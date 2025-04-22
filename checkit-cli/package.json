@@ -25,9 +25,11 @@
   "dependencies": {
     "@xenova/transformers": "^2.17.2",
     "axios": "^1.8.4",
+    "cli-progress": "^3.12.0",
     "commander": "^13.1.0",
     "dotenv": "^16.5.0",
     "execa": "^9.5.2",
-    "inquirer": "^12.5.2"
+    "inquirer": "^12.5.2",
+    "ora": "^8.2.0"
   }
 }
