@@ -5,6 +5,9 @@ import ChapterCard from '../components/chapter/ChapterCard';
 import ChapterCardLong from '../components/chapter/ChapterCardLong';
 import ChapterSelect from '../components/chapter/ChapterSelect';
 import { useNavigate } from 'react-router-dom';
+import UserCard from '../components/user/UserCard';
+import LeaveButton from '../components/button/LeaveButton';
+import MoveGitlabButton from '../components/button/MoveGitlabButton';
 
 function Testpage() {
   const notifySuccess = () => toast.success('성공했습니다!');
@@ -22,6 +25,16 @@ function Testpage() {
       >
         select
       </button>
+      <UserCard name="조승근" role="owner" />
+
+      <hr className="my-3" />
+
+      <h2 className="text-xl font-bold mb-4">버튼 더하기</h2>
+      <LeaveButton />
+      <MoveGitlabButton />
+
+      <hr className="my-3" />
+
       <h2 className="text-xl font-bold mb-4">버튼 테스트</h2>
       <div className="flex flex-wrap gap-4">
         <button
@@ -57,6 +70,8 @@ function Testpage() {
       </div>
       <ToastContainer theme="colored" />
 
+      <hr className="my-3" />
+
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-4">상태 아이콘 테스트</h2>
         <div className="flex items-center gap-8">
@@ -71,15 +86,17 @@ function Testpage() {
         </div>
       </div>
 
+      <hr className="my-3" />
+
       <div className="mt-8">
         <h2 className="text-xl font-bold mb-4">유저 아이콘 테스트</h2>
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2">
-            <UserFilter type="leader" size={28} />
+            <UserFilter type="owner" size={28} />
             <span>팀장</span>
           </div>
           <div className="flex items-center gap-2">
-            <UserFilter type="user" size={24} />
+            <UserFilter type="member" size={24} />
             <span>팀원</span>
           </div>
         </div>

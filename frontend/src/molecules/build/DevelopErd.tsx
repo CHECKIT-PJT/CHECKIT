@@ -1,5 +1,5 @@
 const DevelopErd = () => {
-  return <div>'erd'</div>;
+  return <div>DevelopErd</div>;
 };
 
 export default DevelopErd;
