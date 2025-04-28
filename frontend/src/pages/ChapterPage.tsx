@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { IoArrowBack } from 'react-icons/io5';
 
 function ChapterPage() {
+  // 토스트 메시지 관리 처리할 때 사용하기
   const [message, setMessage] = useState<string>('');
   const notifySuccess = () => toast.success(message);
   const notifyError = () => toast.error(message);
@@ -21,8 +22,8 @@ function ChapterPage() {
       return '/build';
     }
     if (currentPath.includes('/develop')) {
-      if (currentPath.includes('/develop/erd')) return '/develop  /erd';
-      if (currentPath.includes('/develop/api')) return '/develop  /api';
+      if (currentPath.includes('/develop/erd')) return '/develop /erd';
+      if (currentPath.includes('/develop/api')) return '/develop /api';
       if (currentPath.includes('/develop/function'))
         return '/develop  /function';
       return '/develop';
@@ -46,7 +47,7 @@ function ChapterPage() {
         </button>
         <h2>
           {projectName}
-          <span className="text-gray-500 ml-4"> {getRouteText()}</span>
+          <span className="text-gray-500 ml-3"> {getRouteText()}</span>
         </h2>
       </div>
       <Outlet />

@@ -38,9 +38,14 @@ const Header = ({ onLogout, isLoggedIn }: HeaderProps) => {
               className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"
               onClick={() => navigate('/create')}
             >
-              팀 추가하기
+              팀 생성하기
             </span>
-            {/* <span className="text-black text-base">{userName} 님</span> */}
+            <span
+              className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"
+              onClick={() => navigate('/invite')}
+            >
+              요청 메세지
+            </span>
             <span
               className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"
               onClick={handleLogout}

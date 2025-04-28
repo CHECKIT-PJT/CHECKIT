@@ -2,7 +2,7 @@ import { BsPerson } from 'react-icons/bs';
 import { TbChessQueen } from 'react-icons/tb';
 import { LuShieldQuestion } from 'react-icons/lu';
 
-export type IconType = 'user' | 'leader';
+export type IconType = 'owner' | 'member';
 
 interface UserFilterProps {
   type: IconType;
@@ -10,21 +10,21 @@ interface UserFilterProps {
   size?: number;
 }
 
-const UserFilter = ({ type, className = '', size = 24 }: UserFilterProps) => {
+const UserFilter = ({ type, className, size }: UserFilterProps) => {
   const getIcon = () => {
     switch (type) {
-      case 'leader':
+      case 'owner':
         return (
           <div
-            className={`flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 ${className}`}
+            className={`flex items-center justify-center w-9 h-9 rounded-full bg-blue-100 ${className}`}
           >
             <TbChessQueen size={size} className="text-blue-600" />
           </div>
         );
-      case 'user':
+      case 'member':
         return (
           <div
-            className={`flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 ${className}`}
+            className={`flex items-center justify-center w-9 h-9 rounded-full bg-blue-100 ${className}`}
           >
             <BsPerson size={size} className="text-blue-500" />
           </div>
