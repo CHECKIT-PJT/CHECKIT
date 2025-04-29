@@ -8,6 +8,10 @@ plugins {
 group = 'com.checkmate'
 version = '0.0.1-SNAPSHOT'
 
+bootJar {
+	archiveFileName = 'app.jar'   // <- 최종 빌드 결과물을 app.jar로 만듦
+}
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(17)
