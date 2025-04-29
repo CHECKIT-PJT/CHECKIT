@@ -139,7 +139,9 @@ const FuncDetailModal = ({
             </div>
 
             <div className="flex items-center">
-              <span className="font-semibold text-gray-700 mr-2">담당자:</span>
+              <span className="font-semibold text-gray-700 mr-2">
+                담당자 :{' '}
+              </span>
               <input
                 className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300"
                 value={form.assignee}
@@ -166,7 +168,7 @@ const FuncDetailModal = ({
 
             <div className="flex items-center relative">
               <span className="font-semibold text-gray-700 mr-2">
-                우선 순위:
+                우선 순위 :
               </span>
               <div className="dropdown relative">
                 <span
