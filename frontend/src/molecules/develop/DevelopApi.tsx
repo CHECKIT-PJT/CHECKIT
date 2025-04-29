@@ -135,6 +135,18 @@ const DevelopApi = () => {
     setModalOpen(false);
   };
 
+  const handleDelete = () => {
+    if (!selectedApi) return;
+
+    // 삭제 확인
+    if (window.confirm('정말로 이 API를 삭제하시겠습니까?')) {
+      setData(prev =>
+        prev.filter(item => item.apiSpecId !== (selectedApi as any).apiSpecId)
+      );
+      setModalOpen(false);
+    }
+  };
+
   return (
     <div className="mt-5 min-h-screen w-full flex flex-col bg-gray-50">
       <DomainButton
@@ -159,6 +171,7 @@ const DevelopApi = () => {
           api={selectedApi}
           onClose={() => setModalOpen(false)}
           onSave={handleSave}
+          onDelete={handleDelete}
         />
       )}
     </div>

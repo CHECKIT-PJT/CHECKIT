@@ -377,7 +377,7 @@ const ApiDetailModal = ({
       <div className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold text-blue-700">
-            {api ? 'Edit API Details' : 'Add New API'}
+            {api ? 'API 상세 수정 하기' : 'API 추가 하기'}
           </h2>
           <div className="flex gap-3">
             <button
