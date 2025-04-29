@@ -11,6 +11,7 @@ interface ApiDetailModalProps {
   api: ApiDetail | null;
   onClose: () => void;
   onSave: (api: ApiDetail) => void;
+  onDelete?: () => void;
 }
 
 const blankApiDetail: ApiDetail = {
@@ -58,7 +59,12 @@ const emptyJsonBody = `{
   // Add your properties here
 }`;
 
-const ApiDetailModal = ({ api, onClose, onSave }: ApiDetailModalProps) => {
+const ApiDetailModal = ({
+  api,
+  onClose,
+  onSave,
+  onDelete,
+}: ApiDetailModalProps) => {
   const [tab, setTab] = useState<'RESOURCE' | 'QUERY' | 'HEADER'>('RESOURCE');
   const [form, setForm] = useState<ApiDetail>(api ?? blankApiDetail);
 
@@ -380,6 +386,28 @@ const ApiDetailModal = ({ api, onClose, onSave }: ApiDetailModalProps) => {
             >
               Cancel
             </button>
+
+            <button
+              className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium shadow hover:bg-red-700 transition flex items-center gap-2"
+              onClick={onDelete}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+              </svg>
+              Delete
+            </button>
+
             <button
               className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition flex items-center gap-2"
               onClick={handleSave}
