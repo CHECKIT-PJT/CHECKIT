@@ -5,10 +5,10 @@ import ChapterPage from '../pages/ChapterPage';
 import ChapterSelectFirst from '../molecules/chapter/ChapterSelectFirst';
 import BuildSelect from '../molecules/chapter/BuildSelect';
 import DevelopSelect from '../molecules/chapter/DevelopSelect';
-import DevelopErd from '../molecules/build/DevelopErd';
-import DevelopApi from '../molecules/build/DevelopApi';
-import DevelopFunction from '../molecules/build/DevelopFunction';
-import InputSelect from '../molecules/build/InputSelect';
+import DevelopErd from '../molecules/develop/DevelopErd';
+import DevelopApi from '../molecules/develop/DevelopApi';
+import DevelopFunction from '../molecules/develop/DevelopFunction';
+import InputSelect from '../molecules/develop/InputSelect';
 
 const Router = () => {
   // 로그인 체크
