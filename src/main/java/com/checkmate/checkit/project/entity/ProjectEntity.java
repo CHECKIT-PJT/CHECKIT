@@ -26,4 +26,8 @@ public class ProjectEntity extends BaseEntity {
 	public ProjectEntity(String projectName) {
 		this.projectName = projectName;
 	}
+
+	public void updateProjectName(String projectName) {
+		this.projectName = projectName;
+	}
 }

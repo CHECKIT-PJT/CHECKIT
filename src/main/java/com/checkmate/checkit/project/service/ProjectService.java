@@ -9,6 +9,7 @@ import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
+import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
@@ -124,5 +125,24 @@ public class ProjectService {
 		return new ProjectDetailResponse(project.getId(), project.getProjectName(), memberResponses,
 			project.getCreatedAt().toString(),
 			project.getUpdatedAt().toString());
+	}
+
+	@Transactional
+	public void updateProject(String token, Integer projectId, ProjectUpdateRequest projectUpdateRequest) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
+		}
+
+		// 프로젝트 ID로 ProjectEntity 조회
+		ProjectEntity project = projectRepository.findById(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+
+		// 프로젝트 이름 수정
+		project.updateProjectName(projectUpdateRequest.projectName());
 	}
 }
