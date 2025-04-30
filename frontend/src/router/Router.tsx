@@ -1,14 +1,15 @@
-import { Route, Routes, Navigate } from 'react-router-dom';
-import Layout from '../pages/Layout';
-import Testpage from '../pages/Testpage';
-import ChapterPage from '../pages/ChapterPage';
-import ChapterSelectFirst from '../molecules/chapter/ChapterSelectFirst';
-import BuildSelect from '../molecules/chapter/BuildSelect';
-import DevelopSelect from '../molecules/chapter/DevelopSelect';
-import DevelopErd from '../molecules/develop/DevelopErd';
-import DevelopApi from '../molecules/develop/DevelopApi';
-import DevelopFunction from '../molecules/develop/DevelopFunction';
-import InputSelect from '../molecules/develop/InputSelect';
+import { Route, Routes, Navigate } from "react-router-dom";
+import Layout from "../pages/Layout";
+import Testpage from "../pages/Testpage";
+import ChapterPage from "../pages/ChapterPage";
+import ChapterSelectFirst from "../molecules/chapter/ChapterSelectFirst";
+import BuildSelect from "../molecules/chapter/BuildSelect";
+import DevelopSelect from "../molecules/chapter/DevelopSelect";
+import DevelopErd from "../molecules/develop/DevelopErd";
+import DevelopApi from "../molecules/develop/DevelopApi";
+import DevelopFunction from "../molecules/develop/DevelopFunction";
+import InputSelect from "../molecules/develop/InputSelect";
+import BuildPreviewPage from "../pages/BuildPreview/BuildPreviewPage";
 
 const Router = () => {
   // 로그인 체크
@@ -30,6 +31,7 @@ const Router = () => {
             <Route path="api" element={<DevelopApi />} />
             <Route path="function" element={<DevelopFunction />} />
           </Route>
+          <Route path="buildpreview" element={<BuildPreviewPage />} />
         </Route>
       </Route>
     </Routes>
