@@ -6,12 +6,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Embeddable
 @NoArgsConstructor
 @EqualsAndHashCode
 @AllArgsConstructor
+@Getter
 public class ProjectMemberId implements Serializable {
 
 	@Column(name = "user_id", nullable = false)
