@@ -13,8 +13,8 @@ const ToggleButton = () => {
     { action: '테이블 추가', keys: 'Alt + N' },
     { action: '컬럼 추가', keys: 'Alt + Enter' },
     { action: '메모 추가', keys: 'Alt + M' },
-    { action: '테이블/메모 삭제', keys: 'Ctrl + ⌫ / Ctrl + Delete' },
-    { action: '컬럼 삭제', keys: 'Alt + ⌫ / Alt + Delete' },
+    { action: '테이블/메모 삭제', keys: 'Ctrl + Delete' },
+    { action: '컬럼 삭제', keys: 'Alt + Delete' },
     { action: '기본 키', keys: 'Alt + K' },
     { action: '모든 테이블/메모 선택', keys: 'Ctrl + Alt + A' },
     { action: '모든 컬럼 선택', keys: 'Alt + A' },
@@ -32,22 +32,22 @@ const ToggleButton = () => {
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="relative">
       <button
         onClick={toggleShortcuts}
-        className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-all duration-200"
+        className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-full shadow-md transition-all duration-200 z-50"
       >
-        <TbCloudQuestion className="mr-2" size={20} />
+        <TbCloudQuestion size={20} />
       </button>
 
       {showShortcuts && (
-        <div className="mt-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-md w-full">
-          <h3 className="text-lg font-bold mb-3 text-gray-800">
+        <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-96 z-[9999]">
+          <h3 className="text-lg font-bold mb-3 text-gray-800 ml-2">
             키보드 단축키
           </h3>
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto mb-2 mx-2">
             <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="sticky top-0 border-b bg-slate-200 z-10">
                 <tr>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
                     기능
@@ -74,14 +74,14 @@ const ToggleButton = () => {
               </tbody>
             </table>
           </div>
-          <div className="mt-4 flex justify-end">
+          {/* <div className="mt-4 flex justify-end">
             <button
               onClick={toggleShortcuts}
               className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
             >
               닫기
             </button>
-          </div>
+          </div> */}
         </div>
       )}
     </div>
