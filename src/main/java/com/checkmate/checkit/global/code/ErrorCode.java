@@ -32,7 +32,7 @@ public enum ErrorCode {
 	OAuth2AuthenticationRedirectFilter(401, UNAUTHORIZED, "OAuth2 인증 리다이렉트 필터에서 오류가 발생했습니다."),
 
 	// 회원 관련 에러
-	USER_NOT_FOUND(404, NOT_FOUND, "회원을 찾을 수 없습니다."),
+	USER_NOT_FOUND(404, NOT_FOUND, "등록된 회원을 찾을 수 없습니다."),
 	;
 
 	private final int code;
