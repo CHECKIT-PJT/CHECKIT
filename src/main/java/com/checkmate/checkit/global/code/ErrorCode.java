@@ -38,6 +38,7 @@ public enum ErrorCode {
 	INVALID_PROJECT_NAME(400, BAD_REQUEST, "프로젝트 이름이 유효하지 않습니다."),
 	PROJECT_NAME_TOO_LONG(400, BAD_REQUEST, "프로젝트 이름은 50자 이내여야 합니다."),
 	PROJECT_NOT_FOUND(404, NOT_FOUND, "프로젝트를 찾을 수 없습니다."),
+	UNAUTHORIZED_PROJECT_ACCESS(403, FORBIDDEN, "프로젝트에 대한 접근 권한이 없습니다."),
 	;
 
 	private final int code;

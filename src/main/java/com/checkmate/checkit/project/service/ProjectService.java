@@ -10,13 +10,16 @@ import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
+import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
+import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberId;
 import com.checkmate.checkit.project.entity.ProjectMemberRole;
 import com.checkmate.checkit.project.repository.ProjectMemberRepository;
 import com.checkmate.checkit.project.repository.ProjectRepository;
+import com.checkmate.checkit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +31,7 @@ public class ProjectService {
 	private final ProjectRepository projectRepository;
 	private final ProjectMemberRepository projectMemberRepository;
 	private final JwtTokenProvider jwtTokenProvider;
+	private final UserRepository userRepository;
 
 	/**
 	 * 프로젝트 생성
@@ -57,6 +61,11 @@ public class ProjectService {
 			project.getProjectName());
 	}
 
+	/**
+	 * 프로젝트 목록 조회
+	 * @param token : JWT 토큰
+	 * @return projectListResponse : 프로젝트 목록 응답 DTO
+	 */
 	@Transactional(readOnly = true)
 	public List<ProjectListResponse> getProjectList(String token) {
 
@@ -74,5 +83,46 @@ public class ProjectService {
 				return new ProjectListResponse(project.getId(), project.getProjectName());
 			})
 			.toList();
+	}
+
+	/**
+	 * 프로젝트 상세 조회
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return projectDetailResponse : 프로젝트 상세 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public ProjectDetailResponse getProjectDetail(String token, Integer projectId) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
+		}
+
+		// 프로젝트 ID로 ProjectEntity 조회
+		ProjectEntity project = projectRepository.findById(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+
+		// 프로젝트 멤버 조회
+		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			projectId);
+
+		// ProjectMember 목록에서 멤버 ID와 역할 추출
+		List<ProjectMemberResponse> memberResponses = projectMembers.stream()
+			.map(projectMember -> {
+				Integer memberId = projectMember.getId().getUserId();
+				String memberName = userRepository.findById(memberId)
+					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
+					.getUserName();
+				return new ProjectMemberResponse(memberId, memberName, projectMember.getRole());
+			})
+			.toList();
+
+		return new ProjectDetailResponse(project.getId(), project.getProjectName(), memberResponses,
+			project.getCreatedAt().toString(),
+			project.getUpdatedAt().toString());
 	}
 }

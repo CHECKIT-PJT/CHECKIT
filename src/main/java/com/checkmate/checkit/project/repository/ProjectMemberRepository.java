@@ -13,4 +13,10 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMemberEnti
 
 	// 회원이 참여한 프로젝트 중 승인된 것만 조회 (삭제되지 않은 것만)
 	List<ProjectMemberEntity> findById_UserIdAndIsApprovedTrueAndIsDeletedFalse(Integer userId);
+
+	// 프로젝트 소속 회원 조회 (삭제되지 않고 승인된 것만)
+	List<ProjectMemberEntity> findById_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(Integer projectId);
+
+	// 로그인한 회원이 해당 프로젝트에 멤버인지 검증 (삭제되지 않고 승인된 것만)
+	Boolean existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(Integer userId, Integer projectId);
 }
