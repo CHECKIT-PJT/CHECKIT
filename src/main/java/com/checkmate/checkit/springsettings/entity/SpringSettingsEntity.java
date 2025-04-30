@@ -12,16 +12,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "Spring_settings")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class SpringSettingsEntity {
 
 	@Id
@@ -34,11 +34,11 @@ public class SpringSettingsEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private SpringProjectType springProject;    // ENUM (Gradle, Maven)
+	private SpringProjectType springProject;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private SpringLanguageType springLanguage;  // ENUM (Java, Kotlin, Groovy)
+	private SpringLanguageType springLanguage;
 
 	@Column(nullable = false)
 	private int springVersion;
@@ -60,13 +60,13 @@ public class SpringSettingsEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private SpringPackagingType springPackaging;  // ENUM (Jar, War)
+	private SpringPackagingType springPackaging;
 
 	@Column(nullable = false)
 	private int springJavaVersion;
 
 	public enum SpringProjectType {
-		GRADLE_GROOVY, GRADLE_KOTLIN, MAVEN,
+		GRADLE_GROOVY, GRADLE_KOTLIN, MAVEN
 	}
 
 	public enum SpringLanguageType {
@@ -76,6 +76,4 @@ public class SpringSettingsEntity {
 	public enum SpringPackagingType {
 		JAR, WAR
 	}
-
 }
-
