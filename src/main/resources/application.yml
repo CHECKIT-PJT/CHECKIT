@@ -3,6 +3,8 @@ spring:
     import:
       - classpath:application-redis.yml
       - classpath:application-mysql.yml
+      - classpath:application-jwt.yml
+      - classpath:application-oauth.yml
       - optional:file:.env[.properties]
   application:
     name: checkit
