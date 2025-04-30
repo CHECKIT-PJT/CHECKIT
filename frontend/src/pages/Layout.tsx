@@ -7,7 +7,7 @@ const Layout = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const isWidthTooSmall = window.innerWidth < 1024;
+      const isWidthTooSmall = window.innerWidth < 512;
       const isHeightTooSmall = window.innerHeight < 600;
       setIsTooSmall(isWidthTooSmall || isHeightTooSmall);
     };
@@ -20,9 +20,10 @@ const Layout = () => {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-zinc-100">
         <div className="text-center text-zinc-600 px-6">
-          <h1 className="text-2xl font-semibold mb-2">접속 불가</h1>
+          <h1 className="text-2xl font-semibold mb-2">큰 화면으로 만나요!</h1>
           <p className="text-lg">
-            이 서비스는 PC 화면(1024px 이상, 600px 이상)에서만 이용 가능합니다.
+            CHECKIT 서비스는 PC 화면(512px 이상, 600px 이상)에서만 이용
+            가능합니다.
             <br />더 넓은 화면으로 접속해주세요.
           </p>
         </div>
@@ -34,7 +35,7 @@ const Layout = () => {
     <div className="flex h-screen w-screen bg-gray-50 text-gray-900">
       <div className="flex flex-col w-full h-full">
         <Header userName="사용자" isLoggedIn={true} />
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <Outlet />
         </div>
       </div>

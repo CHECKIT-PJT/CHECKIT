@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const ChapterSelect = () => {
   const navigate = useNavigate();
+  const { projectId } = useParams();
   const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
 
   const handleSelect = (chapter: string) => {
     setSelectedChapter(chapter);
-    navigate(`/chapter/${chapter}`);
+    navigate(`/chapter/${projectId}/${chapter}`);
   };
 
   return (
@@ -28,7 +29,7 @@ const ChapterSelect = () => {
             'shadow-md px-12 py-6 rounded-xl text-2xl font-semibold transition-all duration-300 bg-white hover:bg-blue-800 hover:text-white hover:shadow-xl hover:scale-105 border border-gray-200'
           }
         >
-          설계 완료 후 Build
+          결과물 출력하기
         </button>
       </div>
     </div>
