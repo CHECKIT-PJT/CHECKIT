@@ -9,7 +9,7 @@ import DevelopErd from '../molecules/develop/DevelopErd';
 import DevelopApi from '../molecules/develop/DevelopApi';
 import DevelopFunction from '../molecules/develop/DevelopFunction';
 import InputSelect from '../molecules/develop/InputSelect';
-import BuildPreviewPage from '../pages/BuildPreview/BuildPreviewPage';
+import BuildPreviewPage from '../pages/BuildPreviewPage';
 import LandingPage from '../pages/LandingPage';
 import ProjectPage from '../pages/ProjectPage';
 import ProjectList from '../molecules/project/ProjectList';
