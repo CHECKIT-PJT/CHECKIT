@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import ProjectHeader from "../../molecules/buildpreview/ProjectHeader";
-import FileExplorer from "../../molecules/buildpreview/FileExplorer";
-import CodeViewer from "../../molecules/buildpreview/CodeViewer";
-import ProjectStats from "../../molecules/buildpreview/ProjectStats";
-import ActionBar from "../../molecules/buildpreview/ActionBar";
-import useThemeDetection from "../../hooks/useThemeDetection";
+import ProjectHeader from "../molecules/buildpreview/ProjectHeader";
+import FileExplorer from "../molecules/buildpreview/FileExplorer";
+import CodeViewer from "../molecules/buildpreview/CodeViewer";
+import ProjectStats from "../molecules/buildpreview/ProjectStats";
+import ActionBar from "../molecules/buildpreview/ActionBar";
+import useThemeDetection from "../hooks/useThemeDetection";
 import {
   sampleApiResponse,
   downloadProject,
   createNewProject,
-} from "../../api/buildpreview";
-import { countFiles, createFilePath } from "../../utils/fileUtils";
-import { ExpandedFolders, SelectedFile } from "../../types";
+} from "../api/buildpreview";
+import { countFiles, createFilePath } from "../utils/fileUtils";
+import { ExpandedFolders, SelectedFile } from "../types";
 
 /**
  * 프로젝트 미리보기 페이지 컴포넌트
