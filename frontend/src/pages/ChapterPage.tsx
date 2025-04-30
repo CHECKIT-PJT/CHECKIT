@@ -4,14 +4,6 @@ import { toast } from 'react-toastify';
 import { IoArrowBack } from 'react-icons/io5';
 
 function ChapterPage() {
-  // 토스트 메시지 관리 처리할 때 사용하기
-  const [message, setMessage] = useState<string>('');
-  const notifySuccess = () => toast.success(message);
-  const notifyError = () => toast.error(message);
-  const notifyWarning = () => toast.warning(message);
-  const notifyInfo = () => toast.info(message);
-  const notifyDefault = () => toast(message);
-
   // TODO : 프로젝트 이름 받아오기
   const projectName = 'S12A501';
   const location = useLocation();
