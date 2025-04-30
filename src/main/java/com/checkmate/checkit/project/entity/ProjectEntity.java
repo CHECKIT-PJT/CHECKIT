@@ -7,23 +7,23 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "Projects")
 @Getter
-@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class ProjectEntity extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
 
-	@Column(nullable = false)
+	@Column(name = "project_name", nullable = false, length = 100)
 	private String projectName;
+
+	public ProjectEntity(String projectName) {
+		this.projectName = projectName;
+	}
 }
