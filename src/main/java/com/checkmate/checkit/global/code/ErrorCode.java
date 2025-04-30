@@ -1,23 +1,41 @@
 package com.checkmate.checkit.global.code;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import static org.springframework.http.HttpStatus.*;
+
 import org.springframework.http.HttpStatus;
 
-import static org.springframework.http.HttpStatus.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
-    // 서버 에러
-    SERVER_ERROR(5000, INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다"),
+	// 서버 에러
+	SERVER_ERROR(500, INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다"),
 
-    // 요청 관련 에러
-    INVALID_REQUEST(4000, BAD_REQUEST, "잘못된 요청 형식입니다"),
-    NOT_FOUND_ENDPOINT(404, NOT_FOUND, "요청하신 엔드포인트를 찾을 수 없습니다."),
-    ;
+	// 요청 관련 에러
+	INVALID_REQUEST(400, BAD_REQUEST, "잘못된 요청 형식입니다"),
+	NOT_FOUND_ENDPOINT(404, NOT_FOUND, "요청하신 엔드포인트를 찾을 수 없습니다."),
 
-    private final int code;
-    private final HttpStatus httpStatus;
-    private final String message;
+	// JWT 관련 에러
+	INVALID_JWT_SIGNATURE(401, UNAUTHORIZED, "유효하지 않은 JWT 서명입니다."),
+	INVALID_JWT_TOKEN(401, UNAUTHORIZED, "유효하지 않은 JWT 토큰입니다."),
+	EXPIRED_JWT_TOKEN(401, UNAUTHORIZED, "만료된 JWT 토큰입니다."),
+	UNSUPPORTED_JWT_TOKEN(401, UNAUTHORIZED, "지원하지 않는 JWT 토큰입니다."),
+	EMPTY_JWT_TOKEN(400, BAD_REQUEST, "JWT 토큰이 비어있습니다."),
+	BLACKLISTED_JWT_TOKEN(401, UNAUTHORIZED, "로그아웃된 토큰입니다."),
+
+	// OAuth 관련 에러
+	OAuth2AccessDeniedException(403, FORBIDDEN, "OAuth2 인증이 거부되었습니다."),
+	OAuth2AuthenticationException(401, UNAUTHORIZED, "OAuth2 인증에 실패했습니다."),
+	OAuth2AuthenticationProcessingFilter(401, UNAUTHORIZED, "OAuth2 인증 처리 필터에서 오류가 발생했습니다."),
+	OAuth2AuthenticationRedirectFilter(401, UNAUTHORIZED, "OAuth2 인증 리다이렉트 필터에서 오류가 발생했습니다."),
+
+	// 회원 관련 에러
+	USER_NOT_FOUND(404, NOT_FOUND, "회원을 찾을 수 없습니다."),
+	;
+
+	private final int code;
+	private final HttpStatus httpStatus;
+	private final String message;
 }
