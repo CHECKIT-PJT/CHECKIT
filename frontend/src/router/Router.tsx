@@ -9,8 +9,8 @@ import DevelopErd from "../molecules/develop/DevelopErd";
 import DevelopApi from "../molecules/develop/DevelopApi";
 import DevelopFunction from "../molecules/develop/DevelopFunction";
 import InputSelect from "../molecules/develop/InputSelect";
-import BuildPreviewPage from "../pages/BuildPreview/BuildPreviewPage";
-
+import BuildPreviewPage from "../pages/BuildPreviewPage";
+import LandingPage from "../pages/LandingPage";
 const Router = () => {
   // 로그인 체크
   //   const ProtectedRoute = ({ element }) => {
@@ -19,8 +19,9 @@ const Router = () => {
   //   };
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route element={<Layout />}>
-        <Route path="/" element={<Testpage />} />
+        <Route path="/testpage" element={<Testpage />} />
         <Route path="/chapter" element={<ChapterPage />}>
           <Route index element={<Navigate to="first" replace />} />
           <Route path="first" element={<ChapterSelectFirst />} />
