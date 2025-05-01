@@ -93,4 +93,15 @@ public class ProjectController {
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 
+	// 프로젝트 삭제
+	@DeleteMapping("/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> deleteProject(
+		@RequestHeader("Authorization") String authorization, @PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		projectService.deleteProject(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }

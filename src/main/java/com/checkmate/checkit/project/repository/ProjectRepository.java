@@ -9,6 +9,7 @@ import com.checkmate.checkit.project.entity.ProjectEntity;
 
 @Repository
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Integer> {
-	Optional<ProjectEntity> findById(Integer id);
+	// 삭제되지 않은 프로젝트 조회
+	Optional<ProjectEntity> findByIdAndIsDeletedFalse(Integer projectId);
 }
 

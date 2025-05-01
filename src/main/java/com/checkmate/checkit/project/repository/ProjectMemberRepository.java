@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberId;
+import com.checkmate.checkit.project.entity.ProjectMemberRole;
 
 @Repository
 public interface ProjectMemberRepository extends JpaRepository<ProjectMemberEntity, ProjectMemberId> {
@@ -24,4 +25,7 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMemberEnti
 	// 로그인한 회원과 프로젝트 Id를 통해 프로젝트 멤버 조회 (삭제되지 않고 승인된 것만)
 	Optional<ProjectMemberEntity> findById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(Integer userId,
 		Integer projectId);
+
+	// 프로젝트 Id를 통해 프로젝트 멤버가 존재하는지 검증 (삭제되지 않고 승인된 것만)
+	Boolean existsById_ProjectIdAndRoleAndIsApprovedTrueAndIsDeletedFalse(Integer projectId, ProjectMemberRole role);
 }

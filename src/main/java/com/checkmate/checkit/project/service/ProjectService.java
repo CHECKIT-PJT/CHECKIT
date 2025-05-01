@@ -79,7 +79,8 @@ public class ProjectService {
 		return projectMembers.stream()
 			.map(projectMember -> {
 				// 프로젝트 ID로 ProjectEntity 조회
-				ProjectEntity project = projectRepository.findById(projectMember.getId().getProjectId())
+				ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(
+						projectMember.getId().getProjectId())
 					.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 				return new ProjectListResponse(project.getId(), project.getProjectName());
 			})
@@ -104,7 +105,7 @@ public class ProjectService {
 		}
 
 		// 프로젝트 ID로 ProjectEntity 조회
-		ProjectEntity project = projectRepository.findById(projectId)
+		ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(projectId)
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 
 		// 프로젝트 멤버 조회
@@ -145,7 +146,7 @@ public class ProjectService {
 		}
 
 		// 프로젝트 ID로 ProjectEntity 조회
-		ProjectEntity project = projectRepository.findById(projectId)
+		ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(projectId)
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 
 		// 프로젝트 이름 수정
@@ -173,6 +174,39 @@ public class ProjectService {
 		}
 
 		// 프로젝트 멤버 탈퇴
+		projectMember.delete();
+	}
+
+	/**
+	 * 프로젝트 삭제
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 */
+	@Transactional
+	public void deleteProject(String token, Integer projectId) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		ProjectMemberEntity projectMember = projectMemberRepository.findById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+				loginUserId, projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS));
+
+		// 프로젝트 소유주인지 확인
+		if (projectMember.getRole() != ProjectMemberRole.OWNER) {
+			throw new CommonException(ErrorCode.CANNOT_DELETE_PROJECT_MEMBER);
+		}
+
+		// 프로젝트에 소속된 멤버가 있는지 확인
+		if (projectMemberRepository.existsById_ProjectIdAndRoleAndIsApprovedTrueAndIsDeletedFalse(projectId,
+			ProjectMemberRole.MEMBER)) {
+			throw new CommonException(ErrorCode.PROJECT_MEMBER_EXISTS);
+		}
+
+		// 프로젝트 삭제
+		ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+		project.delete();
 		projectMember.delete();
 	}
 }
