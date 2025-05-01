@@ -209,4 +209,36 @@ public class ProjectService {
 		project.delete();
 		projectMember.delete();
 	}
+
+	/**
+	 * 프로젝트 멤버 조회
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return projectMemberResponse : 프로젝트 멤버 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public List<ProjectMemberResponse> getProjectMembers(String token, Integer projectId) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
+		}
+
+		// 프로젝트 멤버 조회
+		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			projectId);
+
+		return projectMembers.stream()
+			.map(projectMember -> {
+				Integer memberId = projectMember.getId().getUserId();
+				String memberName = userRepository.findById(memberId)
+					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
+					.getUserName();
+				return new ProjectMemberResponse(memberId, memberName, projectMember.getRole());
+			})
+			.toList();
+	}
 }

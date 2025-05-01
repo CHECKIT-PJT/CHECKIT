@@ -20,6 +20,7 @@ import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
+import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 
@@ -103,5 +104,17 @@ public class ProjectController {
 		projectService.deleteProject(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// 프로젝트 멤버 목록 조회
+	@GetMapping("/{projectId}/members")
+	public ResponseEntity<JSONResponse<List<ProjectMemberResponse>>> getProjectMembers(
+		@RequestHeader("Authorization") String authorization, @PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		List<ProjectMemberResponse> projectMembers = projectService.getProjectMembers(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, projectMembers));
 	}
 }
