@@ -40,4 +40,10 @@ public class ProjectMemberEntity {
 		this.isApproved = isApproved;
 		this.role = role;
 	}
+
+	// 소프트 삭제 메서드
+	public void delete() {
+		this.deletedAt = LocalDateTime.now();
+		this.isDeleted = true;
+	}
 }

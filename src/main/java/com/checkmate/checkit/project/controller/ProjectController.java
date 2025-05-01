@@ -3,6 +3,7 @@ package com.checkmate.checkit.project.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -79,4 +80,17 @@ public class ProjectController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	// 프로젝트 탈퇴
+	@DeleteMapping("/{projectId}/leave")
+	public ResponseEntity<JSONResponse<Void>> leaveProject(
+		@RequestHeader("Authorization") String authorization, @PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		projectService.leaveProject(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
 }

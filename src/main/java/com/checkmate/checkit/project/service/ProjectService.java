@@ -127,6 +127,12 @@ public class ProjectService {
 			project.getUpdatedAt().toString());
 	}
 
+	/**
+	 * 프로젝트 정보 수정
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param projectUpdateRequest : 프로젝트 수정 요청 DTO
+	 */
 	@Transactional
 	public void updateProject(String token, Integer projectId, ProjectUpdateRequest projectUpdateRequest) {
 
@@ -144,5 +150,29 @@ public class ProjectService {
 
 		// 프로젝트 이름 수정
 		project.updateProjectName(projectUpdateRequest.projectName());
+	}
+
+	/**
+	 * 프로젝트 탈퇴
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 */
+	@Transactional
+	public void leaveProject(String token, Integer projectId) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		ProjectMemberEntity projectMember = projectMemberRepository.findById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+				loginUserId, projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS));
+
+		// 프로젝트 소유주인 경우 예외 처리
+		if (projectMember.getRole() == ProjectMemberRole.OWNER) {
+			throw new CommonException(ErrorCode.CANNOT_LEAVE_PROJECT_OWNER);
+		}
+
+		// 프로젝트 멤버 탈퇴
+		projectMember.delete();
 	}
 }
