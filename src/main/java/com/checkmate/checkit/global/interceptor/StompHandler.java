@@ -21,7 +21,7 @@ public class StompHandler implements ChannelInterceptor {
     @Override
     public Message<?> preSend(@NotNull Message<?> message, @NotNull MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        //CONNECT 명령어(소켓 연결 시) 사용자의 토큰을 받아서 인증처리
+
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             try {
                 String token = accessor.getFirstNativeHeader("Authorization");
