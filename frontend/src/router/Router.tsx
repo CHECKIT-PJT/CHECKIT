@@ -28,7 +28,7 @@ const Router = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/gitlab/callback" element={<OAuthCallback />} />
       <Route element={<Layout />}>
-        <Route path="/" element={<Testpage />} />
+        <Route path="/test" element={<Testpage />} />
         <Route path="/chapter/:projectId" element={<ChapterPage />}>
           <Route index element={<ChapterSelectFirst />} />
           <Route path="build" element={<BuildSelect />} />
