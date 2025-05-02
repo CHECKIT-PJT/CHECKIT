@@ -24,7 +24,7 @@ public class ErdWebSocketController {
                                  @Payload ErdActionMessage message,
                                  Principal principal) {
         String userId = principal.getName();
-        log.info("🔄 {} updated ERD for project {}", userId, projectId);
+        log.info("{} updated ERD for project {}", userId, projectId);
 
         messagingTemplate.convertAndSend("/sub/erd/" + projectId, message);
     }
