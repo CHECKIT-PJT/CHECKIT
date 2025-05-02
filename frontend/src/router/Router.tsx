@@ -15,6 +15,7 @@ import ProjectPage from '../pages/ProjectPage';
 import ProjectList from '../molecules/project/ProjectList';
 import ProjectDetail from '../molecules/project/ProjectDetail';
 import ProjectCreatePage from '../pages/ProjectCreatePage';
+import OAuthCallback from '../pages/OAuthCallBack';
 
 const Router = () => {
   // 로그인 체크
@@ -25,6 +26,7 @@ const Router = () => {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/gitlab/callback" element={<OAuthCallback />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Testpage />} />
         <Route path="/chapter/:projectId" element={<ChapterPage />}>
