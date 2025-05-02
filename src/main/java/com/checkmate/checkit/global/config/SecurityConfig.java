@@ -36,6 +36,7 @@ public class SecurityConfig {
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(authz -> authz
 				.requestMatchers("/api/auth/**").permitAll() // 인증 관련 API는 모두 허용
+					.requestMatchers("/ws/erd/**").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userRepository),
 				UsernamePasswordAuthenticationFilter.class);
