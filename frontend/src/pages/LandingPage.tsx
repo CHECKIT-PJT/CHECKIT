@@ -1,8 +1,7 @@
-// import Logo from "../assets/logo.png";
-import LoginForm from "../molecules/landing/LoginForm";
-import { redirectToGitLabLogin } from "../api/auth";
+import LoginForm from '../molecules/landing/LoginForm';
+import { redirectToGitLabLogin } from '../api/authAPI';
 
-const LandingPage: React.FC = () => {
+const LandingPage = () => {
   const handleGitHubLogin = () => {};
 
   const handleGitLabLogin = () => {
