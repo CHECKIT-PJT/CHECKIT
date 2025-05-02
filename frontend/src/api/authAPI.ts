@@ -4,7 +4,9 @@ import axiosInstance from './axiosInstance';
 export const redirectToGitLabLogin = () => {
   const clientId = import.meta.env.VITE_GITLAB_CLIENT_ID;
   const redirectUri = 'http://localhost:5173/gitlab/callback';
-  const gitlabUrl = `https://lab.ssafy.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=read_user`;
+  const scope = 'read_user read_repository write_repository';
+  const encodedScope = encodeURIComponent(scope);
+  const gitlabUrl = `https://lab.ssafy.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodedScope}`;
 
   window.location.href = gitlabUrl;
 };
@@ -48,13 +50,10 @@ export const logout = async () => {
   }
 };
 
-export const handleAuthCallback = async (
-  provider: 'gitlab',
-  code: string
-): Promise<boolean> => {
+export const handleAuthCallback = async (code: string): Promise<boolean> => {
   try {
     const response = await axiosInstance.get(
-      `/api/auth/${provider}/callback?code=${code}`,
+      `/api/auth/gitlab/callback?code=${code}`,
       {
         withCredentials: true,
       }
@@ -69,7 +68,6 @@ export const handleAuthCallback = async (
 
     return false;
   } catch (error) {
-    console.error(`${provider} callback error:`, error);
     return false;
   }
 };
