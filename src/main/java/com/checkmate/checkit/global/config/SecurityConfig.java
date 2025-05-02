@@ -52,7 +52,6 @@ public class SecurityConfig {
 		configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
 		configuration.setAllowCredentials(true); // 쿠키를 포함한 요청 허용
 		configuration.setMaxAge(3600L);
-
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 
