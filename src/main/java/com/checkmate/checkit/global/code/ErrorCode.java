@@ -48,6 +48,9 @@ public enum ErrorCode {
 
 	// 이메일 관련 에러
 	MAIL_SEND_FAILED(500, INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
+
+	// Git 관련 에러
+	GIT_SETTING_NOT_FOUND(404, NOT_FOUND, "Git 설정을 찾을 수 없습니다."),
 	;
 
 	private final int code;

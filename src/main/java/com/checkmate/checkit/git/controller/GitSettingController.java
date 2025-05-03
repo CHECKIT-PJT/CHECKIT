@@ -1,6 +1,7 @@
 package com.checkmate.checkit.git.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.git.dto.request.GitIgnoreCreateRequest;
+import com.checkmate.checkit.git.dto.response.GitIgnoreResponse;
 import com.checkmate.checkit.git.service.GitSettingService;
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
@@ -33,5 +35,18 @@ public class GitSettingController {
 		gitSettingService.createGitIgnore(token, projectId, request);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// GitIgnore 조회
+	@GetMapping("/gitignore/{projectId}")
+	public ResponseEntity<JSONResponse<GitIgnoreResponse>> getGitIgnore(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		GitIgnoreResponse gitIgnoreResponse = gitSettingService.getGitIgnore(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, gitIgnoreResponse));
 	}
 }
