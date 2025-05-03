@@ -33,6 +33,21 @@ public enum ErrorCode {
 
 	// 회원 관련 에러
 	USER_NOT_FOUND(404, NOT_FOUND, "등록된 회원을 찾을 수 없습니다."),
+
+	// 프로젝트 관련 에러
+	INVALID_PROJECT_NAME(400, BAD_REQUEST, "프로젝트 이름이 유효하지 않습니다."),
+	PROJECT_NAME_TOO_LONG(400, BAD_REQUEST, "프로젝트 이름은 50자 이내여야 합니다."),
+	PROJECT_NOT_FOUND(404, NOT_FOUND, "프로젝트를 찾을 수 없습니다."),
+	UNAUTHORIZED_PROJECT_ACCESS(403, FORBIDDEN, "프로젝트에 대한 접근 권한이 없습니다."),
+	CANNOT_LEAVE_PROJECT_OWNER(403, FORBIDDEN, "프로젝트 소유자는 프로젝트를 나갈 수 없습니다."),
+	CANNOT_DELETE_PROJECT_MEMBER(403, FORBIDDEN, "프로젝트 소유자만 프로젝트를 삭제할 수 있습니다."),
+	PROJECT_MEMBER_EXISTS(400, BAD_REQUEST, "프로젝트에 멤버가 존재하여 삭제할 수 없습니다."),
+	ALREADY_MEMBER(400, BAD_REQUEST, "이미 프로젝트에 참여하고 있습니다."),
+	INVALID_INVITE_CODE(400, BAD_REQUEST, "유효하지 않은 초대 코드입니다."),
+	INVALID_INVITE_MEMBER(400, BAD_REQUEST, "초대된 멤버가 아닙니다."),
+
+	// 이메일 관련 에러
+	MAIL_SEND_FAILED(500, INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
 	;
 
 	private final int code;
