@@ -371,7 +371,8 @@ public class ProjectService {
 	 * @param loginUserId : 로그인한 사용자 ID
 	 * @param projectId : 프로젝트 ID
 	 */
-	private void validateUserAndProject(Integer loginUserId, Integer projectId) {
+	@Transactional(readOnly = true)
+	public void validateUserAndProject(Integer loginUserId, Integer projectId) {
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
 		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
 			loginUserId, projectId)) {
