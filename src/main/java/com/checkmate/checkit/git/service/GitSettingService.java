@@ -65,6 +65,28 @@ public class GitSettingService {
 	}
 
 	/**
+	 * GitIgnore 수정
+	 *
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 * @param request   GitIgnore 수정 요청
+	 */
+	@Transactional
+	public void updateGitIgnore(String token, Integer projectId, GitIgnoreCreateRequest request) {
+
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// GitSettingsEntity가 존재하는지 검증
+		GitSettingsEntity gitSettings = validateGitSetting(projectId);
+
+		// GitIgnore 수정
+		gitSettings.updateGitIgnore(request.content());
+	}
+
+	/**
 	 * GitSettingsEntity가 존재하는지 검증
 	 *
 	 * @param projectId 프로젝트 ID

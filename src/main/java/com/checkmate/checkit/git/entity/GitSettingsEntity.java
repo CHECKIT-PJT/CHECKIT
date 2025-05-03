@@ -45,4 +45,8 @@ public class GitSettingsEntity {
 	public void createGitIgnore(String content) {
 		this.gitIgnore = content;
 	}
+
+	public void updateGitIgnore(String content) {
+		this.gitIgnore = content;
+	}
 }
