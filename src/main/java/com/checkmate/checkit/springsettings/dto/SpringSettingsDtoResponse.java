@@ -23,4 +23,20 @@ public class SpringSettingsDtoResponse {
 	private String springPackageName;
 	private SpringSettingsEntity.SpringPackagingType springPackaging;
 	private int springJavaVersion;
+
+	public static SpringSettingsDtoResponse fromEntity(SpringSettingsEntity entity) {
+		return new SpringSettingsDtoResponse(
+			entity.getId(),
+			entity.getSpringProject(),
+			entity.getSpringLanguage(),
+			entity.getSpringVersion(),
+			entity.getSpringGroup(),
+			entity.getSpringArtifact(),
+			entity.getSpringName(),
+			entity.getSpringDescription(),
+			entity.getSpringPackageName(),
+			entity.getSpringPackaging(),
+			entity.getSpringJavaVersion()
+		);
+	}
 }
