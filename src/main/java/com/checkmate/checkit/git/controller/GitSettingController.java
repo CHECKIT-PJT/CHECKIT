@@ -1,6 +1,7 @@
 package com.checkmate.checkit.git.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -61,6 +62,19 @@ public class GitSettingController {
 		String token = authorization.substring(7);
 
 		gitSettingService.updateGitIgnore(token, projectId, request);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// GitIgnore 삭제
+	@DeleteMapping("/gitignore/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> deleteGitIgnore(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		gitSettingService.deleteGitIgnore(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}

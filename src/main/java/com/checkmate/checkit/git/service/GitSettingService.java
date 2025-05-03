@@ -61,6 +61,11 @@ public class GitSettingService {
 		// GitSettingsEntity가 존재하는지 검증
 		GitSettingsEntity gitSettings = validateGitSetting(projectId);
 
+		// GitIgnore 조회
+		if (gitSettings.getGitIgnore() == null) {
+			throw new CommonException(ErrorCode.GIT_IGNORE_NOT_FOUND);
+		}
+
 		return new GitIgnoreResponse(gitSettings.getGitIgnore());
 	}
 
@@ -84,6 +89,26 @@ public class GitSettingService {
 
 		// GitIgnore 수정
 		gitSettings.updateGitIgnore(request.content());
+	}
+
+	/**
+	 * GitIgnore 삭제
+	 *
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 */
+	@Transactional
+	public void deleteGitIgnore(String token, Integer projectId) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// GitSettingsEntity가 존재하는지 검증
+		GitSettingsEntity gitSettings = validateGitSetting(projectId);
+
+		// GitIgnore 삭제
+		gitSettings.updateGitIgnore(null);
 	}
 
 	/**
