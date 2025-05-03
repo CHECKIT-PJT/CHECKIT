@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.checkmate.checkit.git.dto.request.BranchStrategyCreateRequest;
+import com.checkmate.checkit.git.dto.request.BranchStrategyUpdateRequest;
 import com.checkmate.checkit.git.dto.request.GitIgnoreCreateRequest;
+import com.checkmate.checkit.git.dto.response.BranchStrategyResponse;
 import com.checkmate.checkit.git.dto.response.GitIgnoreResponse;
 import com.checkmate.checkit.git.service.GitSettingService;
 import com.checkmate.checkit.global.code.SuccessCode;
@@ -75,6 +78,60 @@ public class GitSettingController {
 		String token = authorization.substring(7);
 
 		gitSettingService.deleteGitIgnore(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// 브랜치 전략 생성
+	@PostMapping("/branch-strategy/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> createBranchStrategy(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody BranchStrategyCreateRequest request) {
+
+		String token = authorization.substring(7);
+
+		gitSettingService.createBranchStrategy(token, projectId, request);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// 브랜치 전략 조회
+	@GetMapping("/branch-strategy/{projectId}")
+	public ResponseEntity<JSONResponse<BranchStrategyResponse>> getBranchStrategy(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		BranchStrategyResponse branchStrategyResponse = gitSettingService.getBranchStrategy(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, branchStrategyResponse));
+	}
+
+	// 브랜치 전략 수정
+	@PutMapping("/branch-strategy/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> updateBranchStrategy(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody BranchStrategyUpdateRequest request) {
+
+		String token = authorization.substring(7);
+
+		gitSettingService.updateBranchStrategy(token, projectId, request);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// 브랜치 전략 삭제
+	@DeleteMapping("/branch-strategy/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> deleteBranchStrategy(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		gitSettingService.deleteBranchStrategy(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}

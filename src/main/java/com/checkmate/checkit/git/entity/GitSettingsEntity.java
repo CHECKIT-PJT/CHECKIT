@@ -49,4 +49,12 @@ public class GitSettingsEntity {
 	public void updateGitIgnore(String content) {
 		this.gitIgnore = content;
 	}
+
+	public void createBranchConventionReg(String branchConventionReg) {
+		this.branchConventionReg = branchConventionReg;
+	}
+
+	public void updateBranchConventionReg(String branchConventionReg) {
+		this.branchConventionReg = branchConventionReg;
+	}
 }

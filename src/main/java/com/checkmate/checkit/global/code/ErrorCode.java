@@ -52,6 +52,7 @@ public enum ErrorCode {
 	// Git 관련 에러
 	GIT_SETTING_NOT_FOUND(404, NOT_FOUND, "Git 설정을 찾을 수 없습니다."),
 	GIT_IGNORE_NOT_FOUND(404, NOT_FOUND, "GitIgnore를 찾을 수 없습니다."),
+	BRANCH_STRATEGY_NOT_FOUND(404, NOT_FOUND, "Branch 전략을 찾을 수 없습니다."),
 	;
 
 	private final int code;

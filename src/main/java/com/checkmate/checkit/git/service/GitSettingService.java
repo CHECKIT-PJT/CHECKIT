@@ -3,7 +3,10 @@ package com.checkmate.checkit.git.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.checkmate.checkit.git.dto.request.BranchStrategyCreateRequest;
+import com.checkmate.checkit.git.dto.request.BranchStrategyUpdateRequest;
 import com.checkmate.checkit.git.dto.request.GitIgnoreCreateRequest;
+import com.checkmate.checkit.git.dto.response.BranchStrategyResponse;
 import com.checkmate.checkit.git.dto.response.GitIgnoreResponse;
 import com.checkmate.checkit.git.entity.GitSettingsEntity;
 import com.checkmate.checkit.git.repository.GitSettingRepository;
@@ -109,6 +112,93 @@ public class GitSettingService {
 
 		// GitIgnore 삭제
 		gitSettings.updateGitIgnore(null);
+	}
+
+	/**
+	 * 브랜치 전략 생성
+	 *
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 * @param request   브랜치 전략 생성 요청
+	 */
+	@Transactional
+	public void createBranchStrategy(String token, Integer projectId, BranchStrategyCreateRequest request) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// GitSettingsEntity가 존재하는지 검증 및 생성
+		GitSettingsEntity gitSettings = validateAndCreateGitSetting(projectId);
+
+		// 브랜치 전략 생성
+		gitSettings.createBranchConventionReg(request.branchConventionReg());
+	}
+
+	/**
+	 * 브랜치 전략 조회
+	 *
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 * @return BranchStrategyResponse
+	 */
+	@Transactional(readOnly = true)
+	public BranchStrategyResponse getBranchStrategy(String token, Integer projectId) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// GitSettingsEntity가 존재하는지 검증
+		GitSettingsEntity gitSettings = validateGitSetting(projectId);
+
+		// 브랜치 전략 조회
+		if (gitSettings.getBranchConventionReg() == null) {
+			throw new CommonException(ErrorCode.BRANCH_STRATEGY_NOT_FOUND);
+		}
+
+		return new BranchStrategyResponse(gitSettings.getBranchConventionReg());
+	}
+
+	/**
+	 * 브랜치 전략 수정
+	 *
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 * @param request   브랜치 전략 수정 요청
+	 */
+	@Transactional
+	public void updateBranchStrategy(String token, Integer projectId, BranchStrategyUpdateRequest request) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// GitSettingsEntity가 존재하는지 검증
+		GitSettingsEntity gitSettings = validateGitSetting(projectId);
+
+		// 브랜치 전략 수정
+		gitSettings.updateBranchConventionReg(request.branchConventionReg());
+	}
+
+	/**
+	 * 브랜치 전략 삭제
+	 *
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 */
+	@Transactional
+	public void deleteBranchStrategy(String token, Integer projectId) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// GitSettingsEntity가 존재하는지 검증
+		GitSettingsEntity gitSettings = validateGitSetting(projectId);
+
+		// 브랜치 전략 삭제
+		gitSettings.updateBranchConventionReg(null);
 	}
 
 	/**
