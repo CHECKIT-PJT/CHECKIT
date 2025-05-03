@@ -28,4 +28,7 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMemberEnti
 
 	// 프로젝트 Id를 통해 프로젝트 멤버가 존재하는지 검증 (삭제되지 않고 승인된 것만)
 	Boolean existsById_ProjectIdAndRoleAndIsApprovedTrueAndIsDeletedFalse(Integer projectId, ProjectMemberRole role);
+
+	// 프로젝트 Id를 통해 프로젝트 멤버 조회 (탈퇴하지 않은 것만)
+	List<ProjectMemberEntity> findById_ProjectIdAndIsDeletedFalse(Integer projectId);
 }

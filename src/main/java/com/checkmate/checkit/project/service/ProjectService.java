@@ -1,18 +1,25 @@
 package com.checkmate.checkit.project.service;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.checkmate.checkit.global.code.ErrorCode;
+import com.checkmate.checkit.global.common.mail.MailService;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
+import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
+import com.checkmate.checkit.project.dto.response.ProjectMemberListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
@@ -33,6 +40,10 @@ public class ProjectService {
 	private final ProjectMemberRepository projectMemberRepository;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final UserRepository userRepository;
+	private final MailService mailService;
+	private final RedisTemplate<String, Object> redisTemplate;
+
+	private final String PROJECT_INVITE_URL = "http://localhost:5173/invite";
 
 	/**
 	 * 프로젝트 생성
@@ -217,7 +228,7 @@ public class ProjectService {
 	 * @return projectMemberResponse : 프로젝트 멤버 응답 DTO
 	 */
 	@Transactional(readOnly = true)
-	public List<ProjectMemberResponse> getProjectMembers(String token, Integer projectId) {
+	public List<ProjectMemberListResponse> getProjectMembers(String token, Integer projectId) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
@@ -227,8 +238,8 @@ public class ProjectService {
 			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
 		}
 
-		// 프로젝트 멤버 조회
-		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+		// 프로젝트 멤버 조회 (승인되지 않은 멤버 포함)
+		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsDeletedFalse(
 			projectId);
 
 		return projectMembers.stream()
@@ -237,8 +248,111 @@ public class ProjectService {
 				String memberName = userRepository.findById(memberId)
 					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
 					.getUserName();
-				return new ProjectMemberResponse(memberId, memberName, projectMember.getRole());
+				return new ProjectMemberListResponse(memberId, memberName, projectMember.getRole(),
+					projectMember.isApproved());
 			})
 			.toList();
+	}
+
+	/**
+	 * 프로젝트 멤버 초대
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param emails : 초대할 이메일 리스트
+	 */
+	@Transactional(readOnly = true)
+	public void inviteProjectMember(String token, Integer projectId, List<String> emails) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		validateUserAndProject(loginUserId, projectId);
+
+		String inviteCode = UUID.randomUUID().toString();
+		String key = "invite:" + inviteCode;
+		redisTemplate.opsForValue().set(key, Integer.toString(projectId), 30, TimeUnit.MINUTES);
+
+		// 이메일로 초대 코드 전송
+		for (String email : emails) {
+			mailService.sendInviteEmail(email,
+				PROJECT_INVITE_URL + "?inviteCode=" + inviteCode);
+		}
+
+	}
+
+	/**
+	 * 프로젝트 초대 링크 생성
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return invitationLinkCreateResponse : 초대 링크 생성 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public InvitationLinkCreateResponse createProjectInvitationLink(String token, Integer projectId) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		validateUserAndProject(loginUserId, projectId);
+
+		String inviteCode = UUID.randomUUID().toString();
+		String key = "invite:" + inviteCode;
+		redisTemplate.opsForValue().set(key, Integer.toString(projectId), 30, TimeUnit.MINUTES);
+
+		return new InvitationLinkCreateResponse(PROJECT_INVITE_URL + "?inviteCode=" + inviteCode);
+	}
+
+	/**
+	 * 프로젝트 참여 요청
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 */
+	public void requestProjectParticipation(String token, Integer projectId,
+		ProjectParticipateRequest projectParticipateRequest) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.ALREADY_MEMBER);
+		}
+
+		// 초대 코드로 프로젝트 ID 조회
+		String key = "invite:" + projectParticipateRequest.inviteCode();
+		String projectIdString = (String)redisTemplate.opsForValue().get(key);
+
+		if (projectIdString == null) {
+			throw new CommonException(ErrorCode.INVALID_INVITE_CODE);
+		}
+
+		// 프로젝트 ID와 회원 ID로 ProjectMemberId 생성
+		Integer projectIdFromRedis = Integer.parseInt(projectIdString);
+
+		ProjectMemberId projectMemberId = new ProjectMemberId(loginUserId, projectIdFromRedis);
+
+		// 프로젝트 멤버 엔티티 생성
+		ProjectMemberEntity projectMemberEntity = ProjectMemberEntity.builder()
+			.id(projectMemberId)
+			.isApproved(false)
+			.role(ProjectMemberRole.MEMBER)
+			.build();
+
+		// 프로젝트 멤버 저장
+		projectMemberRepository.save(projectMemberEntity);
+	}
+
+	/**
+	 * 프로젝트 소속 및 사용자 검증
+	 * @param loginUserId : 로그인한 사용자 ID
+	 * @param projectId : 프로젝트 ID
+	 */
+	private void validateUserAndProject(Integer loginUserId, Integer projectId) {
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
+		}
+
+		// 프로젝트 ID로 ProjectEntity 조회
+		projectRepository.findByIdAndIsDeletedFalse(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 	}
 }
