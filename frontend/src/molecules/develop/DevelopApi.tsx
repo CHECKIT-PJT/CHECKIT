@@ -3,7 +3,7 @@ import DomainButton from '../../components/button/DomainButton';
 import ApiTable from '../../components/apicomponent/ApiTable';
 import ApiDetailModal from '../../components/apicomponent/ApiDetailModal';
 import type { ApiDocListItem, ApiDetail } from '../../types/ApiDoc';
-import ApiAddButton from '../../components/button/ApiAddButton';
+import ApiAddButton from '../../components/apicomponent/ApiAddButton';
 
 // 예시 데이터 직접 선언
 const exampleApiDocList: ApiDocListItem[] = [

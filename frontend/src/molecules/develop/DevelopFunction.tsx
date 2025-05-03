@@ -3,7 +3,7 @@ import DomainButton from '../../components/button/DomainButton';
 import FuncTable from '../../components/funccomponent/FuncTable';
 import FuncDetailModal from '../../components/funccomponent/FuncDetailModal';
 import type { FuncListItem, FuncDetail } from '../../types/FuncDoc';
-import FuncAddButton from '../../components/button/FuncAddButton';
+import FuncAddButton from '../../components/funccomponent/FuncAddButton';
 
 // 예시 데이터 직접 선언
 const exampleFuncList: FuncListItem[] = [

@@ -91,10 +91,10 @@ const ProjectList = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
+        <h1 className="text-2xl font-bold text-gray-800">
           <span className="text-blue-600">{username}</span> 님의 프로젝트
         </h1>
-        <p className="text-gray-500 mt-2">
+        <p className="text-gray-500 mt-2 text-sm">
           프로젝트의 시작은 <b>CHEKIT</b>과 함께 진행하세요.
         </p>
       </div>

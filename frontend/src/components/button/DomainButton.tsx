@@ -9,7 +9,7 @@ const DomainButton = ({
   selectedDomain,
   onSelect,
 }: DomainButtonProps) => (
-  <div className="flex gap-2 mb-4">
+  <div className="flex gap-2 mb-4 text-sm">
     <button
       onClick={() => onSelect('ALL')}
       className={`px-4 py-2 rounded font-bold ${
