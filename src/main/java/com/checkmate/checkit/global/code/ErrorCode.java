@@ -44,6 +44,7 @@ public enum ErrorCode {
 	PROJECT_MEMBER_EXISTS(400, BAD_REQUEST, "프로젝트에 멤버가 존재하여 삭제할 수 없습니다."),
 	ALREADY_MEMBER(400, BAD_REQUEST, "이미 프로젝트에 참여하고 있습니다."),
 	INVALID_INVITE_CODE(400, BAD_REQUEST, "유효하지 않은 초대 코드입니다."),
+	INVALID_INVITE_MEMBER(400, BAD_REQUEST, "초대된 멤버가 아닙니다."),
 
 	// 이메일 관련 에러
 	MAIL_SEND_FAILED(500, INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),

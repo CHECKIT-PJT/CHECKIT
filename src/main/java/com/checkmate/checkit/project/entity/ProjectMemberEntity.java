@@ -46,4 +46,9 @@ public class ProjectMemberEntity {
 		this.deletedAt = LocalDateTime.now();
 		this.isDeleted = true;
 	}
+
+	// 승인 메서드
+	public void approve() {
+		this.isApproved = true;
+	}
 }

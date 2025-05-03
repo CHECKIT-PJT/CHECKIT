@@ -31,4 +31,8 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMemberEnti
 
 	// 프로젝트 Id를 통해 프로젝트 멤버 조회 (탈퇴하지 않은 것만)
 	List<ProjectMemberEntity> findById_ProjectIdAndIsDeletedFalse(Integer projectId);
+
+	// 프로젝트 Id와 회원 Id를 통해 프로젝트 멤버 조회 (탈퇴하지 않은 것만)
+	Optional<ProjectMemberEntity> findById_UserIdAndId_ProjectIdAndIsApprovedFalseAndIsDeletedFalse(Integer userId,
+		Integer projectId);
 }

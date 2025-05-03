@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
+import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
@@ -162,4 +163,19 @@ public class ProjectController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	// 프로젝트 초대 승인
+	@PostMapping("{projectId}/invitations/accept")
+	public ResponseEntity<JSONResponse<Void>> approveProjectInvitation(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody ProjectInvitationAcceptRequest projectInvitationAcceptRequest) {
+
+		String token = authorization.substring(7);
+
+		projectService.approveProjectInvitation(token, projectId, projectInvitationAcceptRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
 }

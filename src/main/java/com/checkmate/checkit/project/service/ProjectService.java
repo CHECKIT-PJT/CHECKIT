@@ -13,6 +13,7 @@ import com.checkmate.checkit.global.common.mail.MailService;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
+import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
@@ -304,6 +305,7 @@ public class ProjectService {
 	 * @param token : JWT 토큰
 	 * @param projectId : 프로젝트 ID
 	 */
+	@Transactional
 	public void requestProjectParticipation(String token, Integer projectId,
 		ProjectParticipateRequest projectParticipateRequest) {
 
@@ -337,6 +339,31 @@ public class ProjectService {
 
 		// 프로젝트 멤버 저장
 		projectMemberRepository.save(projectMemberEntity);
+	}
+
+	/**
+	 * 프로젝트 초대 승인
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param projectInvitationAcceptRequest : 프로젝트 초대 승인 요청 DTO
+	 */
+	@Transactional
+	public void approveProjectInvitation(String token, Integer projectId,
+		ProjectInvitationAcceptRequest projectInvitationAcceptRequest) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// 회원 ID와 프로젝트 ID로 ProjectMemberEntity 조회
+		ProjectMemberEntity projectMember = projectMemberRepository
+			.findById_UserIdAndId_ProjectIdAndIsApprovedFalseAndIsDeletedFalse(
+				projectInvitationAcceptRequest.userId(), projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.INVALID_INVITE_MEMBER));
+
+		// 프로젝트 멤버 승인
+		projectMember.approve();
 	}
 
 	/**
