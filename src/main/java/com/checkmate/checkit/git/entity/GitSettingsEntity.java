@@ -57,4 +57,12 @@ public class GitSettingsEntity {
 	public void updateBranchConventionReg(String branchConventionReg) {
 		this.branchConventionReg = branchConventionReg;
 	}
+
+	public void createCommitConventionReg(String commitConventionReg) {
+		this.commitConventionReg = commitConventionReg;
+	}
+
+	public void updateCommitConventionReg(String commitConventionReg) {
+		this.commitConventionReg = commitConventionReg;
+	}
 }

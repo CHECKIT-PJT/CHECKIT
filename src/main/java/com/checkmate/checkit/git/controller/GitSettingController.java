@@ -13,8 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.git.dto.request.BranchStrategyCreateRequest;
 import com.checkmate.checkit.git.dto.request.BranchStrategyUpdateRequest;
+import com.checkmate.checkit.git.dto.request.CommitConventionCreateRequest;
+import com.checkmate.checkit.git.dto.request.CommitConventionUpdateRequest;
 import com.checkmate.checkit.git.dto.request.GitIgnoreCreateRequest;
 import com.checkmate.checkit.git.dto.response.BranchStrategyResponse;
+import com.checkmate.checkit.git.dto.response.CommitConventionResponse;
 import com.checkmate.checkit.git.dto.response.GitIgnoreResponse;
 import com.checkmate.checkit.git.service.GitSettingService;
 import com.checkmate.checkit.global.code.SuccessCode;
@@ -132,6 +135,60 @@ public class GitSettingController {
 		String token = authorization.substring(7);
 
 		gitSettingService.deleteBranchStrategy(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// Commit Convention 생성
+	@PostMapping("/commit-convention/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> createCommitConvention(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody CommitConventionCreateRequest request) {
+
+		String token = authorization.substring(7);
+
+		gitSettingService.createCommitConvention(token, projectId, request);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// Commit Convention 조회
+	@GetMapping("/commit-convention/{projectId}")
+	public ResponseEntity<JSONResponse<CommitConventionResponse>> getCommitConvention(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		CommitConventionResponse response = gitSettingService.getCommitConvention(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, response));
+	}
+
+	// Commit Convention 수정
+	@PutMapping("/commit-convention/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> updateCommitConvention(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody CommitConventionUpdateRequest request) {
+
+		String token = authorization.substring(7);
+
+		gitSettingService.updateCommitConvention(token, projectId, request);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// Commit Convention 삭제
+	@DeleteMapping("/commit-convention/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> deleteCommitConvention(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		gitSettingService.deleteCommitConvention(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
