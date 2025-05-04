@@ -21,7 +21,7 @@ const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
   };
 
   return (
-    <table className="w-full h-full border-collapse">
+    <table className="w-full h-full border-collapse text-sm">
       <thead>
         <tr className="bg-gray-100 border-b-2 border-gray-300">
           <th className="py-3 px-2">ID</th>

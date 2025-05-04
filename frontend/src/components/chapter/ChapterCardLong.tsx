@@ -1,6 +1,7 @@
 // components/Card.tsx
 import { ReactNode } from 'react';
 import { IoRocketOutline } from 'react-icons/io5';
+import { RiArrowRightSLine } from 'react-icons/ri';
 
 interface CardProps {
   title: string;
@@ -20,16 +21,19 @@ const ChapterCardLong = ({
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl p-6 cursor-pointer transition-all duration-300 ease-in-out
-        w-[400px] h-24 flex items-center justify-between
-        ${bgColor || ''} bg-white border text-black hover:bg-gradient-to-r hover:from-blue-300 hover:to-blue-500 hover:text-white`}
+      className={`p-6 cursor-pointer transition-all duration-300 ease-in-out
+        w-full h-14 flex items-center justify-between
+        ${bgColor || ''} bg-white border-b text-black hover:bg-gradient-to-r hover:text-white`}
     >
-      <div className="text-xl font-semibold tracking-wide">{title}</div>
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium">{subtitle}</span>
+      <div className="flex items-center gap-8">
         <div className="transition-transform duration-300 hover:scale-110">
           {icon}
         </div>
+        <div className="text-lg font-semibold tracking-wide">{title}</div>
+      </div>
+      <div className="flex items-center gap-12">
+        <span className="text-xs font-medium text-gray-400">{subtitle}</span>
+        <RiArrowRightSLine size={18} />
       </div>
     </div>
   );

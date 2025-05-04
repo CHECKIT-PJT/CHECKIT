@@ -18,12 +18,10 @@ const MoveGitlabButton = () => {
   return (
     <button
       onClick={handleMove}
-      className={
-        'px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg transition-colors duration-200 ' +
-        'hover:bg-gradient-to-r hover:from-orange-400 hover:to-red-500 hover:text-white'
-      }
+      className={`px-4 py-2 bg-white text-base text-primary-600 border border-primary-600 rounded-lg transition-colors duration-200 
+        hover:bg-gradient-to-r hover:from-orange-400 hover:to-red-500 hover:text-white w-full`}
     >
-      Repository로 이동하기
+      Repository
     </button>
   );
 };
