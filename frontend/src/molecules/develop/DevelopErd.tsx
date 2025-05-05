@@ -1,100 +1,15 @@
-// import { useEffect, useRef, useState } from 'react';
-// import '@dineug/erd-editor';
-// import { ErdEditorElement } from '@dineug/erd-editor';
-// import ToggleButton from '../../components/button/ToggleButton';
-
-// interface Theme {
-//   canvas: string;
-//   table: string;
-//   tableActive: string;
-//   focus: string;
-//   keyPK: string;
-//   keyFK: string;
-//   keyPFK: string;
-//   font: string;
-//   fontActive: string;
-//   fontPlaceholder: string;
-//   contextmenu: string;
-//   contextmenuActive: string;
-//   edit: string;
-//   columnSelect: string;
-//   columnActive: string;
-//   minimapShadow: string;
-//   scrollbarThumb: string;
-//   scrollbarThumbActive: string;
-//   menubar: string;
-//   visualization: string;
-// }
-
-// /* eslint-disable @typescript-eslint/no-namespace */
-// declare global {
-//   namespace JSX {
-//     interface IntrinsicElements {
-//       'erd-editor': React.DetailedHTMLProps<
-//         React.HTMLAttributes<ErdEditorElement>,
-//         ErdEditorElement
-//       >;
-//     }
-//   }
-// }
-// /* eslint-enable @typescript-eslint/no-namespace */
-
-// const DevelopErd = () => {
-//   const ref = useRef<HTMLDivElement>(null);
-//   const [erdData, setErdData] = useState<any>(null);
-
-//   useEffect(() => {
-//     if (ref.current && !ref.current.querySelector('erd-editor')) {
-//       const erd = document.createElement('erd-editor') as ErdEditorElement;
-
-//       erd.style.width = '100%';
-//       erd.style.height = '100%';
-
-//       erd.setPresetTheme({
-//         appearance: 'light',
-//         grayColor: 'slate',
-//         accentColor: 'blue',
-//       });
-
-//       erd.setAttribute('enableThemeBuilder', 'true');
-//       erd.setAttribute('systemDarkMode', 'false');
-
-//       ref.current.appendChild(erd);
-
-//       erd.addEventListener('save', ((e: CustomEvent) => {
-//         const savedData = e.detail;
-//         setErdData(savedData);
-//         console.log('저장된 ERD 데이터:', savedData);
-//         // TODO: erd 저장 API 호출 필요
-//       }) as EventListener);
-//     }
-//   }, []);
-
-//   return (
-//     <div className="flex flex-col items-center w-full h-full">
-//       <div className="flex justify-end w-[90%] mb-2">
-//         <ToggleButton />
-//       </div>
-//       <div className="w-[90%] h-[500px]">
-//         <div ref={ref} className="w-full h-full" />
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default DevelopErd;
-import { useEffect, useRef } from 'react';
-import '@dineug/erd-editor';
-import { ErdEditorElement } from '../../types/erd-editor';
-import ToggleButton from '../../components/button/ToggleButton';
-import axiosInstance from '../../api/axiosInstance';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
+import { useEffect, useRef } from "react";
+import "@dineug/erd-editor";
+import { ErdEditorElement } from "../../types/erd-editor";
+import ToggleButton from "../../components/button/ToggleButton";
+import axiosInstance from "../../api/axiosInstance";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
 
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'erd-editor': React.DetailedHTMLProps<
+      "erd-editor": React.DetailedHTMLProps<
         React.HTMLAttributes<ErdEditorElement>,
         ErdEditorElement
       >;
@@ -104,54 +19,75 @@ declare global {
 
 interface ErdMessage {
   type: string;
-  payload: any;
+  payload: string; // JSON string
 }
 
-const DevelopErd = ({ projectId }: { projectId: number }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<ErdEditorElement | null>(null);
+const DevelopErd = () => {
+  const projectId = 1;
   const stompClientRef = useRef<Client | null>(null);
   const saveInterval = useRef<number | null>(null);
+  const isInternalUpdate = useRef(false);
 
-  const saveToServer = async (data: any) => {
+  const saveToServer = async (jsonString: string) => {
     try {
-      await axiosInstance.post(`/api/erd/${projectId}/save`, data);
-      console.log('✅ DB 저장 완료');
+      await axiosInstance.post(`/api/erd/${projectId}`, jsonString, {
+        headers: { "Content-Type": "application/json" },
+      });
+      console.log("✅ DB 저장 완료");
     } catch (err) {
-      console.error('❌ DB 저장 실패:', err);
+      console.error("❌ DB 저장 실패:", err);
     }
   };
 
   const handleManualSave = () => {
-    const editor = editorRef.current;
-    if (editor) {
-      const data = editor.getData();
-      saveToServer(data);
+    const editor = document.getElementById(
+      "erd-editor"
+    ) as ErdEditorElement | null;
+    if (editor?.value) {
+      saveToServer(editor.value);
+    } else {
+      console.error("❌ editor.value 사용 불가");
     }
   };
 
   const initStomp = () => {
-    const token = sessionStorage.getItem('accessToken');
-    const sock = new SockJS(`${import.meta.env.VITE_API_BASE_URL}/ws/erd`);
+    const token = sessionStorage.getItem("accessToken");
+    const sock = new SockJS(
+      `${import.meta.env.VITE_API_BASE_URL}/ws/erd?token=${token}`
+    );
 
     const stompClient = new Client({
       webSocketFactory: () => sock,
       connectHeaders: {
-        Authorization: `Bearer ${token || ''}`,
+        Authorization: `Bearer ${token || ""}`,
       },
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('✅ STOMP 연결 성공');
+        console.log("STOMP 연결 성공");
 
         stompClient.subscribe(`/sub/erd/${projectId}`, (message) => {
-          const parsed: ErdMessage = JSON.parse(message.body);
-          if (parsed.type === 'erd-update' && editorRef.current) {
-            editorRef.current.setData(parsed.payload);
+          const parsed = JSON.parse(message.body); // 메시지를 파싱
+          console.log("받은 메세지 :", parsed.payload);
+          const myUserId = getUserIdFromToken(token);
+
+          if (parsed.userId === myUserId) {
+            // 내가 보낸 메시지는 무시
+            return;
+          }
+
+          const editor = document.getElementById(
+            "erd-editor"
+          ) as ErdEditorElement | null;
+          if (editor && parsed.payload) {
+            isInternalUpdate.current = true;
+            editor.value = parsed.payload; // 실시간 반영
+          } else {
+            console.error("❌ editor not found or payload 없음");
           }
         });
       },
       onStompError: (frame) => {
-        console.error('❌ STOMP 에러:', frame);
+        console.error("❌ STOMP 에러:", frame);
       },
     });
 
@@ -161,61 +97,62 @@ const DevelopErd = ({ projectId }: { projectId: number }) => {
 
   useEffect(() => {
     const initEditor = async () => {
-      if (ref.current && !ref.current.querySelector('erd-editor')) {
-        const erd = document.createElement('erd-editor') as unknown as ErdEditorElement;
-        editorRef.current = erd;
-
-        erd.style.width = '100%';
-        erd.style.height = '100%';
-        erd.setPresetTheme({
-          appearance: 'light',
-          grayColor: 'slate',
-          accentColor: 'blue',
-        });
-
-        erd.setAttribute('enableThemeBuilder', 'true');
-        erd.setAttribute('systemDarkMode', 'false');
-        ref.current.appendChild(erd);
-
-        // 1. 초기 ERD 데이터 불러오기
-        try {
-          const res = await axiosInstance.get(`/api/erd/${projectId}`);
-          if (res.data) {
-            erd.setData(res.data);
-          }
-        } catch (err) {
-          console.error('❌ 초기 데이터 불러오기 실패:', err);
-        }
-
-        // 2. 실시간 변경 감지
-        erd.subscribe(() => {
-          const data = erd.getData();
-          stompClientRef.current?.publish({
-            destination: `/pub/erd/update/${projectId}`,
-            body: JSON.stringify({
-              type: 'erd-update',
-              payload: data,
-            }),
-          });
-        });
-
-        // 3. 수동 저장 버튼 클릭 시
-        erd.addEventListener('save', ((e: CustomEvent) => {
-          const data = e.detail;
-          saveToServer(data);
-        }) as EventListener);
+      await customElements.whenDefined("erd-editor");
+      const editor = document.getElementById(
+        "erd-editor"
+      ) as ErdEditorElement | null;
+      if (!editor) {
+        console.error("❌ editor not found");
+        return;
       }
+
+      editor.style.width = "100%";
+      editor.style.height = "100%";
+      editor.setPresetTheme({
+        appearance: "light",
+        grayColor: "slate",
+        accentColor: "blue",
+      });
+
+      try {
+        const res = await axiosInstance.get(`/api/erd/${projectId}`);
+        if (res.data) {
+          editor.setInitialValue(JSON.stringify(res.data));
+        }
+      } catch (err) {
+        console.error("❌ 초기 데이터 불러오기 실패:", err);
+      }
+
+      // 실시간 변경 감지 (내가 수정할 때)
+      editor.addEventListener("change", (event) => {
+        if (isInternalUpdate.current) {
+          isInternalUpdate.current = false;
+          return;
+        }
+        const newData = (event.target as ErdEditorElement).value;
+        console.log("send :", newData);
+        stompClientRef.current?.publish({
+          destination: `/pub/erd/update/${projectId}`,
+          body: newData,
+        });
+      });
+
+      // 수동 저장 버튼 누를 때
+      editor.addEventListener("save", ((e: CustomEvent) => {
+        const data = (e.target as ErdEditorElement).value;
+        saveToServer(data);
+      }) as EventListener);
     };
 
     initEditor();
     initStomp();
 
-    // 4. 주기적 저장 (5초)
     saveInterval.current = setInterval(() => {
-      const editor = editorRef.current;
-      if (editor) {
-        const data = editor.getData();
-        saveToServer(data);
+      const editor = document.getElementById(
+        "erd-editor"
+      ) as ErdEditorElement | null;
+      if (editor?.value) {
+        saveToServer(editor.value);
       }
     }, 5000);
 
@@ -237,10 +174,27 @@ const DevelopErd = ({ projectId }: { projectId: number }) => {
         </button>
       </div>
       <div className="w-[90%] h-[500px]">
-        <div ref={ref} className="w-full h-full" />
+        <erd-editor
+          id="erd-editor"
+          enableThemeBuilder="true"
+          systemDarkMode="false"
+          style={{ width: "100%", height: "100%" }}
+        />
       </div>
     </div>
   );
 };
+
+function getUserIdFromToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded.userName;
+  } catch (err) {
+    console.error("❌ JWT 파싱 실패", err);
+    return null;
+  }
+}
 
 export default DevelopErd;
