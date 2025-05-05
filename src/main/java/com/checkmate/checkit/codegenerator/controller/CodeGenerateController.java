@@ -1,0 +1,65 @@
+package com.checkmate.checkit.codegenerator.controller;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.checkmate.checkit.codegenerator.service.EntityGenerateService;
+import com.checkmate.checkit.erd.dto.response.ErdRelationshipResponse;
+import com.checkmate.checkit.erd.dto.response.ErdSnapshotResponse;
+import com.checkmate.checkit.erd.dto.response.ErdTableResponse;
+import com.checkmate.checkit.erd.service.ErdService;
+import com.checkmate.checkit.springsettings.service.SpringSettingsService;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/generate")
+@RequiredArgsConstructor
+public class CodeGenerateController {
+
+	private final EntityGenerateService entityGenerateService;
+	private final ErdService erdService;
+	private final SpringSettingsService springSettingsService;
+
+	// 엔티티 코드 생성을 위한 엔드포인트
+	@PostMapping("/build/{projectId}")
+	public ResponseEntity<String> generateEntityCode(@PathVariable int projectId) {
+		//사용자가 지정한 base package  가져오기
+		String basePackage = Optional.ofNullable(
+			springSettingsService.getSpringSettings(projectId).getSpringPackageName()
+		).orElseThrow(() -> new IllegalStateException("springPackageName이 null입니다. Spring 설정을 확인하세요."));
+
+		// ERD 데이터 가져오기
+		ErdSnapshotResponse erdData = erdService.getErdByProjectId(projectId);
+		List<ErdTableResponse> tables = erdData.getTables();
+		List<ErdRelationshipResponse> allRelationships = erdData.getRelationships();
+
+		// 엔티티 코드 생성
+		StringBuilder entityCode = new StringBuilder();
+		for (ErdTableResponse table : tables) {
+			// 해당 테이블과 관련된 관계만 필터링
+			List<ErdRelationshipResponse> tableRelationships = allRelationships.stream()
+				.filter(r ->
+					r.getSourceTableId().equals(table.getId()) ||
+						r.getTargetTableId().equals(table.getId())
+				).toList();
+
+			// 해당 테이블에 대한 엔티티 코드 생성
+			String entityCodeForTable = entityGenerateService.generateEntityCode(
+				table,
+				table.getColumns(),
+				tableRelationships,
+				basePackage
+			);
+			entityCode.append(entityCodeForTable).append("\n");
+		}
+
+		// 생성된 엔티티 코드 반환
+		return ResponseEntity.ok(entityCode.toString());
+	}
+}
