@@ -1,5 +1,9 @@
 package com.checkmate.checkit.git.controller;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -139,6 +143,23 @@ public class GitSettingController {
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 
+	// 브랜치 전략 파일 생성
+	@GetMapping("/branch-strategy/{projectId}/download")
+	public ResponseEntity<Resource> createBranchStrategyFile(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		ByteArrayResource branchStrategyFileResponse = gitSettingService.createBranchStrategyFile(token,
+			projectId);
+
+		return ResponseEntity.ok()
+			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=pre-commit")
+			.contentType(MediaType.APPLICATION_OCTET_STREAM)
+			.body(branchStrategyFileResponse);
+	}
+
 	// Commit Convention 생성
 	@PostMapping("/commit-convention/{projectId}")
 	public ResponseEntity<JSONResponse<Void>> createCommitConvention(
@@ -191,5 +212,22 @@ public class GitSettingController {
 		gitSettingService.deleteCommitConvention(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// Commit Convention 파일 생성
+	@GetMapping("/commit-convention/{projectId}/download")
+	public ResponseEntity<Resource> createCommitConventionFile(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		ByteArrayResource commitConventionFileResponse = gitSettingService.createCommitConventionFile(token,
+			projectId);
+
+		return ResponseEntity.ok()
+			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commit-msg")
+			.contentType(MediaType.APPLICATION_OCTET_STREAM)
+			.body(commitConventionFileResponse);
 	}
 }
