@@ -1,8 +1,10 @@
 package com.checkmate.checkit.codegenerator.controller;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import com.checkmate.checkit.erd.mapper.ErdJsonConverter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,7 +30,7 @@ public class CodeGenerateController {
 
 	// 엔티티 코드 생성을 위한 엔드포인트
 	@PostMapping("/build/{projectId}")
-	public ResponseEntity<String> generateEntityCode(@PathVariable int projectId) {
+	public ResponseEntity<String> generateEntityCode(@PathVariable int projectId) throws IOException {
 		//사용자가 지정한 base package  가져오기
 		String basePackage = Optional.ofNullable(
 			springSettingsService.getSpringSettings(projectId).getSpringPackageName()
@@ -36,8 +38,9 @@ public class CodeGenerateController {
 
 		// ERD 데이터 가져오기
 		ErdSnapshotResponse erdData = erdService.getErdByProjectId(projectId);
-		List<ErdTableResponse> tables = erdData.getTables();
-		List<ErdRelationshipResponse> allRelationships = erdData.getRelationships();
+		ErdJsonConverter.ErdSnapshotDto erdSnapshotDto = ErdJsonConverter.convertFromJson(erdData.getErdJson());
+		List<ErdTableResponse> tables = erdSnapshotDto.getTables();
+		List<ErdRelationshipResponse> allRelationships = erdSnapshotDto.getRelationships();
 
 		// 엔티티 코드 생성
 		StringBuilder entityCode = new StringBuilder();

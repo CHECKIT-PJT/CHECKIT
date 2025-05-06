@@ -2,15 +2,8 @@ package com.checkmate.checkit.erd.service;
 
 import com.checkmate.checkit.erd.dto.request.ErdSnapshotRequest;
 import com.checkmate.checkit.erd.dto.response.ErdSnapshotResponse;
-import com.checkmate.checkit.erd.entity.ErdColumnEntity;
-import com.checkmate.checkit.erd.entity.ErdRelationshipColumnEntity;
-import com.checkmate.checkit.erd.entity.ErdRelationshipEntity;
-import com.checkmate.checkit.erd.entity.ErdTableEntity;
-import com.checkmate.checkit.erd.mapper.ErdMapper;
-import com.checkmate.checkit.erd.repository.ErdColumnRepository;
-import com.checkmate.checkit.erd.repository.ErdRelationshipColumnRepository;
-import com.checkmate.checkit.erd.repository.ErdRelationshipRepository;
-import com.checkmate.checkit.erd.repository.ErdTableRepository;
+import com.checkmate.checkit.erd.entity.*;
+import com.checkmate.checkit.erd.repository.*;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.repository.ProjectRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,19 +21,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ErdService {
 
-    private final ErdTableRepository tableRepository;
-    private final ErdColumnRepository columnRepository;
-    private final ErdRelationshipRepository relationshipRepository;
-    private final ErdRelationshipColumnRepository relationshipColumnRepository;
+//    private final ErdTableRepository tableRepository;
+//    private final ErdColumnRepository columnRepository;
+//    private final ErdRelationshipRepository relationshipRepository;
+//    private final ErdRelationshipColumnRepository relationshipColumnRepository;
     private final ProjectRepository projectRepository;
+    private final ErdSnapshotRepository erdSnapshotRepository;
 
     public ErdSnapshotResponse getErdByProjectId(int projectId) {
-        List<ErdTableEntity> tables = tableRepository.findAllByProjectId(projectId);
-        List<ErdColumnEntity> columns = columnRepository.findAllByTableIn(tables);
-        List<ErdRelationshipEntity> relationships = relationshipRepository.findAllByProjectId(projectId);
-        List<ErdRelationshipColumnEntity> relationshipColumns = relationshipColumnRepository.findAllByRelationshipIn(relationships);
+        ProjectEntity project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
 
-        return ErdMapper.toSnapshotResponseDto(tables, columns, relationships, relationshipColumns);
+        ErdSnapshot snapshot = erdSnapshotRepository.findByProject(project)
+                .orElse(null);
+
+        ErdSnapshotResponse response = new ErdSnapshotResponse(snapshot.getErdJson());
+        return response;
     }
 
     @Transactional
@@ -48,22 +44,18 @@ public class ErdService {
         ProjectEntity project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found"));
 
-        List<ErdTableEntity> tables = ErdMapper.toTableEntities(dto.getTables(), project);
-        tableRepository.saveAll(tables);
+        ErdSnapshot snapshot = erdSnapshotRepository.findByProject(project)
+                .orElse(null);
 
-        List<ErdColumnEntity> columns = ErdMapper.toColumnEntities(dto.getTables(), tables);
-        columnRepository.saveAll(columns);
+        if (snapshot == null) {
+            snapshot = ErdSnapshot.builder()
+                    .project(project)
+                    .erdJson(dto.getErdJson())
+                    .build();
+        } else {
+            snapshot.updateErdJson(dto.getErdJson());
+        }
 
-        Map<UUID, ErdTableEntity> tableMap = tables.stream()
-                .collect(Collectors.toMap(ErdTableEntity::getId, Function.identity()));
-
-        List<ErdRelationshipEntity> relationships = ErdMapper.toRelationshipEntities(dto.getRelationships(), tableMap, project);
-        relationshipRepository.saveAll(relationships);
-
-        Map<UUID, ErdColumnEntity> columnMap = columns.stream()
-                .collect(Collectors.toMap(ErdColumnEntity::getId, Function.identity()));
-
-        List<ErdRelationshipColumnEntity> relColumns = ErdMapper.toRelationshipColumnEntities(dto.getRelationships(), relationships, columnMap);
-        relationshipColumnRepository.saveAll(relColumns);
+        erdSnapshotRepository.save(snapshot);
     }
 }

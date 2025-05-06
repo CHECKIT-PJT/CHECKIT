@@ -1,6 +1,10 @@
 package com.checkmate.checkit.erd.controller;
 
 import com.checkmate.checkit.erd.dto.ErdActionMessage;
+import com.checkmate.checkit.erd.dto.request.ErdSnapshotRequest;
+import com.checkmate.checkit.erd.service.ErdService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
@@ -15,17 +19,24 @@ import java.security.Principal;
 public class ErdWebSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final ErdService erdService;
 
-    /**
-     * 클라이언트에서 ERD 액션을 보낼 때 (예: 테이블 추가, 컬럼 수정 등)
-     */
     @MessageMapping("/erd/update/{projectId}")
     public void receiveErdAction(@DestinationVariable int projectId,
-                                 @Payload ErdActionMessage message,
+                                 @Payload String message,
                                  Principal principal) {
         String userId = principal.getName();
         log.info("{} updated ERD for project {}", userId, projectId);
+        log.info("message : " + message);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode msg = mapper.createObjectNode();
+        msg.put("userId", userId);
+        msg.put("payload", message);
 
-        messagingTemplate.convertAndSend("/sub/erd/" + projectId, message);
+
+        ErdSnapshotRequest request = new ErdSnapshotRequest(message);
+
+        erdService.saveErd(projectId, request);
+        messagingTemplate.convertAndSend("/sub/erd/" + projectId, msg);
     }
 }
