@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from '../molecules/layout/Header';
+import { ToastContainer } from 'react-toastify';
 
 const Layout = () => {
   const [isTooSmall, setIsTooSmall] = useState<boolean>(false);
@@ -18,7 +19,7 @@ const Layout = () => {
 
   if (isTooSmall) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-zinc-100">
+      <div className="flex h-full w-full items-center justify-center bg-zinc-100">
         <div className="text-center text-zinc-600 px-6">
           <h1 className="text-2xl font-semibold mb-2">큰 화면으로 만나요!</h1>
           <p className="text-lg">
@@ -32,13 +33,23 @@ const Layout = () => {
   }
 
   return (
-    <div className="flex h-screen w-screen bg-gray-50 text-gray-900">
+    <div className="flex h-full w-full bg-gray-50 text-gray-900">
       <div className="flex flex-col w-full h-full">
         <Header userName="사용자" isLoggedIn={true} />
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
           <Outlet />
         </div>
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </div>
   );
 };

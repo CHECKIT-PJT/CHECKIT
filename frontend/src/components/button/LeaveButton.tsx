@@ -2,10 +2,9 @@ import { useState } from 'react';
 
 interface LeaveButtonProps {
   onClick?: () => void;
-  className?: string;
 }
 
-const LeaveButton = ({ onClick, className = '' }: LeaveButtonProps) => {
+const LeaveButton = ({ onClick }: LeaveButtonProps) => {
   const [showModal, setShowModal] = useState(false);
 
   const handleLeave = () => {
@@ -17,7 +16,7 @@ const LeaveButton = ({ onClick, className = '' }: LeaveButtonProps) => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg hover:bg-primary-50 transition-colors ${className}`}
+        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors w-full`}
       >
         떠나기
       </button>

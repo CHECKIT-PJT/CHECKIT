@@ -203,6 +203,9 @@ const DevelopErd = () => {
           style={{ width: "100%", height: "100%" }}
         />
       </div>
+      <div className="flex justify-end w-[5%] ">
+        <ToggleButton />
+      </div>
     </div>
   );
 };
