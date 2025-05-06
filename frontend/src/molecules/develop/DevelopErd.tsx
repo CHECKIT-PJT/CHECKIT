@@ -30,12 +30,16 @@ const DevelopErd = () => {
 
   const saveToServer = async (jsonString: string) => {
     try {
-      await axiosInstance.post(`/api/erd/${projectId}`, jsonString, {
-        headers: { "Content-Type": "application/json" },
-      });
-      console.log("✅ DB 저장 완료");
+      await axiosInstance.post(
+        `/api/erd/${projectId}`,
+        { erdJson: jsonString },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      console.log("DB 저장 완료");
     } catch (err) {
-      console.error("❌ DB 저장 실패:", err);
+      console.error("DB 저장 실패:", err);
     }
   };
 
@@ -68,6 +72,7 @@ const DevelopErd = () => {
         stompClient.subscribe(`/sub/erd/${projectId}`, (message) => {
           const parsed = JSON.parse(message.body); // 메시지를 파싱
           console.log("받은 메세지 :", parsed.payload);
+
           const myUserId = getUserIdFromToken(token);
 
           if (parsed.userId === myUserId) {
@@ -78,16 +83,16 @@ const DevelopErd = () => {
           const editor = document.getElementById(
             "erd-editor"
           ) as ErdEditorElement | null;
-          if (editor && parsed.payload) {
+          if (editor && parsed.payload && editor.value !== parsed.payload) {
             isInternalUpdate.current = true;
             editor.value = parsed.payload; // 실시간 반영
           } else {
-            console.error("❌ editor not found or payload 없음");
+            console.error("editor.value와 parsed.payload값이 같습니다.");
           }
         });
       },
       onStompError: (frame) => {
-        console.error("❌ STOMP 에러:", frame);
+        console.error("STOMP 에러:", frame);
       },
     });
 
@@ -96,13 +101,26 @@ const DevelopErd = () => {
   };
 
   useEffect(() => {
+    const handleUnload = () => {
+      const editor = document.getElementById(
+        "erd-editor"
+      ) as ErdEditorElement | null;
+      if (editor?.value) {
+        navigator.sendBeacon(
+          `/api/erd/${projectId}`,
+          JSON.stringify({ erdJson: editor.value })
+        );
+      }
+    };
+    window.addEventListener("beforeunload", handleUnload);
+
     const initEditor = async () => {
       await customElements.whenDefined("erd-editor");
       const editor = document.getElementById(
         "erd-editor"
       ) as ErdEditorElement | null;
       if (!editor) {
-        console.error("❌ editor not found");
+        console.error(" editor not found");
         return;
       }
 
@@ -116,11 +134,12 @@ const DevelopErd = () => {
 
       try {
         const res = await axiosInstance.get(`/api/erd/${projectId}`);
-        if (res.data) {
-          editor.setInitialValue(JSON.stringify(res.data));
+        if (res.data.erdJson) {
+          isInternalUpdate.current = true;
+          editor.value = res.data.erdJson;
         }
       } catch (err) {
-        console.error("❌ 초기 데이터 불러오기 실패:", err);
+        console.error("초기 데이터 불러오기 실패:", err);
       }
 
       // 실시간 변경 감지 (내가 수정할 때)
@@ -129,12 +148,15 @@ const DevelopErd = () => {
           isInternalUpdate.current = false;
           return;
         }
+
         const newData = (event.target as ErdEditorElement).value;
-        console.log("send :", newData);
+
         stompClientRef.current?.publish({
           destination: `/pub/erd/update/${projectId}`,
           body: newData,
         });
+
+        saveToServer(newData);
       });
 
       // 수동 저장 버튼 누를 때
@@ -147,18 +169,18 @@ const DevelopErd = () => {
     initEditor();
     initStomp();
 
-    saveInterval.current = setInterval(() => {
-      const editor = document.getElementById(
-        "erd-editor"
-      ) as ErdEditorElement | null;
-      if (editor?.value) {
-        saveToServer(editor.value);
-      }
-    }, 5000);
+    // saveInterval.current = setInterval(() => {
+    //   const editor = document.getElementById(
+    //     "erd-editor"
+    //   ) as ErdEditorElement | null;
+    //   if (editor?.value) {
+    //     saveToServer(editor.value);
+    //   }
+    // }, 5000);
 
     return () => {
       stompClientRef.current?.deactivate();
-      if (saveInterval.current) clearInterval(saveInterval.current);
+      window.removeEventListener("beforeunload", handleUnload);
     };
   }, [projectId]);
 
@@ -192,7 +214,7 @@ function getUserIdFromToken(token: string | null): string | null {
     const decoded = JSON.parse(atob(payload));
     return decoded.userName;
   } catch (err) {
-    console.error("❌ JWT 파싱 실패", err);
+    console.error("JWT 파싱 실패", err);
     return null;
   }
 }
