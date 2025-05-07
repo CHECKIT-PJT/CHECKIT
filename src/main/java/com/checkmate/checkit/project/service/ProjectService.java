@@ -94,7 +94,8 @@ public class ProjectService {
 				ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(
 						projectMember.getId().getProjectId())
 					.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
-				return new ProjectListResponse(project.getId(), project.getProjectName());
+				return new ProjectListResponse(project.getId(), project.getProjectName(),
+					project.getCreatedAt().toString());
 			})
 			.toList();
 	}

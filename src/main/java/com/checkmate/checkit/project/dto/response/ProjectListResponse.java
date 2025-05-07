@@ -8,4 +8,5 @@ import lombok.Getter;
 public class ProjectListResponse {
 	private Integer projectId;
 	private String projectName;
+	private String createdAt;
 }
