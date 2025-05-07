@@ -115,23 +115,19 @@ export const useDeleteProject = () => {
 
 // 프로젝트 멤버 추가
 export const useAddProjectMember = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       projectId,
-      memberData,
+      emails,
     }: {
       projectId: number;
-      memberData: Partial<ProjectMember>;
+      emails: string[];
     }) => {
       const response = await axiosInstance.post(
-        `/api/project/${projectId}/members`,
-        memberData
+        `/api/project/${projectId}/invitations`,
+        emails
       );
       return response.data;
-    },
-    onSuccess: (_, { projectId }) => {
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     },
   });
 };

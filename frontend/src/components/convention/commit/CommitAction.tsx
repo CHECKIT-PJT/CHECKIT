@@ -7,7 +7,7 @@ import {
 } from '../../../api/commitAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
   onUpdate: () => void;
 }
 

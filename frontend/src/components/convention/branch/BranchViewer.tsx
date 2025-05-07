@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useGetBranchConventionReg } from '../../../api/branchAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
 }
 
 const BranchViewer = ({ projectId }: Props) => {

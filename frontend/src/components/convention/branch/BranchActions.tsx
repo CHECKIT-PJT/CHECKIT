@@ -7,7 +7,7 @@ import {
 } from '../../../api/branchAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
   onUpdate: () => void;
 }
 

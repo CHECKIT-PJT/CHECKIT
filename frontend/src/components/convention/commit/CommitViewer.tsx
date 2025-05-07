@@ -3,7 +3,7 @@ import { useGetCommitConventionReg } from '../../../api/commitAPI';
 import axios from 'axios';
 
 interface Props {
-  projectId: string;
+  projectId: number;
 }
 
 const CommitViewer = ({ projectId }: Props) => {
