@@ -1,12 +1,16 @@
 // src/pages/GitLabCallback.tsx
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { handleAuthCallback } from '../api/authAPI';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
+  const processedRef = useRef(false);
 
   useEffect(() => {
+    if (processedRef.current) return;
+    processedRef.current = true;
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
 
@@ -16,17 +20,14 @@ const OAuthCallback = () => {
       return;
     }
 
-    handleAuthCallback('gitlab', code)
-      .then(success => {
-        if (success) {
-          navigate('/'); // 로그인 성공 시
-        } else {
-          navigate('/?error=invalid_token');
-        }
-      })
-      .catch(() => {
-        navigate('/?error=login_failed');
-      });
+    handleAuthCallback(code).then(success => {
+      if (success) {
+        console.log('success');
+        navigate('/project');
+      } else {
+        navigate('/?error=invalid_token');
+      }
+    });
   }, [navigate]);
 
   return <div>GitLab 로그인 처리 중입니다...</div>;

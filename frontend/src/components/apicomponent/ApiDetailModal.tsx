@@ -451,7 +451,7 @@ const ApiDetailModal = ({
             />
           </div>
 
-          <div className="flex flex-wrap gap-6 mb-6 p-4 bg-gray-50 rounded-xl">
+          <div className="flex flex-wrap gap-6 mb-6 p-4 bg-gray-50 rounded-xl text-sm">
             <div className="flex items-center relative">
               <span className="font-semibold text-gray-700 mr-2">Method:</span>
               <div className="dropdown relative">

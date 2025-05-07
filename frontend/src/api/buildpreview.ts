@@ -1,4 +1,4 @@
-import { ApiResponse } from "../../types";
+import { ApiResponse } from '../types';
 
 /**
  * API 서비스 - 샘플 데이터 및 API 통신 관련 로직
@@ -7,25 +7,25 @@ import { ApiResponse } from "../../types";
 // 샘플 API 응답 데이터
 export const sampleApiResponse: ApiResponse = {
   status: 200,
-  message: "Code generation successful.",
+  message: 'Code generation successful.',
   data: {
     entity: {
-      "User.java": "public class User { ... }",
-      "Post.java": "public class Post { ... }",
+      'User.java': 'public class User { ... }',
+      'Post.java': 'public class Post { ... }',
     },
     dto: {
-      "UserRequestDto.java": "public class UserRequestDto { ... }",
-      "UserResponseDto.java": "public class UserResponseDto { ... }",
+      'UserRequestDto.java': 'public class UserRequestDto { ... }',
+      'UserResponseDto.java': 'public class UserResponseDto { ... }',
     },
     controller: {
-      "UserController.java": "public class UserController { ... }",
+      'UserController.java': 'public class UserController { ... }',
     },
     service: {
-      "UserService.java": "public interface UserService { ... }",
+      'UserService.java': 'public interface UserService { ... }',
     },
     repository: {
-      "UserRepository.java":
-        "public interface UserRepository extends JpaRepository<User, Long> { ... }",
+      'UserRepository.java':
+        'public interface UserRepository extends JpaRepository<User, Long> { ... }',
     },
   },
 };
@@ -36,7 +36,7 @@ export const sampleApiResponse: ApiResponse = {
  */
 export const downloadProject = async (): Promise<boolean> => {
   // 실제 API 연동 시 구현
-  console.log("프로젝트 다운로드");
+  console.log('프로젝트 다운로드');
   return true;
 };
 
@@ -46,6 +46,6 @@ export const downloadProject = async (): Promise<boolean> => {
  */
 export const createNewProject = async (): Promise<boolean> => {
   // 실제 API 연동 시 구현
-  console.log("새 프로젝트 생성");
+  console.log('새 프로젝트 생성');
   return true;
 };

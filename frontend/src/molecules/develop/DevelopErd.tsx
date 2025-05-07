@@ -69,12 +69,12 @@ const DevelopErd = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center w-full h-full">
-      <div className="flex justify-end w-[90%] mb-2">
-        <ToggleButton />
-      </div>
-      <div className="w-[90%] h-[500px]">
+    <div className="flex flex-row items-start w-full h-full">
+      <div className="w-[95%] h-[500px]">
         <div ref={ref} className="w-full h-full" />
+      </div>
+      <div className="flex justify-end w-[5%] ">
+        <ToggleButton />
       </div>
     </div>
   );
