@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IoAdd, IoClose, IoMail, IoLink, IoCopy } from 'react-icons/io5';
 import { TbMailUp } from 'react-icons/tb';
 import { toast } from 'react-toastify';
+import { useCreateInvitationLink } from '../../api/projectAPI';
 
 interface MemberAddButtonProps {
   projectId: number;
@@ -14,12 +15,21 @@ const MemberAddButton = ({ projectId, projectName }: MemberAddButtonProps) => {
   const [emailError, setEmailError] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'email' | 'link'>('email');
+  const [inviteUrl, setInviteUrl] = useState('');
 
-  // 임시 초대 링크 (나중에 백엔드에서 생성된 링크로 대체)
-  const inviteUrl = `https://checkit.com/invite/${projectId}`;
+  const createInvitationLink = useCreateInvitationLink();
 
-  const openModal = () => {
+  const openModal = async () => {
     setIsModalOpen(true);
+    try {
+      const response = await createInvitationLink.mutateAsync(projectId);
+      if (response.result) {
+        setInviteUrl(response.result.invitationLink);
+      }
+    } catch (error) {
+      console.error('초대 링크 생성 실패:', error);
+      toast.error('초대 링크 생성에 실패했습니다.');
+    }
   };
 
   const closeModal = () => {
@@ -45,20 +55,18 @@ const MemberAddButton = ({ projectId, projectName }: MemberAddButtonProps) => {
     setInviteEmail('');
   };
 
-  const copyInviteLink = () => {
-    navigator.clipboard.writeText(inviteUrl).then(
-      () => {
-        setCopySuccess(true);
-        toast.success('초대 링크가 복사되었습니다!');
-        setTimeout(() => {
-          setCopySuccess(false);
-        }, 2000);
-      },
-      err => {
-        console.error('클립보드 복사 실패:', err);
-        toast.error('링크 복사에 실패했습니다. 다시 시도해주세요.');
-      }
-    );
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopySuccess(true);
+      toast.success('초대 링크가 복사되었습니다!');
+      setTimeout(() => {
+        setCopySuccess(false);
+      }, 2000);
+    } catch (err) {
+      console.error('클립보드 복사 실패:', err);
+      toast.error('링크 복사에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   return (

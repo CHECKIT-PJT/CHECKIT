@@ -1,13 +1,16 @@
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { FaFolder, FaFolderOpen } from 'react-icons/fa';
+import useProjectStore from '../stores/projectStore';
 
 function DevelopPage() {
   const params = useParams();
   const projectId = params.projectId || '1';
+  const { currentProject } = useProjectStore();
 
-  // TODO : 프로젝트 이름 받아오기
-  const projectName = 'S12A501';
+  // 프로젝트 이름을 store에서 가져오기
+  console.log(currentProject);
+  const projectName = currentProject?.projectName || '';
   const location = useLocation();
   const currentPath = location.pathname;
 
