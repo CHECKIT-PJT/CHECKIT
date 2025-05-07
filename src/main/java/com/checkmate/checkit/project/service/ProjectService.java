@@ -308,21 +308,15 @@ public class ProjectService {
 	}
 
 	/**
-	 * 프로젝트 참여 요청
+	 * 프로젝트 초대 요청
 	 * @param token : JWT 토큰
-	 * @param projectId : 프로젝트 ID
+	 * @param projectParticipateRequest : 프로젝트 초대 요청 DTO
 	 */
 	@Transactional
-	public void requestProjectParticipation(String token, Integer projectId,
+	public void requestProjectParticipation(String token,
 		ProjectParticipateRequest projectParticipateRequest) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
-
-		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-			loginUserId, projectId)) {
-			throw new CommonException(ErrorCode.ALREADY_MEMBER);
-		}
 
 		// 초대 코드로 프로젝트 ID 조회
 		String key = "invite:" + projectParticipateRequest.inviteCode();
@@ -330,6 +324,14 @@ public class ProjectService {
 
 		if (projectIdString == null) {
 			throw new CommonException(ErrorCode.INVALID_INVITE_CODE);
+		}
+
+		Integer projectId = Integer.parseInt(projectIdString);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.ALREADY_MEMBER);
 		}
 
 		// 프로젝트 ID와 회원 ID로 ProjectMemberId 생성

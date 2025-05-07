@@ -157,16 +157,15 @@ public class ProjectController {
 	}
 
 	// 프로젝트 참여 요청
-	@PostMapping("/{projectId}/participation")
+	@PostMapping("/participation")
 	public ResponseEntity<JSONResponse<Void>> requestProjectParticipation(
 		@RequestHeader("Authorization") String authorization,
-		@PathVariable Integer projectId,
 		@RequestBody ProjectParticipateRequest projectParticipateRequest
 	) {
 
 		String token = authorization.substring(7);
 
-		projectService.requestProjectParticipation(token, projectId, projectParticipateRequest);
+		projectService.requestProjectParticipation(token, projectParticipateRequest);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
