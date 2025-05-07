@@ -1,25 +1,25 @@
-import { Route, Routes, Navigate } from "react-router-dom";
-import Layout from "../pages/Layout";
-import Testpage from "../pages/Testpage";
-import DevelopSelect from "../molecules/chapter/DevelopSelect";
-import DevelopErd from "../molecules/develop/DevelopErd";
-import DevelopApi from "../molecules/develop/DevelopApi";
-import DevelopFunction from "../molecules/develop/DevelopFunction";
-import InputSelect from "../molecules/develop/InputSelect";
-import BuildPreviewPage from "../pages/BuildPreviewPage";
-import BuildOptionPage from "../pages/BuildOptionPage";
-import LandingPage from "../pages/LandingPage";
-import ProjectPage from "../pages/ProjectPage";
-import ProjectList from "../molecules/project/ProjectList";
-import ProjectDetail from "../molecules/project/ProjectDetail";
-import ProjectCreatePage from "../pages/ProjectCreatePage";
-import OAuthCallback from "../pages/OAuthCallBack";
-import DevelopPage from "../pages/DevelopPage";
-import BuildSelect from "../molecules/buildpreview/BuildSelect";
-import BranchConvention from "../molecules/convention/BranchConvention";
-import CommitConvention from "../molecules/convention/CommitConvetntion";
-import SpringSettingPage from "../pages/SpringSettingPage";
-
+import { Route, Routes, Navigate } from 'react-router-dom';
+import Layout from '../pages/Layout';
+import Testpage from '../pages/Testpage';
+import DevelopSelect from '../molecules/chapter/DevelopSelect';
+import DevelopErd from '../molecules/develop/DevelopErd';
+import DevelopApi from '../molecules/develop/DevelopApi';
+import DevelopFunction from '../molecules/develop/DevelopFunction';
+import InputSelect from '../molecules/develop/InputSelect';
+import BuildPreviewPage from '../pages/BuildPreviewPage';
+import BuildOptionPage from '../pages/BuildOptionPage';
+import LandingPage from '../pages/LandingPage';
+import ProjectPage from '../pages/ProjectPage';
+import ProjectList from '../molecules/project/ProjectList';
+import ProjectDetail from '../molecules/project/ProjectDetail';
+import ProjectCreatePage from '../pages/ProjectCreatePage';
+import OAuthCallback from '../pages/OAuthCallBack';
+import DevelopPage from '../pages/DevelopPage';
+import BuildSelect from '../molecules/buildpreview/BuildSelect';
+import BranchConvention from '../molecules/convention/BranchConvention';
+import CommitConvention from '../molecules/convention/CommitConvetntion';
+import SpringSettingPage from '../pages/SpringSettingPage';
+import GitignoreConvention from '../molecules/convention/GitignoreConvention';
 const Router = () => {
   // 로그인 체크
   //   const ProtectedRoute = ({ element }) => {
@@ -60,6 +60,7 @@ const Router = () => {
           <Route index element={<BranchConvention />} />
           <Route path="branch" element={<BranchConvention />} />
           <Route path="commit" element={<CommitConvention />} />
+          <Route path="gitignore" element={<GitignoreConvention />} />
         </Route>
       </Route>
     </Routes>

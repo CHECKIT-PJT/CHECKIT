@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { IoAdd, IoClose, IoMail, IoLink, IoCopy } from 'react-icons/io5';
 import { TbMailUp } from 'react-icons/tb';
 import { toast } from 'react-toastify';
-import { useCreateInvitationLink } from '../../api/projectAPI';
+import {
+  useCreateInvitationLink,
+  useAddProjectMember,
+} from '../../api/projectAPI';
 
 interface MemberAddButtonProps {
   projectId: number;
@@ -18,6 +21,7 @@ const MemberAddButton = ({ projectId, projectName }: MemberAddButtonProps) => {
   const [inviteUrl, setInviteUrl] = useState('');
 
   const createInvitationLink = useCreateInvitationLink();
+  const addProjectMember = useAddProjectMember();
 
   const openModal = async () => {
     setIsModalOpen(true);
@@ -44,15 +48,23 @@ const MemberAddButton = ({ projectId, projectName }: MemberAddButtonProps) => {
     setEmailError('');
   };
 
-  const sendInviteEmail = () => {
+  const sendInviteEmail = async () => {
     if (!inviteEmail) {
       setEmailError('이메일을 입력해주세요.');
       return;
     }
 
-    // TODO: 이메일 전송 로직 추가
-    toast.success('초대장이 발송되었습니다!');
-    setInviteEmail('');
+    try {
+      await addProjectMember.mutateAsync({
+        projectId,
+        emails: [inviteEmail],
+      });
+      toast.success('초대장이 발송되었습니다!');
+      setInviteEmail('');
+    } catch (error) {
+      console.error('이메일 초대 실패:', error);
+      toast.error('이메일 초대에 실패했습니다.');
+    }
   };
 
   const copyInviteLink = async () => {

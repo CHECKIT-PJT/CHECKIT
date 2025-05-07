@@ -6,7 +6,7 @@ import {
 } from '../../../api/commitAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
   initialPattern?: string;
   onUpdate: () => void;
 }

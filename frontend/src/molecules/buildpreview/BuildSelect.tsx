@@ -1,6 +1,7 @@
 import { FaPlay, FaDesktop } from 'react-icons/fa';
 import ChapterCardLong from '../../components/chapter/ChapterCardLong';
 import { useNavigate } from 'react-router-dom';
+import { SiSpring } from 'react-icons/si';
 
 interface BuildSelectProps {
   className?: string;
@@ -25,10 +26,17 @@ const BuildSelect = ({
         onClick={() => navigate('build/option/branch')}
       />
       <ChapterCardLong
+        title="Spring 설정"
+        subtitle="초기 스프링 설정 선택하기"
+        icon={<SiSpring size={18} className="text-gray-200" />}
+        bgColor="hover:from-green-800 hover:to-green-900 "
+        onClick={() => navigate('spring')}
+      />
+      <ChapterCardLong
         title="빌드 미리보기"
         subtitle="초기 코드 자동 생성"
         icon={<FaDesktop size={18} className="text-gray-200" />}
-        bgColor="hover:from-stone-500 hover:to-stone-600 "
+        bgColor="hover:from-stone-600 hover:to-stone-700 "
         onClick={() => navigate('buildpreview')}
       />
     </div>
