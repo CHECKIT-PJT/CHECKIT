@@ -5,6 +5,7 @@ import ToggleButton from "../../components/button/ToggleButton";
 import axiosInstance from "../../api/axiosInstance";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import { useParams } from "react-router-dom";
 
 declare global {
   namespace JSX {
@@ -23,7 +24,7 @@ interface ErdMessage {
 }
 
 const DevelopErd = () => {
-  const { projectId } = useParams();
+  const {projectId} = useParams();
   const stompClientRef = useRef<Client | null>(null);
   const saveInterval = useRef<number | null>(null);
   const isInternalUpdate = useRef(false);
