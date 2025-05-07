@@ -1,5 +1,8 @@
 package com.checkmate.checkit.project.service;
 
+import java.nio.charset.StandardCharsets;
+
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 
 import com.checkmate.checkit.global.code.ErrorCode;
@@ -95,6 +98,21 @@ public class DockerComposeService {
 				() -> new CommonException(ErrorCode.DOCKER_COMPOSE_NOT_FOUND));
 
 		dockerComposeRepository.delete(dockerComposeEntity);
+	}
+
+	/**
+	 * 도커 컴포즈 파일을 다운로드
+	 * @param projectId : 프로젝트 ID
+	 * @return : ByteArrayResource
+	 */
+	public ByteArrayResource createDockerComposeFile(Integer projectId) {
+		DockerComposeEntity dockerComposeEntity = dockerComposeRepository.findByProjectId(projectId)
+			.orElseThrow(
+				() -> new CommonException(ErrorCode.DOCKER_COMPOSE_NOT_FOUND));
+
+		String content = dockerComposeEntity.getContent();
+
+		return new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
 	}
 
 	private String generateMySQLContent() {

@@ -2,6 +2,10 @@ package com.checkmate.checkit.project.controller;
 
 import java.util.List;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -233,5 +237,21 @@ public class ProjectController {
 		projectService.deleteDockerCompose(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// docker-compose 파일 다운로드
+	@GetMapping("/{projectId}/docker-compose/download")
+	public ResponseEntity<Resource> downloadDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		ByteArrayResource dockerComposeFile = projectService.createDockerComposeFile(token, projectId);
+
+		return ResponseEntity.ok()
+			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=docker-compose.yml")
+			.contentType(MediaType.parseMediaType("application/x-yaml"))
+			.body(dockerComposeFile);
 	}
 }

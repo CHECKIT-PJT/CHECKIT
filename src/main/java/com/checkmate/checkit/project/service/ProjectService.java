@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -441,6 +442,23 @@ public class ProjectService {
 
 		// Docker Compose 삭제
 		dockerComposeService.deleteDockerComposeFile(projectId);
+	}
+
+	/**
+	 * Docker Compose 파일 다운로드
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return ByteArrayResource : Docker Compose 파일 리소스
+	 */
+	@Transactional(readOnly = true)
+	public ByteArrayResource createDockerComposeFile(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 파일 다운로드
+		return dockerComposeService.createDockerComposeFile(projectId);
 	}
 
 	/**
