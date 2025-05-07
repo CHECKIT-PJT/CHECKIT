@@ -30,7 +30,32 @@ const OAuthCallback = () => {
     });
   }, [navigate]);
 
-  return <div>GitLab 로그인 처리 중입니다...</div>;
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex flex-col items-center p-8 rounded-xl">
+        <div className="relative w-24 h-24 mb-6">
+          {/* Spinner ring */}
+          <div className="absolute inset-0 rounded-full border-4 border-t-transparent border-gray-300 animate-spin"></div>
+        </div>
+
+        <h2 className="text-2xl font-medium text-gray-700 mb-2">로그인 중</h2>
+        <div className="flex space-x-1 mt-3">
+          <div
+            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+            style={{ animationDelay: '0s' }}
+          ></div>
+          <div
+            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+            style={{ animationDelay: '0.2s' }}
+          ></div>
+          <div
+            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+            style={{ animationDelay: '0.4s' }}
+          ></div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default OAuthCallback;

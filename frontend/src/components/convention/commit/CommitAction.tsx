@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import { MdOutlineDownloading } from 'react-icons/md';
+import {
+  useDeleteCommitConvention,
+  useDownloadCommitConvention,
+} from '../../../api/commitAPI';
 
 interface Props {
   projectId: string;
@@ -21,8 +25,7 @@ const CommitAction = ({ projectId, onUpdate }: Props) => {
     setShowConfirm(false);
 
     try {
-      // TODO 커밋 컨벤션 삭제 API 호출
-      console.log('커밋 컨벤션 삭제 요청됨');
+      await useDeleteCommitConvention(Number(projectId));
       onUpdate();
     } catch (error) {
       console.error('커밋 컨벤션 삭제 실패:', error);
@@ -35,23 +38,16 @@ const CommitAction = ({ projectId, onUpdate }: Props) => {
     setIsDownloading(true);
 
     try {
-      //   const response = async api 호출
-      //   );
-      //   if (response.ok) {
-      //     const data = await response.json();
-      //     const blob = new Blob([data.file], { type: 'text/markdown' });
-      //     const url = window.URL.createObjectURL(blob);
-      //     const a = document.createElement('a');
-      //     a.href = url;
-      //     a.download = 'COMMIT_CONVENTION.md';
-      //     document.body.appendChild(a);
-      //     a.click();
-      //     document.body.removeChild(a);
-      //     window.URL.revokeObjectURL(url);
-      //   } else {
-      //     const data = await response.json();
-      //     console.error('파일 다운로드 실패:', data.message);
-      //   }
+      const response = await useDownloadCommitConvention(Number(projectId));
+      const blob = new Blob([response], { type: 'text/markdown' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'COMMIT_CONVENTION.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('파일 다운로드 실패:', error);
     } finally {

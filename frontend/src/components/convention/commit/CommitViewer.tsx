@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useGetCommitConventionReg } from '../../../api/commitAPI';
+import axios from 'axios';
 
 interface Props {
   projectId: string;
@@ -12,15 +14,15 @@ const CommitViewer = ({ projectId }: Props) => {
     const fetchCommitConvention = async () => {
       setLoading(true);
       try {
-        // TODO 커밋 전략 조회 API 호출 구현
-        // setTimeout(() => {
-        //   setPattern(
-        //     '^feature/[A-Z]+-[0-9]+|^hotfix/[A-Z]+-[0-9]+|^main$|^release/v[0-9]+\\.[0-9]+\\.[0-9]+$'
-        //   );
-        //   setLoading(false);
-        // }, 500);
+        const result = await useGetCommitConventionReg(Number(projectId));
+        setPattern(result?.commitConventionReg || '');
       } catch (error) {
-        console.error('브랜치 전략 조회 실패:', error);
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          // 404 에러는 정상적인 케이스로 처리 (커밋 컨벤션이 없는 경우)
+          setPattern('');
+        } else {
+          console.error('커밋 컨벤션 조회 실패:', error);
+        }
       } finally {
         setLoading(false);
       }

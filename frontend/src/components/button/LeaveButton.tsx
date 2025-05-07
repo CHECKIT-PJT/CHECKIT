@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDeleteProject } from '../../api/projectAPI';
 
 interface LeaveButtonProps {
   onClick?: () => void;
@@ -6,10 +8,20 @@ interface LeaveButtonProps {
 
 const LeaveButton = ({ onClick }: LeaveButtonProps) => {
   const [showModal, setShowModal] = useState(false);
+  const { projectId } = useParams();
+  const navigate = useNavigate();
+  const { mutate: deleteProject } = useDeleteProject();
 
   const handleLeave = () => {
-    setShowModal(false);
-    if (onClick) onClick();
+    if (projectId) {
+      deleteProject(Number(projectId), {
+        onSuccess: () => {
+          setShowModal(false);
+          navigate('/project');
+          if (onClick) onClick();
+        },
+      });
+    }
   };
 
   return (
