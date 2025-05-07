@@ -32,6 +32,7 @@ import com.checkmate.checkit.project.entity.ProjectMemberId;
 import com.checkmate.checkit.project.entity.ProjectMemberRole;
 import com.checkmate.checkit.project.repository.ProjectMemberRepository;
 import com.checkmate.checkit.project.repository.ProjectRepository;
+import com.checkmate.checkit.user.entity.User;
 import com.checkmate.checkit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -134,10 +135,10 @@ public class ProjectService {
 		List<ProjectMemberResponse> memberResponses = projectMembers.stream()
 			.map(projectMember -> {
 				Integer memberId = projectMember.getId().getUserId();
-				String memberName = userRepository.findById(memberId)
-					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
-					.getUserName();
-				return new ProjectMemberResponse(memberId, memberName, projectMember.getRole());
+				User user = userRepository.findById(memberId)
+					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
+				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
+					projectMember.getRole());
 			})
 			.toList();
 
@@ -252,10 +253,10 @@ public class ProjectService {
 		return projectMembers.stream()
 			.map(projectMember -> {
 				Integer memberId = projectMember.getId().getUserId();
-				String memberName = userRepository.findById(memberId)
-					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
-					.getUserName();
-				return new ProjectMemberListResponse(memberId, memberName, projectMember.getRole(),
+				User user = userRepository.findById(memberId)
+					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
+				return new ProjectMemberListResponse(memberId, user.getUserName(), user.getNickname(),
+					projectMember.getRole(),
 					projectMember.isApproved());
 			})
 			.toList();

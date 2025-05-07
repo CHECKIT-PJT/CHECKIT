@@ -169,8 +169,8 @@ public class AuthService {
 		// 사용자 정보 업데이트
 		user.updateUserName(userName);
 		user.updateUserEmail(email);
+		user.updateNickname(nickname);
 		user.updateRefreshToken(jwtRefreshToken);
-		userRepository.save(user);
 
 		// OAuthToken 저장
 		saveOAuthToken(user, provider, accessToken);
