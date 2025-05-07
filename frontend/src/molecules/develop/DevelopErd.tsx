@@ -23,7 +23,7 @@ interface ErdMessage {
 }
 
 const DevelopErd = () => {
-  const projectId = 1;
+  const { projectId } = useParams();
   const stompClientRef = useRef<Client | null>(null);
   const saveInterval = useRef<number | null>(null);
   const isInternalUpdate = useRef(false);
@@ -169,14 +169,6 @@ const DevelopErd = () => {
     initEditor();
     initStomp();
 
-    // saveInterval.current = setInterval(() => {
-    //   const editor = document.getElementById(
-    //     "erd-editor"
-    //   ) as ErdEditorElement | null;
-    //   if (editor?.value) {
-    //     saveToServer(editor.value);
-    //   }
-    // }, 5000);
 
     return () => {
       stompClientRef.current?.deactivate();
