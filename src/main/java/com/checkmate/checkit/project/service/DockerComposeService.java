@@ -2,8 +2,11 @@ package com.checkmate.checkit.project.service;
 
 import org.springframework.stereotype.Service;
 
+import com.checkmate.checkit.global.code.ErrorCode;
+import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.common.DatabaseType;
 import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
+import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.entity.DockerComposeEntity;
 import com.checkmate.checkit.project.repository.DockerComposeRepository;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +56,19 @@ public class DockerComposeService {
 			.build();
 
 		dockerComposeRepository.save(dockerComposeEntity);
+	}
+
+	/**
+	 * 도커 컴포즈 파일을 조회
+	 * @param projectId : 프로젝트 ID
+	 * @return : Docker Compose 응답
+	 */
+	public DockerComposeResponse getDockerComposeFile(Integer projectId) {
+		DockerComposeEntity dockerComposeEntity = dockerComposeRepository.findByProjectId(projectId)
+			.orElseThrow(
+				() -> new CommonException(ErrorCode.DOCKER_COMPOSE_NOT_FOUND));
+
+		return new DockerComposeResponse(dockerComposeEntity.getContent());
 	}
 
 	private String generateMySQLContent() {
@@ -113,5 +129,4 @@ public class DockerComposeService {
 			      - "6379:6379"
 			""";
 	}
-
 }

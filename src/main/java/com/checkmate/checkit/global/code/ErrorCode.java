@@ -57,6 +57,7 @@ public enum ErrorCode {
 
 	// 도커 관련 에러
 	INVALID_DATABASE_TYPE(400, BAD_REQUEST, "유효하지 않은 데이터베이스 타입입니다."),
+	DOCKER_COMPOSE_NOT_FOUND(404, NOT_FOUND, "Docker Compose 파일을 찾을 수 없습니다."),
 	;
 
 	private final int code;

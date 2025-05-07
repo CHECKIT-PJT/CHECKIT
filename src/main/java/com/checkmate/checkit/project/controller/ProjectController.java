@@ -20,6 +20,7 @@ import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
@@ -191,5 +192,18 @@ public class ProjectController {
 		projectService.createDockerCompose(token, projectId, dockerComposeCreateRequest);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// docker-compose 파일 조회
+	@GetMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<DockerComposeResponse>> getDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		DockerComposeResponse dockerComposeContent = projectService.getDockerCompose(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, dockerComposeContent));
 	}
 }

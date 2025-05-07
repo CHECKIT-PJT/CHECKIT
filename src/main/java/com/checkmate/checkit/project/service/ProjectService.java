@@ -17,6 +17,7 @@ import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
@@ -387,6 +388,23 @@ public class ProjectService {
 		// Docker Compose 생성 로직 구현
 		dockerComposeService.generateAndSaveDockerComposeFile(projectId,
 			dockerComposeCreateRequest);
+	}
+
+	/**
+	 * Docker Compose 조회
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return dockerComposeResponse : Docker Compose 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public DockerComposeResponse getDockerCompose(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 조회
+		return dockerComposeService.getDockerComposeFile(projectId);
 	}
 
 	/**
