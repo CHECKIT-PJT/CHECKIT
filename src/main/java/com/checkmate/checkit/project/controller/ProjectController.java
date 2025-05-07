@@ -2,6 +2,10 @@ package com.checkmate.checkit.project.controller;
 
 import java.util.List;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,10 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
+import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
+import com.checkmate.checkit.project.dto.request.DockerComposeUpdateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
@@ -178,4 +185,73 @@ public class ProjectController {
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 
+	// docker-compose 파일 생성
+	@PostMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<Void>> createDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody DockerComposeCreateRequest dockerComposeCreateRequest) {
+
+		String token = authorization.substring(7);
+
+		projectService.createDockerCompose(token, projectId, dockerComposeCreateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// docker-compose 파일 조회
+	@GetMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<DockerComposeResponse>> getDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		DockerComposeResponse dockerComposeContent = projectService.getDockerCompose(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, dockerComposeContent));
+	}
+
+	// docker-compose 파일 수정
+	@PutMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<Void>> updateDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody DockerComposeUpdateRequest dockerComposeUpdateRequest) {
+
+		String token = authorization.substring(7);
+
+		projectService.updateDockerCompose(token, projectId, dockerComposeUpdateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// docker-compose 파일 삭제
+	@DeleteMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<Void>> deleteDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		projectService.deleteDockerCompose(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// docker-compose 파일 다운로드
+	@GetMapping("/{projectId}/docker-compose/download")
+	public ResponseEntity<Resource> downloadDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		ByteArrayResource dockerComposeFile = projectService.createDockerComposeFile(token, projectId);
+
+		return ResponseEntity.ok()
+			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=docker-compose.yml")
+			.contentType(MediaType.parseMediaType("application/x-yaml"))
+			.body(dockerComposeFile);
+	}
 }
