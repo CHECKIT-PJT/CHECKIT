@@ -12,6 +12,7 @@ public class UserResponse {
 	private Integer id;
 	private String externalId;
 	private String username;
+	private String nickname;
 	private String email;
 	private String provider;
 	private LocalDateTime createdAt;
@@ -21,6 +22,7 @@ public class UserResponse {
 		this.id = user.getId();
 		this.externalId = user.getExternalId();
 		this.username = user.getUserName();
+		this.nickname = user.getNickname();
 		this.email = user.getUserEmail();
 		this.provider = user.getLoginProvider().name();
 		this.createdAt = user.getCreatedAt();
