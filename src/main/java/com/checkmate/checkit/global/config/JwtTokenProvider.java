@@ -54,13 +54,14 @@ public class JwtTokenProvider {
 	/**
 	 * 액세스 토큰 생성 (짧은 유효기간)
 	 */
-	public String createAccessToken(Integer userId, String userName) {
+	public String createAccessToken(Integer userId, String userName, String nickname) {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + jwtAccessExpiration);
 
 		return Jwts.builder()
 			.setSubject(Integer.toString(userId))
 			.claim("userName", userName)
+			.claim("nickname", nickname)
 			.setIssuedAt(now)
 			.setExpiration(expiryDate)
 			.signWith(key, SignatureAlgorithm.HS256)
