@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.checkmate.checkit.codegenerator.service.DtoGenerateService;
 import com.checkmate.checkit.codegenerator.service.EntityGenerateService;
 import com.checkmate.checkit.erd.dto.response.ErdRelationshipResponse;
 import com.checkmate.checkit.erd.dto.response.ErdSnapshotResponse;
@@ -27,6 +28,7 @@ public class CodeGenerateController {
 	private final EntityGenerateService entityGenerateService;
 	private final ErdService erdService;
 	private final SpringSettingsService springSettingsService;
+	private final DtoGenerateService dtoGenerateService; // 추가
 
 	// 엔티티 코드 생성을 위한 엔드포인트
 	@PostMapping("/build/{projectId}")
@@ -42,8 +44,10 @@ public class CodeGenerateController {
 		List<ErdTableResponse> tables = erdSnapshotDto.getTables();
 		List<ErdRelationshipResponse> allRelationships = erdSnapshotDto.getRelationships();
 
-		// 엔티티 코드 생성
-		StringBuilder entityCode = new StringBuilder();
+		// 전체 결과 문자열
+		StringBuilder codeResult = new StringBuilder();
+
+		// 1. 엔티티 코드 생성
 		for (ErdTableResponse table : tables) {
 			// 해당 테이블과 관련된 관계만 필터링
 			List<ErdRelationshipResponse> tableRelationships = allRelationships.stream()
@@ -59,10 +63,16 @@ public class CodeGenerateController {
 				tableRelationships,
 				basePackage
 			);
-			entityCode.append(entityCodeForTable).append("\n");
+			codeResult.append(entityCodeForTable).append("\n");
 		}
 
-		// 생성된 엔티티 코드 반환
-		return ResponseEntity.ok(entityCode.toString());
+		// 2. DTO 코드 생성 추가
+		dtoGenerateService.generateDtos(projectId, basePackage).forEach((fileName, content) -> {
+			codeResult.append(content).append("\n");
+		});
+
+		// 최종 코드 반환
+		return ResponseEntity.ok(codeResult.toString());
 	}
+
 }
