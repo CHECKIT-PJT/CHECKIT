@@ -22,12 +22,16 @@ public class DockerComposeEntity {
 	@Column(nullable = false)
 	private Integer projectId;
 
-	@Column(columnDefinition = "TEXT", nullable = false)
+	@Column(columnDefinition = "TEXT")
 	private String content;
 
 	@Builder
 	public DockerComposeEntity(Integer projectId, String content) {
 		this.projectId = projectId;
+		this.content = content;
+	}
+
+	public void updateContent(String content) {
 		this.content = content;
 	}
 }

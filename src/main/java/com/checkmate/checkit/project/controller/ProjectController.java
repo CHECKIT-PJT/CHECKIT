@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
 import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
+import com.checkmate.checkit.project.dto.request.DockerComposeUpdateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
@@ -205,5 +206,19 @@ public class ProjectController {
 		DockerComposeResponse dockerComposeContent = projectService.getDockerCompose(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, dockerComposeContent));
+	}
+
+	// docker-compose 파일 수정
+	@PutMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<Void>> updateDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody DockerComposeUpdateRequest dockerComposeUpdateRequest) {
+
+		String token = authorization.substring(7);
+
+		projectService.updateDockerCompose(token, projectId, dockerComposeUpdateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 }

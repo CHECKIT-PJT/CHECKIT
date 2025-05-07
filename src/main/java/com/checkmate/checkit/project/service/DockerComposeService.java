@@ -6,6 +6,7 @@ import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.common.DatabaseType;
 import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
+import com.checkmate.checkit.project.dto.request.DockerComposeUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.entity.DockerComposeEntity;
 import com.checkmate.checkit.project.repository.DockerComposeRepository;
@@ -69,6 +70,19 @@ public class DockerComposeService {
 				() -> new CommonException(ErrorCode.DOCKER_COMPOSE_NOT_FOUND));
 
 		return new DockerComposeResponse(dockerComposeEntity.getContent());
+	}
+
+	/**
+	 * 도커 컴포즈 파일을 수정
+	 * @param projectId : 프로젝트 ID
+	 * @param dockerComposeUpdateRequest : Docker Compose 수정 요청
+	 */
+	public void updateDockerComposeFile(Integer projectId, DockerComposeUpdateRequest dockerComposeUpdateRequest) {
+		DockerComposeEntity dockerComposeEntity = dockerComposeRepository.findByProjectId(projectId)
+			.orElseThrow(
+				() -> new CommonException(ErrorCode.DOCKER_COMPOSE_NOT_FOUND));
+
+		dockerComposeEntity.updateContent(dockerComposeUpdateRequest.content());
 	}
 
 	private String generateMySQLContent() {

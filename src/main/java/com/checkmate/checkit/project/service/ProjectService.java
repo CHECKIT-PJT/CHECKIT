@@ -13,6 +13,7 @@ import com.checkmate.checkit.global.common.mail.MailService;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
+import com.checkmate.checkit.project.dto.request.DockerComposeUpdateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
@@ -405,6 +406,25 @@ public class ProjectService {
 
 		// Docker Compose 조회
 		return dockerComposeService.getDockerComposeFile(projectId);
+	}
+
+	/**
+	 * Docker Compose 수정
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param dockerComposeUpdateRequest : Docker Compose 수정 요청 DTO
+	 */
+	@Transactional
+	public void updateDockerCompose(String token, Integer projectId,
+		DockerComposeUpdateRequest dockerComposeUpdateRequest) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 수정
+		dockerComposeService.updateDockerComposeFile(projectId,
+			dockerComposeUpdateRequest);
 	}
 
 	/**
