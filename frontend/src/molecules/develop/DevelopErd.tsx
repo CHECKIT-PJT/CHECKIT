@@ -1,35 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import '@dineug/erd-editor';
-import { ErdEditorElement } from '@dineug/erd-editor';
-import ToggleButton from '../../components/button/ToggleButton';
-
-interface Theme {
-  canvas: string;
-  table: string;
-  tableActive: string;
-  focus: string;
-  keyPK: string;
-  keyFK: string;
-  keyPFK: string;
-  font: string;
-  fontActive: string;
-  fontPlaceholder: string;
-  contextmenu: string;
-  contextmenuActive: string;
-  edit: string;
-  columnSelect: string;
-  columnActive: string;
-  minimapShadow: string;
-  scrollbarThumb: string;
-  scrollbarThumbActive: string;
-  menubar: string;
-  visualization: string;
-}
+import { useEffect, useRef } from "react";
+import "@dineug/erd-editor";
+import { ErdEditorElement } from "../../types/erd-editor";
+import ToggleButton from "../../components/button/ToggleButton";
+import axiosInstance from "../../api/axiosInstance";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
+import { useParams } from "react-router-dom";
 
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'erd-editor': React.DetailedHTMLProps<
+      "erd-editor": React.DetailedHTMLProps<
         React.HTMLAttributes<ErdEditorElement>,
         ErdEditorElement
       >;
@@ -37,41 +18,183 @@ declare global {
   }
 }
 
+interface ErdMessage {
+  type: string;
+  payload: string; // JSON string
+}
+
 const DevelopErd = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [erdData, setErdData] = useState<any>(null);
+  const {projectId} = useParams();
+  const stompClientRef = useRef<Client | null>(null);
+  const saveInterval = useRef<number | null>(null);
+  const isInternalUpdate = useRef(false);
+
+  const saveToServer = async (jsonString: string) => {
+    try {
+      await axiosInstance.post(
+        `/api/erd/${projectId}`,
+        { erdJson: jsonString },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      console.log("DB 저장 완료");
+    } catch (err) {
+      console.error("DB 저장 실패:", err);
+    }
+  };
+
+  const handleManualSave = () => {
+    const editor = document.getElementById(
+      "erd-editor"
+    ) as ErdEditorElement | null;
+    if (editor?.value) {
+      saveToServer(editor.value);
+    } else {
+      console.error("❌ editor.value 사용 불가");
+    }
+  };
+
+  const initStomp = () => {
+    const token = sessionStorage.getItem("accessToken");
+    const sock = new SockJS(
+      `${import.meta.env.VITE_API_BASE_URL}/ws/erd?token=${token}`
+    );
+
+    const stompClient = new Client({
+      webSocketFactory: () => sock,
+      connectHeaders: {
+        Authorization: `Bearer ${token || ""}`,
+      },
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("STOMP 연결 성공");
+
+        stompClient.subscribe(`/sub/erd/${projectId}`, (message) => {
+          const parsed = JSON.parse(message.body); // 메시지를 파싱
+          console.log("받은 메세지 :", parsed.payload);
+
+          const myUserId = getUserIdFromToken(token);
+
+          if (parsed.userId === myUserId) {
+            // 내가 보낸 메시지는 무시
+            return;
+          }
+
+          const editor = document.getElementById(
+            "erd-editor"
+          ) as ErdEditorElement | null;
+          if (editor && parsed.payload && editor.value !== parsed.payload) {
+            isInternalUpdate.current = true;
+            editor.value = parsed.payload; // 실시간 반영
+          } else {
+            console.error("editor.value와 parsed.payload값이 같습니다.");
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error("STOMP 에러:", frame);
+      },
+    });
+
+    stompClient.activate();
+    stompClientRef.current = stompClient;
+  };
 
   useEffect(() => {
-    if (ref.current && !ref.current.querySelector('erd-editor')) {
-      const erd = document.createElement('erd-editor') as ErdEditorElement;
+    const handleUnload = () => {
+      const editor = document.getElementById(
+        "erd-editor"
+      ) as ErdEditorElement | null;
+      if (editor?.value) {
+        navigator.sendBeacon(
+          `/api/erd/${projectId}`,
+          JSON.stringify({ erdJson: editor.value })
+        );
+      }
+    };
+    window.addEventListener("beforeunload", handleUnload);
 
-      erd.style.width = '100%';
-      erd.style.height = '100%';
+    const initEditor = async () => {
+      await customElements.whenDefined("erd-editor");
+      const editor = document.getElementById(
+        "erd-editor"
+      ) as ErdEditorElement | null;
+      if (!editor) {
+        console.error(" editor not found");
+        return;
+      }
 
-      erd.setPresetTheme({
-        appearance: 'light',
-        grayColor: 'slate',
-        accentColor: 'blue',
+      editor.style.width = "100%";
+      editor.style.height = "100%";
+      editor.setPresetTheme({
+        appearance: "light",
+        grayColor: "slate",
+        accentColor: "blue",
       });
 
-      erd.setAttribute('enableThemeBuilder', 'true');
-      erd.setAttribute('systemDarkMode', 'false');
+      try {
+        const res = await axiosInstance.get(`/api/erd/${projectId}`);
+        if (res.data.erdJson) {
+          isInternalUpdate.current = true;
+          editor.value = res.data.erdJson;
+        }
+      } catch (err) {
+        console.error("초기 데이터 불러오기 실패:", err);
+      }
 
-      ref.current.appendChild(erd);
+      // 실시간 변경 감지 (내가 수정할 때)
+      editor.addEventListener("change", (event) => {
+        if (isInternalUpdate.current) {
+          isInternalUpdate.current = false;
+          return;
+        }
 
-      erd.addEventListener('save', ((e: CustomEvent) => {
-        const savedData = e.detail;
-        setErdData(savedData);
-        console.log('저장된 ERD 데이터:', savedData);
-        // TODO: erd 저장 API 호출 필요
+        const newData = (event.target as ErdEditorElement).value;
+
+        stompClientRef.current?.publish({
+          destination: `/pub/erd/update/${projectId}`,
+          body: newData,
+        });
+
+        saveToServer(newData);
+      });
+
+      // 수동 저장 버튼 누를 때
+      editor.addEventListener("save", ((e: CustomEvent) => {
+        const data = (e.target as ErdEditorElement).value;
+        saveToServer(data);
       }) as EventListener);
-    }
-  }, []);
+    };
+
+    initEditor();
+    initStomp();
+
+
+    return () => {
+      stompClientRef.current?.deactivate();
+      window.removeEventListener("beforeunload", handleUnload);
+    };
+  }, [projectId]);
 
   return (
-    <div className="flex flex-row items-start w-full h-full">
-      <div className="w-[95%] h-[500px]">
-        <div ref={ref} className="w-full h-full" />
+    <div className="flex flex-col items-center w-full h-full">
+      <div className="flex justify-between w-[90%] mb-2">
+        <ToggleButton />
+        <button
+          onClick={handleManualSave}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          저장하기
+        </button>
+      </div>
+      <div className="w-[90%] h-[500px]">
+        <erd-editor
+          id="erd-editor"
+          enableThemeBuilder="true"
+          systemDarkMode="false"
+          style={{ width: "100%", height: "100%" }}
+        />
       </div>
       <div className="flex justify-end w-[5%] ">
         <ToggleButton />
@@ -79,5 +202,17 @@ const DevelopErd = () => {
     </div>
   );
 };
+
+function getUserIdFromToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded.userName;
+  } catch (err) {
+    console.error("JWT 파싱 실패", err);
+    return null;
+  }
+}
 
 export default DevelopErd;
