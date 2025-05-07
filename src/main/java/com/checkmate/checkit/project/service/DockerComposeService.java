@@ -85,6 +85,18 @@ public class DockerComposeService {
 		dockerComposeEntity.updateContent(dockerComposeUpdateRequest.content());
 	}
 
+	/**
+	 * 도커 컴포즈 파일을 삭제
+	 * @param projectId : 프로젝트 ID
+	 */
+	public void deleteDockerComposeFile(Integer projectId) {
+		DockerComposeEntity dockerComposeEntity = dockerComposeRepository.findByProjectId(projectId)
+			.orElseThrow(
+				() -> new CommonException(ErrorCode.DOCKER_COMPOSE_NOT_FOUND));
+
+		dockerComposeRepository.delete(dockerComposeEntity);
+	}
+
 	private String generateMySQLContent() {
 		return """
 			  mysql:

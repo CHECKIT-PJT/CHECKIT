@@ -221,4 +221,17 @@ public class ProjectController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	// docker-compose 파일 삭제
+	@DeleteMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<Void>> deleteDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		projectService.deleteDockerCompose(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }

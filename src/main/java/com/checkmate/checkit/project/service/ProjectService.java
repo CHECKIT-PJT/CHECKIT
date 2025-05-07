@@ -428,6 +428,22 @@ public class ProjectService {
 	}
 
 	/**
+	 * Docker Compose 삭제
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 */
+	@Transactional
+	public void deleteDockerCompose(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 삭제
+		dockerComposeService.deleteDockerComposeFile(projectId);
+	}
+
+	/**
 	 * 프로젝트 소속 및 사용자 검증
 	 * @param loginUserId : 로그인한 사용자 ID
 	 * @param projectId : 프로젝트 ID
