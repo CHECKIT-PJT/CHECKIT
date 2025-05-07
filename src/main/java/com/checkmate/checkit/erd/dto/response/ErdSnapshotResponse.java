@@ -1,17 +1,10 @@
 package com.checkmate.checkit.erd.dto.response;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Data;
 
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 @AllArgsConstructor
 public class ErdSnapshotResponse {
-    private List<ErdTableResponse> tables;
-    private List<ErdRelationshipResponse> relationships;
+    private String erdJson;
 }
