@@ -6,6 +6,7 @@ import com.checkmate.checkit.global.config.JwtTokenProvider;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -16,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class StompHandler implements ChannelInterceptor {
     private final JwtTokenProvider jwtUtil;
     @Override
@@ -25,6 +27,10 @@ public class StompHandler implements ChannelInterceptor {
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             try {
                 String token = accessor.getFirstNativeHeader("Authorization");
+                if (token != null && token.startsWith("Bearer ")) {
+                    token = token.substring(7);
+                }
+
                 Long userId = Long.valueOf(jwtUtil.getUserIdFromToken(token));
                 if (userId != null) {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId.toString(), null, null);

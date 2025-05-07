@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
+import java.security.Principal;
 import java.util.Map;
 
 @Component
@@ -26,11 +27,10 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
         if (request instanceof ServletServerHttpRequest servletRequest) {
             HttpServletRequest httpRequest = servletRequest.getServletRequest();
-
-
-            String token = httpRequest.getParameter("accessToken");
+            String token = httpRequest.getParameter("token");
             if (token == null) {
                 token = httpRequest.getHeader("Authorization");
+
                 if (token != null && token.startsWith("Bearer ")) {
                     token = token.substring(7);
                 }
@@ -39,7 +39,8 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             // 유효성 검증
             if (token != null && jwtUtil.validateToken(token)) {
                 String userId = jwtUtil.getUserNameFromToken(token);
-                attributes.put("userId", userId);
+                Principal principal = () -> userId;
+                attributes.put("principal", principal);
                 return true;
             }
         }
