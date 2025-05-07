@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
+import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
@@ -178,4 +179,17 @@ public class ProjectController {
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 
+	// docker-compose 파일 생성
+	@PostMapping("/{projectId}/docker-compose")
+	public ResponseEntity<JSONResponse<Void>> createDockerCompose(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody DockerComposeCreateRequest dockerComposeCreateRequest) {
+
+		String token = authorization.substring(7);
+
+		projectService.createDockerCompose(token, projectId, dockerComposeCreateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }

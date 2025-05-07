@@ -12,6 +12,7 @@ import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.common.mail.MailService;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
@@ -43,6 +44,7 @@ public class ProjectService {
 	private final UserRepository userRepository;
 	private final MailService mailService;
 	private final RedisTemplate<String, Object> redisTemplate;
+	private final DockerComposeService dockerComposeService;
 
 	private final String PROJECT_INVITE_URL = "http://localhost:5173/invite";
 
@@ -365,6 +367,26 @@ public class ProjectService {
 
 		// 프로젝트 멤버 승인
 		projectMember.approve();
+	}
+
+	/**
+	 * Docker Compose 생성
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param dockerComposeCreateRequest : Docker Compose 생성 요청 DTO
+	 */
+	@Transactional
+	public void createDockerCompose(String token, Integer projectId,
+		DockerComposeCreateRequest dockerComposeCreateRequest) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 생성 로직 구현
+		dockerComposeService.generateAndSaveDockerComposeFile(projectId,
+			dockerComposeCreateRequest);
 	}
 
 	/**
