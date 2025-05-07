@@ -9,14 +9,37 @@ interface ProjectAddModalProps {
 
 const ProjectAddModal = ({ isOpen, onClose, onSave }: ProjectAddModalProps) => {
   const [projectName, setProjectName] = useState('');
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
+  const validateProjectName = (name: string) => {
+    if (/\s/.test(name)) {
+      return '프로젝트 이름에 띄어쓰기를 사용할 수 없습니다.';
+    }
+    if (/[가-힣]/.test(name)) {
+      return '프로젝트 이름에 한글을 사용할 수 없습니다.';
+    }
+    return '';
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    setProjectName(newName);
+    setError(validateProjectName(newName));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError = validateProjectName(projectName);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     if (projectName.trim()) {
       onSave({ projectName });
       setProjectName('');
+      setError('');
       onClose();
     }
   };
@@ -40,11 +63,13 @@ const ProjectAddModal = ({ isOpen, onClose, onSave }: ProjectAddModalProps) => {
               type="text"
               id="projectName"
               value={projectName}
-              onChange={e => setProjectName(e.target.value)}
+              onChange={handleChange}
+              maxLength={20}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="프로젝트 이름을 입력하세요"
               autoFocus
             />
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
           </div>
 
           <div className="flex justify-end gap-2">
@@ -58,7 +83,7 @@ const ProjectAddModal = ({ isOpen, onClose, onSave }: ProjectAddModalProps) => {
             <button
               type="submit"
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-              disabled={!projectName.trim()}
+              disabled={!projectName.trim() || !!error}
             >
               추가
             </button>

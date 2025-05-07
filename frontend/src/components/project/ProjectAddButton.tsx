@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { FiFolderPlus } from 'react-icons/fi';
 import ProjectAddModal from './ProjectAddModal';
+import { useCreateProject } from '../../api/projectAPI';
 
 const ProjectAddButton = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { mutate: createProject } = useCreateProject();
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -14,8 +16,8 @@ const ProjectAddButton = () => {
   };
 
   const handleSaveProject = (project: { projectName: string }) => {
-    console.log('새 프로젝트 생성:', project);
-    // TODO 프로젝트 저장 로직직
+    createProject(project);
+    closeModal();
   };
 
   return (

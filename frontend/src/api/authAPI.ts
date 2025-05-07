@@ -1,10 +1,10 @@
-import axiosInstance from './axiosInstance';
+import axiosInstance from "./axiosInstance";
 
 // GitLab OAuth 리다이렉션
 export const redirectToGitLabLogin = () => {
   const clientId = import.meta.env.VITE_GITLAB_CLIENT_ID;
-  const redirectUri = 'http://localhost:5173/gitlab/callback';
-  const scope = 'read_user read_repository write_repository';
+  const redirectUri = "http://localhost:5173/gitlab/callback";
+  const scope = "read_user read_repository write_repository";
   const encodedScope = encodeURIComponent(scope);
   const gitlabUrl = `https://lab.ssafy.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodedScope}`;
 
@@ -14,10 +14,10 @@ export const redirectToGitLabLogin = () => {
 // 인증 상태 확인
 export const verifyToken = async () => {
   try {
-    const response = await axiosInstance.get('/api/auth/verify');
+    const response = await axiosInstance.get("/api/auth/verify");
     return response.data.success;
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error("Token verification error:", error);
     return false;
   }
 };
@@ -25,14 +25,14 @@ export const verifyToken = async () => {
 // 토큰 갱신
 export const refreshToken = async () => {
   try {
-    const response = await axiosInstance.post('/api/auth/refresh');
+    const response = await axiosInstance.post("/api/auth/refresh");
     // sessionStorage에 토큰 저장
     if (response.data.data && response.data.data.accessToken) {
-      sessionStorage.setItem('accessToken', response.data.data.accessToken);
+      sessionStorage.setItem("accessToken", response.data.data.accessToken);
     }
     return response.data.data;
   } catch (error) {
-    console.error('Token refresh error:', error);
+    console.error("Token refresh error:", error);
     throw error;
   }
 };
@@ -40,12 +40,12 @@ export const refreshToken = async () => {
 // 로그아웃
 export const logout = async () => {
   try {
-    await axiosInstance.post('/api/auth/logout');
+    await axiosInstance.post("/api/auth/logout");
     // 로그아웃 시 sessionStorage에서 토큰 제거
-    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem("accessToken");
     return true;
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error("Logout error:", error);
     throw error;
   }
 };
@@ -58,11 +58,11 @@ export const handleAuthCallback = async (code: string): Promise<boolean> => {
         withCredentials: true,
       }
     );
-    console.log('response', response);
+    console.log("response", response);
     const accessToken = response.data.result.accessToken;
 
     if (accessToken) {
-      sessionStorage.setItem('accessToken', accessToken);
+      sessionStorage.setItem("accessToken", accessToken);
       return true;
     }
 
@@ -74,7 +74,7 @@ export const handleAuthCallback = async (code: string): Promise<boolean> => {
 
 // sessionStorage에서 토큰 가져오기
 export const getToken = () => {
-  return sessionStorage.getItem('accessToken');
+  return sessionStorage.getItem("accessToken");
 };
 
 export default {

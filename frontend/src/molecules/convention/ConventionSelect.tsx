@@ -27,18 +27,18 @@ const ConventionSelect = ({ activePath }: SidebarMenuProps) => {
       emoji: '🌿',
     },
     {
-      id: 'gitignore',
-      title: '.gitignore 설계',
-      icon: <FaCode size={16} />,
-      color: 'bg-blue-700',
-      emoji: '📋',
-    },
-    {
       id: 'commit',
       title: '커밋 컨벤션',
       icon: <FaFileAlt size={16} />,
-      color: 'bg-green-700',
+      color: 'bg-green-200',
       emoji: '💬',
+    },
+    {
+      id: 'gitignore',
+      title: '.gitignore 설계',
+      icon: <FaCode size={16} />,
+      color: 'bg-blue-200',
+      emoji: '📋',
     },
   ];
 

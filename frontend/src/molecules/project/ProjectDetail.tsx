@@ -3,33 +3,26 @@ import InputSelect from '../develop/InputSelect';
 import LeaveButton from '../../components/button/LeaveButton';
 import MoveGitlabButton from '../../components/button/MoveGitlabButton';
 import MemberAddButton from '../../components/button/MemberAddButton';
-import { useNavigate } from 'react-router-dom';
-import { ProjectDetailDoc } from '../../types/ProjectDoc';
+import { useNavigate, useParams } from 'react-router-dom';
 import DocSelect from '../document/DocSelect';
 import BuildSelect from '../buildpreview/BuildSelect';
+import { useGetProjectById } from '../../api/projectAPI';
 
 const ProjectDetail = () => {
-  // TODO : 프로젝트 이름 받아오기
-  const projectName = 'S12A501';
   const navigate = useNavigate();
+  const { projectId } = useParams();
+
+  const { data: response } = useGetProjectById(Number(projectId));
 
   const onClickBack = () => {
     navigate('/project');
   };
 
-  const exampleProject: ProjectDetailDoc = {
-    projectId: 1,
-    projectName: 'ExampleProject',
-    createdAt: '2025-04-26T12:00:00Z',
-    updatedAt: '2025-04-26T13:00:00Z',
-    projectMembers: [
-      {
-        userId: 1,
-        username: '임태훈',
-        role: 'OWNER',
-      },
-    ],
-  };
+  if (!response?.result) {
+    return <div>Loading...</div>;
+  }
+
+  const projectData = response.result;
 
   return (
     <div className="flex flex-col h-full">
@@ -41,7 +34,9 @@ const ProjectDetail = () => {
           >
             <IoArrowBack className="w-5 h-5" />
           </button>
-          <h3 className="font-bold text-gray-800 highlight">{projectName}</h3>
+          <h3 className="font-bold text-gray-800 highlight">
+            {projectData.projectName}
+          </h3>
         </div>
         <div className="flex gap-4">
           <LeaveButton />
@@ -55,22 +50,24 @@ const ProjectDetail = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg">팀 멤버</h3>
               <MemberAddButton
-                projectId={exampleProject.projectId}
-                projectName={exampleProject.projectName}
+                projectId={projectData.projectId}
+                projectName={projectData.projectName}
               />
             </div>
             <ul>
-              {exampleProject.projectMembers.map(member => (
-                <li key={member.userId} className="mb-2">
-                  <span className="font-medium">{member.username}</span>
-                  <span className="ml-2 text-xs text-gray-500">
-                    {member.role}
-                  </span>
-                  <div className="text-xs text-gray-400 ml-1">
-                    ID: {member.userId}
-                  </div>
-                </li>
-              ))}
+              {projectData.projectMembers.map(
+                (member: { id: number; userName: string; role: string }) => (
+                  <li key={member.id} className="mb-2">
+                    <span className="font-medium">{member.userName}</span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      {member.role}
+                    </span>
+                    <div className="text-xs text-gray-400 ml-1">
+                      ID: {member.id}
+                    </div>
+                  </li>
+                )
+              )}
             </ul>
           </div>
         </div>

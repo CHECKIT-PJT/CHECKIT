@@ -41,7 +41,7 @@ const ToggleButton = () => {
       </button>
 
       {showShortcuts && (
-        <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-96 z-[9999]">
+        <div className="absolute left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-96 z-[9999]">
           <h3 className="text-lg font-bold mb-3 text-gray-800 ml-2">
             키보드 단축키
           </h3>

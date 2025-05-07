@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
+import {
+  useGetCommitConventionReg,
+  useCreateCommitConvention,
+  useUpdateCommitConvention,
+} from '../../../api/commitAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
   initialPattern?: string;
   onUpdate: () => void;
 }
@@ -13,7 +18,18 @@ const CommitForm = ({ projectId, initialPattern = '', onUpdate }: Props) => {
   const [existingPattern, setExistingPattern] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkExistingPattern = async () => {};
+    const checkExistingPattern = async () => {
+      try {
+        const result = await useGetCommitConventionReg(Number(projectId));
+        if (result?.commitConventionReg) {
+          setExistingPattern(result.commitConventionReg);
+          setPattern(result.commitConventionReg);
+        }
+      } catch (error) {
+        console.error('커밋 컨벤션 조회 실패:', error);
+      }
+    };
+    checkExistingPattern();
   }, [projectId, initialPattern]);
 
   const validatePattern = (input: string): boolean => {
@@ -35,22 +51,13 @@ const CommitForm = ({ projectId, initialPattern = '', onUpdate }: Props) => {
     }
 
     try {
-      // 패턴 존재 여부에 따라 메서드 결정
-      const method = existingPattern ? 'PUT' : 'POST';
-      const url = `/api/git/commit-convention/${projectId}`;
-
-      const response = await fetch(url, {
-        method,
-        body: JSON.stringify({ commitConventionReg: pattern }),
-      });
-
-      if (response.ok) {
-        setExistingPattern(pattern);
-        onUpdate();
+      if (existingPattern) {
+        await useUpdateCommitConvention(Number(projectId), pattern);
       } else {
-        const data = await response.json();
-        setError(data.message || '커밋 컨벤션 설정 중 오류가 발생했습니다.');
+        await useCreateCommitConvention(Number(projectId), pattern);
       }
+      setExistingPattern(pattern);
+      onUpdate();
     } catch (err) {
       setError('커밋 컨벤션 설정 중 오류가 발생했습니다.');
       console.error('커밋 컨벤션 설정 실패:', err);

@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import { MdOutlineDownloading } from 'react-icons/md';
+import {
+  useDeleteBranchConvention,
+  useDownloadBranchConvention,
+} from '../../../api/branchAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
   onUpdate: () => void;
 }
 
@@ -21,12 +25,7 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
     setShowConfirm(false);
 
     try {
-      // API 호출 구현
-      // await deleteBranchStrategy(projectId);
-
-      // 임시 구현 (실제로는 API 호출)
-      await new Promise(resolve => setTimeout(resolve, 800));
-
+      await useDeleteBranchConvention(Number(projectId));
       onUpdate();
     } catch (error) {
       console.error('브랜치 전략 삭제 실패:', error);
@@ -39,12 +38,17 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
     setIsDownloading(true);
 
     try {
-      // API 호출 및 파일 다운로드 구현
-      // const response = await fetchBranchFile(projectId);
-      // downloadFile(response.data, 'branch-strategy.txt');
-
-      // 임시 구현 (실제로는 API 호출 및 파일 다운로드)
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const response = await useDownloadBranchConvention(Number(projectId));
+      // 파일 다운로드 처리
+      const blob = new Blob([response], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'branch-convention.txt';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('파일 다운로드 실패:', error);
     } finally {

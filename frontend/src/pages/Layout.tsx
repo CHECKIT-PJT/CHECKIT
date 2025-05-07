@@ -36,7 +36,7 @@ const Layout = () => {
     <div className="flex h-full w-full bg-gray-50 text-gray-900">
       <div className="flex flex-col w-full h-full">
         <Header userName="사용자" isLoggedIn={true} />
-        <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-4 scrollbar-hide scroll-target">
           <Outlet />
         </div>
       </div>

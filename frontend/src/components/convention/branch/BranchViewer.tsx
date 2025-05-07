@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useGetBranchConventionReg } from '../../../api/branchAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
 }
 
 const BranchViewer = ({ projectId }: Props) => {
@@ -12,13 +13,8 @@ const BranchViewer = ({ projectId }: Props) => {
     const fetchBranchStrategy = async () => {
       setLoading(true);
       try {
-        // 브랜치 전략 조회 API 호출 구현
-        // setTimeout(() => {
-        //   setPattern(
-        //     '^feature/[A-Z]+-[0-9]+|^hotfix/[A-Z]+-[0-9]+|^main$|^release/v[0-9]+\\.[0-9]+\\.[0-9]+$'
-        //   );
-        //   setLoading(false);
-        // }, 500);
+        const result = await useGetBranchConventionReg(Number(projectId));
+        setPattern(result?.branchConventionReg || '');
       } catch (error) {
         console.error('브랜치 전략 조회 실패:', error);
       } finally {

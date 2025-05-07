@@ -18,7 +18,8 @@ import DevelopPage from '../pages/DevelopPage';
 import BuildSelect from '../molecules/buildpreview/BuildSelect';
 import BranchConvention from '../molecules/convention/BranchConvention';
 import CommitConvention from '../molecules/convention/CommitConvetntion';
-
+import SpringSettingPage from '../pages/SpringSettingPage';
+import GitignoreConvention from '../molecules/convention/GitignoreConvention';
 const Router = () => {
   // 로그인 체크
   //   const ProtectedRoute = ({ element }) => {
@@ -30,6 +31,7 @@ const Router = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/gitlab/callback" element={<OAuthCallback />} />
       <Route element={<Layout />}>
+        <Route path="/spring" element={<SpringSettingPage />} />
         <Route path="/test" element={<Testpage />} />
 
         <Route path="/project" element={<ProjectPage />}>
@@ -46,6 +48,7 @@ const Router = () => {
         </Route>
         <Route path="/create" element={<ProjectCreatePage />} />
         <Route path="/project/:projectId/build" element={<BuildSelect />} />
+
         <Route
           path="/project/:projectId/buildpreview"
           element={<BuildPreviewPage />}
@@ -57,6 +60,7 @@ const Router = () => {
           <Route index element={<BranchConvention />} />
           <Route path="branch" element={<BranchConvention />} />
           <Route path="commit" element={<CommitConvention />} />
+          <Route path="gitignore" element={<GitignoreConvention />} />
         </Route>
       </Route>
     </Routes>

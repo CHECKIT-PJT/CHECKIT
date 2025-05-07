@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProjectTable from '../../components/project/ProjectTable';
 import ProjectSearch from '../../components/project/ProjectSearch';
 import ProjectAddButton from '../../components/project/ProjectAddButton';
+import { useGetProjects } from '../../api/projectAPI';
 
 // 프로젝트 타입 정의
 interface Project {
@@ -12,55 +13,20 @@ interface Project {
 }
 
 const ProjectList = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
   const [search, setSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const navigate = useNavigate();
+  const { data: projects = [], isLoading } = useGetProjects();
 
   // 사용자 정보
   const username = '사용자';
 
-  // 프로젝트 데이터 로드 (실제로는 API 호출로 대체)
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        // 실제 구현에서는 API로 데이터를 가져옵니다
-        // const response = await fetch('/api/projects');
-        // const data = await response.json();
-
-        // 임시 데이터
-        const data = [
-          {
-            projectId: 1,
-            projectName: 'ExampleProject',
-            createdAt: '2025-04-26T12:00:00Z',
-          },
-          {
-            projectId: 2,
-            projectName: 'CodeGenAI',
-            createdAt: '2025-03-15T08:30:00Z',
-          },
-        ];
-
-        setProjects(data);
-        setIsLoading(false);
-      } catch (error) {
-        console.error(
-          '프로젝트 데이터를 불러오는 중 오류가 발생했습니다:',
-          error
-        );
-        setIsLoading(false);
-      }
-    };
-
-    fetchProjects();
-  }, []);
-
-  const filteredProjects = projects.filter(project =>
-    project.projectName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProjects = Array.isArray(projects)
+    ? projects.filter((project: Project) =>
+        project.projectName.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
 
   const handleProjectClick = (projectId: number) => {
     navigate(`/project/${projectId}`);
@@ -68,19 +34,6 @@ const ProjectList = () => {
 
   const handleAddProject = () => {
     setIsAdding(true);
-  };
-
-  const handleSaveProject = () => {
-    if (newProjectName.trim()) {
-      const newProject: Project = {
-        projectId: projects.length + 1, // 임시 ID 생성
-        projectName: newProjectName,
-        createdAt: new Date().toISOString(),
-      };
-      setProjects([newProject, ...projects]);
-      setNewProjectName('');
-      setIsAdding(false);
-    }
   };
 
   const handleCancelAdd = () => {
@@ -115,7 +68,11 @@ const ProjectList = () => {
         </div>
       </div>
 
-      {filteredProjects.length > 0 ? (
+      {isLoading ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">로딩 중...</p>
+        </div>
+      ) : filteredProjects.length > 0 ? (
         <ProjectTable
           projects={filteredProjects}
           onDetail={handleProjectClick}

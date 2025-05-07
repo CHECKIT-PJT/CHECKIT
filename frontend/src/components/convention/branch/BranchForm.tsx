@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
+import {
+  useGetBranchConventionReg,
+  useCreateBranchConvention,
+  useUpdateBranchConvention,
+} from '../../../api/branchAPI';
 
 interface Props {
-  projectId: string;
+  projectId: number;
   initialPattern?: string;
   onUpdate: () => void;
 }
@@ -16,19 +21,16 @@ const BranchForm = ({ projectId, initialPattern = '', onUpdate }: Props) => {
   useEffect(() => {
     const checkExistingPattern = async () => {
       try {
-        // TODO: API로 기존 패턴 조회
-        // const response = await fetchBranchPattern(projectId);
-        // setExistingPattern(response.data?.pattern || null);
-
-        // 임시 구현 (실제로는 API 호출)
-        setExistingPattern(initialPattern || null);
-      } catch (err) {
-        console.error('브랜치 패턴 조회 실패:', err);
-      }
+        const result = await useGetBranchConventionReg(Number(projectId));
+        setExistingPattern(result?.branchConventionReg || null);
+        if (result?.branchConventionReg) {
+          setPattern(result.branchConventionReg);
+        }
+      } catch (err) {}
     };
 
     checkExistingPattern();
-  }, [projectId, initialPattern]);
+  }, [projectId]);
 
   const validatePattern = (input: string): boolean => {
     try {
@@ -51,17 +53,12 @@ const BranchForm = ({ projectId, initialPattern = '', onUpdate }: Props) => {
     setIsSubmitting(true);
 
     try {
-      // 패턴 존재 여부에 따라 메서드 결정
-      const method = existingPattern ? 'PUT' : 'POST';
+      if (existingPattern) {
+        await useUpdateBranchConvention(Number(projectId), pattern);
+      } else {
+        await useCreateBranchConvention(Number(projectId), pattern);
+      }
 
-      // TODO: API 호출 구현
-      // if (method === 'POST') {
-      //   await createBranchPattern(projectId, pattern);
-      // } else {
-      //   await updateBranchPattern(projectId, pattern);
-      // }
-
-      // 상태 업데이트
       setExistingPattern(pattern);
       onUpdate();
     } catch (err) {
@@ -116,9 +113,7 @@ const BranchForm = ({ projectId, initialPattern = '', onUpdate }: Props) => {
             ${
               isSubmitting
                 ? 'bg-gray-400 cursor-not-allowed'
-                : existingPattern
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
         >
           {isSubmitting ? '처리 중...' : '설정'}
