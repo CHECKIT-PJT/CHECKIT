@@ -127,7 +127,7 @@ public class ProjectService {
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 
 		// 프로젝트 멤버 조회
-		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsDeletedFalse(
 			projectId);
 
 		// ProjectMember 목록에서 멤버 ID와 역할 추출
