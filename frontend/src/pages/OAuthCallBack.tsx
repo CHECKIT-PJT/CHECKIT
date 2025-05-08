@@ -23,6 +23,7 @@ const OAuthCallback = () => {
     handleAuthCallback(code).then(success => {
       if (success) {
         console.log('success');
+        console.log(success);
         navigate('/project');
       } else {
         navigate('/?error=invalid_token');

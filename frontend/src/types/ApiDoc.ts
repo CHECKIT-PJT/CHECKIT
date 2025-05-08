@@ -17,11 +17,11 @@ export interface DtoItem {
 export interface Dto {
   dtoName: string;
   dtoItems: DtoItem[];
+  dtoType?: string;
 }
 
 export interface ApiResponse {
   statusCode: number;
-  responseJson: string;
   responseDescription: string;
 }
 

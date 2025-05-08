@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DomainButton from '../../components/button/DomainButton';
 import ApiTable from '../../components/apicomponent/ApiTable';
 import ApiDetailModal from '../../components/apicomponent/ApiDetailModal';
@@ -50,17 +50,17 @@ const exampleApiDetail: ApiDetail = {
     dtoItems: [
       { dtoItemName: 'id', dataTypeName: 'Long', isList: false },
       { dtoItemName: 'username', dataTypeName: 'String', isList: false },
+      { dtoItemName: 'email', dataTypeName: 'String', isList: false },
+      { dtoItemName: 'roles', dataTypeName: 'String', isList: true },
     ],
   },
   responses: [
     {
       statusCode: 200,
-      responseJson: '{ "id": 1, "username": "testuser" }',
       responseDescription: '요청 성공',
     },
     {
       statusCode: 404,
-      responseJson: '{ "error": "Not Found" }',
       responseDescription: '사용자를 찾을 수 없음',
     },
   ],
@@ -86,25 +86,72 @@ const DevelopApi = () => {
   });
 
   const handleAdd = () => {
-    setSelectedApi(null);
+    setSelectedApi({
+      apiName: '',
+      endpoint: '',
+      method: 'GET',
+      category: '',
+      description: '',
+      header: '',
+      pathVariables: [],
+      requestParams: [],
+      requestDto: { dtoName: '', dtoItems: [] },
+      responseDto: { dtoName: '', dtoItems: [] },
+      responses: [],
+    });
     setModalOpen(true);
   };
 
   const handleRowClick = (api: ApiDocListItem) => {
+    const apiDetail =
+      api.apiName === exampleApiDetail.apiName
+        ? exampleApiDetail
+        : {
+            apiName: api.apiName,
+            endpoint: api.endpoint,
+            method: api.method,
+            category: api.category,
+            description: api.description,
+            header: api.header,
+            pathVariables: [],
+            requestParams: [],
+            requestDto: { dtoName: '', dtoItems: [] },
+            responseDto: { dtoName: '', dtoItems: [] },
+            responses: [],
+          };
+
     setSelectedApi({
-      ...exampleApiDetail,
-      ...api,
+      apiName: api.apiName,
+      endpoint: api.endpoint,
+      method: api.method,
+      category: api.category,
+      description: api.description,
+      header: api.header,
+      pathVariables: apiDetail.pathVariables,
+      requestParams: apiDetail.requestParams,
+      requestDto: apiDetail.requestDto,
+      responseDto: apiDetail.responseDto,
+      responses: apiDetail.responses,
     });
     setModalOpen(true);
   };
 
   // 저장(등록/수정)
   const handleSave = (form: ApiDetail) => {
+    const newApiItem: ApiDocListItem = {
+      apiSpecId: Date.now(),
+      apiName: form.apiName,
+      endpoint: form.endpoint,
+      method: form.method,
+      category: form.category,
+      description: form.description,
+      header: form.header,
+    };
+
     if (selectedApi) {
-      // 수정
       setData(prev =>
         prev.map(item =>
-          item.apiSpecId === (form as any).apiSpecId
+          item.apiSpecId === (selectedApi as any).apiSpecId
             ? {
                 ...item,
                 apiName: form.apiName,
@@ -118,27 +165,16 @@ const DevelopApi = () => {
         )
       );
     } else {
-      // 추가
-      setData(prev => [
-        ...prev,
-        {
-          apiSpecId: prev.length + 1,
-          apiName: form.apiName,
-          endpoint: form.endpoint,
-          method: form.method,
-          category: form.category,
-          description: form.description,
-          header: form.header,
-        },
-      ]);
+      setData(prev => [...prev, newApiItem]);
     }
+
     setModalOpen(false);
+    setSelectedApi(null);
   };
 
   const handleDelete = () => {
     if (!selectedApi) return;
 
-    // 삭제 확인
     if (window.confirm('정말로 이 API를 삭제하시겠습니까?')) {
       setData(prev =>
         prev.filter(item => item.apiSpecId !== (selectedApi as any).apiSpecId)
