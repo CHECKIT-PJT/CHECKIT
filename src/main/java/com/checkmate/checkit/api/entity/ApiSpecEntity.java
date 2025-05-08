@@ -51,9 +51,8 @@ public class ApiSpecEntity {
 	@Column(name = "description")
 	private String description;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false)
-	private ApiStatus status;
+	@Column(name = "status_code", nullable = false)
+	private Integer statusCode;
 
 	@Column(name = "header")
 	private String header;
@@ -76,12 +75,6 @@ public class ApiSpecEntity {
 		PUT,
 		DELETE,
 		PATCH,
-	}
-
-	public enum ApiStatus {
-		시작전,
-		진행중,
-		완료
 	}
 
 }
