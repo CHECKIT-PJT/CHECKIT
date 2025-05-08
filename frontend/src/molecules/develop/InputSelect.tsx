@@ -20,7 +20,7 @@ const InputSelect = ({
       <ChapterCardLong
         title="ERD 설계"
         subtitle="데이터베이스 구조 설계"
-        icon={<FaDatabase size={18} className="text-gray-200" />}
+        icon={<FaDatabase size={18} className="text-white-500" />}
         bgColor="hover:from-slate-500 hover:to-slate-600 border-t"
         onClick={() => navigate('develop/erd')}
       />

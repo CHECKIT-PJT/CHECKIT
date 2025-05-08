@@ -28,14 +28,14 @@ const BuildSelect = ({
       <ChapterCardLong
         title="Spring 설정"
         subtitle="초기 스프링 설정 선택하기"
-        icon={<SiSpring size={18} className="text-gray-200" />}
+        icon={<SiSpring size={18} className="text-white-500" />}
         bgColor="hover:from-green-800 hover:to-green-900 "
         onClick={() => navigate('spring')}
       />
       <ChapterCardLong
         title="빌드 미리보기"
         subtitle="초기 코드 자동 생성"
-        icon={<FaDesktop size={18} className="text-gray-200" />}
+        icon={<FaDesktop size={18} className="text-white-500" />}
         bgColor="hover:from-stone-600 hover:to-stone-700 "
         onClick={() => navigate('buildpreview')}
       />

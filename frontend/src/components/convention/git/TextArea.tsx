@@ -12,19 +12,26 @@ const TextArea = ({ value, onChange }: TextAreaProps) => {
   const lines = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
 
   useEffect(() => {
-    if (lineRef.current) {
-      const editor = document.getElementById('editor-textarea');
-      if (editor) {
+    const editor = document.getElementById('editor-textarea');
+    if (!editor || !lineRef.current) return;
+
+    const handleScroll = () => {
+      if (lineRef.current) {
         lineRef.current.scrollTop = editor.scrollTop;
       }
-    }
-  }, [value]);
+    };
+
+    editor.addEventListener('scroll', handleScroll);
+    return () => {
+      editor.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   return (
     <div className="flex font-mono border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-gray-100 text-slate-800">
       <div
         ref={lineRef}
-        className="bg-gray-100 text-slate-800 text-right py-2 px-3 select-none"
+        className="bg-gray-100 text-slate-800 text-right py-2 px-3 select-none border-r"
         style={{
           lineHeight: '1.5',
           width: '3rem',

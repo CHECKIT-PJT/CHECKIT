@@ -3,19 +3,28 @@ import InputSelect from '../develop/InputSelect';
 import LeaveButton from '../../components/button/LeaveButton';
 import MoveGitlabButton from '../../components/button/MoveGitlabButton';
 import MemberAddButton from '../../components/button/MemberAddButton';
-import { useNavigate, useParams } from 'react-router-dom';
+import { data, useNavigate, useParams } from 'react-router-dom';
 import DocSelect from '../document/DocSelect';
 import BuildSelect from '../buildpreview/BuildSelect';
-import { useGetProjectById } from '../../api/projectAPI';
+import {
+  useGetProjectById,
+  useApproveMember,
+  useGetProjectMembers,
+} from '../../api/projectAPI';
 
 const ProjectDetail = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
 
   const { data: response } = useGetProjectById(Number(projectId));
+  const { mutate: approveMember } = useApproveMember();
 
   const onClickBack = () => {
     navigate('/project');
+  };
+
+  const handleApprove = (memberId: number) => {
+    approveMember({ projectId: Number(projectId), memberId });
   };
 
   if (!response?.result) {
@@ -23,6 +32,9 @@ const ProjectDetail = () => {
   }
 
   const projectData = response.result;
+  const isOwner = projectData.projectMembers.some(
+    (member: any) => member.role === 'OWNER' && member.isApproved
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -45,7 +57,7 @@ const ProjectDetail = () => {
       </div>
 
       <div className="flex flex-1">
-        <div className="w-1/5 p-4 border-r border-gray-200 flex flex-col">
+        <div className="w-1/5 py-2 pr-4 border-r border-gray-200 flex flex-col">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg">팀 멤버</h3>
@@ -61,15 +73,29 @@ const ProjectDetail = () => {
                   nickname: string;
                   userName: string;
                   role: string;
+                  isApproved: boolean;
                 }) => (
-                  <li key={member.id} className="mb-2">
-                    <span className="font-medium">{member.nickname}</span>
-
-                    <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                      {member.role}
-                    </span>
-                    <div className="text-xs text-gray-400 ml-1">
-                      {member.userName}
+                  <li key={member.id} className="mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="font-medium">{member.nickname}</span>
+                        <span className="ml-4 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                          {member.role}
+                        </span>
+                        <div className="text-xs text-gray-400 ml-1 mt-1">
+                          {member.userName}
+                        </div>
+                      </div>
+                      {isOwner &&
+                        !member.isApproved &&
+                        member.role !== 'OWNER' && (
+                          <button
+                            onClick={() => handleApprove(member.id)}
+                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                          >
+                            승인 하기
+                          </button>
+                        )}
                     </div>
                   </li>
                 )

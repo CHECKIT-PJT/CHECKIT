@@ -4,13 +4,33 @@ import ProjectTable from '../../components/project/ProjectTable';
 import ProjectSearch from '../../components/project/ProjectSearch';
 import ProjectAddButton from '../../components/project/ProjectAddButton';
 import { useGetProjects } from '../../api/projectAPI';
+import { getToken } from '../../api/authAPI';
 
-// 프로젝트 타입 정의
 interface Project {
   projectId: number;
   projectName: string;
   createdAt: string;
 }
+
+const getUserNameFromToken = (): string => {
+  const token = getToken();
+  if (!token) return '';
+  try {
+    const payload = token.split('.')[1];
+    const decodedPayload = decodeURIComponent(
+      atob(payload)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+    const decoded = JSON.parse(decodedPayload);
+    return decoded.nickname || '';
+  } catch (err) {
+    return '사용자';
+  }
+};
 
 const ProjectList = () => {
   const [search, setSearch] = useState('');
@@ -19,8 +39,7 @@ const ProjectList = () => {
   const navigate = useNavigate();
   const { data: projects = [], isLoading } = useGetProjects();
 
-  // 사용자 정보
-  const username = '사용자';
+  const username = getUserNameFromToken();
 
   const filteredProjects = Array.isArray(projects)
     ? projects.filter((project: Project) =>
@@ -30,15 +49,6 @@ const ProjectList = () => {
 
   const handleProjectClick = (projectId: number) => {
     navigate(`/project/${projectId}`);
-  };
-
-  const handleAddProject = () => {
-    setIsAdding(true);
-  };
-
-  const handleCancelAdd = () => {
-    setNewProjectName('');
-    setIsAdding(false);
   };
 
   return (

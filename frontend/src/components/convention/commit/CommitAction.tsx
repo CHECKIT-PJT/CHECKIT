@@ -39,15 +39,24 @@ const CommitAction = ({ projectId, onUpdate }: Props) => {
 
     try {
       const response = await useDownloadCommitConvention(Number(projectId));
-      const blob = new Blob([response], { type: 'text/markdown' });
+
+      // Content-Disposition 헤더에서 파일명 추출
+      const disposition = response.headers['content-disposition'];
+      const match = disposition?.match(/filename="?(.+?)"?$/);
+      const filename = match?.[1] || 'commit-msg';
+
+      // 파일 다운로드 처리
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'],
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'COMMIT_CONVENTION.md';
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('파일 다운로드 실패:', error);
     } finally {
