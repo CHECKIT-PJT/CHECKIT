@@ -29,6 +29,9 @@ public class User extends BaseEntity {
 	@Column(name = "user_name", nullable = false, length = 30)
 	private String userName;
 
+	@Column(name = "nickname", length = 30)
+	private String nickname;
+
 	@Column(name = "user_email", nullable = false, length = 50)
 	private String userEmail;
 
@@ -40,9 +43,11 @@ public class User extends BaseEntity {
 	private String refreshToken;
 
 	@Builder
-	public User(String externalId, String userName, String userEmail, AuthProvider loginProvider, String refreshToken) {
+	public User(String externalId, String userName, String nickname, String userEmail, AuthProvider loginProvider,
+		String refreshToken) {
 		this.externalId = externalId;
 		this.userName = userName;
+		this.nickname = nickname;
 		this.userEmail = userEmail;
 		this.loginProvider = loginProvider;
 		this.refreshToken = refreshToken;
@@ -54,6 +59,10 @@ public class User extends BaseEntity {
 
 	public void updateUserName(String userName) {
 		this.userName = userName;
+	}
+
+	public void updateNickname(String nickname) {
+		this.nickname = nickname;
 	}
 
 	public void updateUserEmail(String email) {

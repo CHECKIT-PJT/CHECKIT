@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,15 +13,17 @@ import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.common.mail.MailService;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
+import com.checkmate.checkit.project.dto.request.DockerComposeUpdateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
-import com.checkmate.checkit.project.dto.response.ProjectMemberListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
@@ -28,6 +31,7 @@ import com.checkmate.checkit.project.entity.ProjectMemberId;
 import com.checkmate.checkit.project.entity.ProjectMemberRole;
 import com.checkmate.checkit.project.repository.ProjectMemberRepository;
 import com.checkmate.checkit.project.repository.ProjectRepository;
+import com.checkmate.checkit.user.entity.User;
 import com.checkmate.checkit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +47,7 @@ public class ProjectService {
 	private final UserRepository userRepository;
 	private final MailService mailService;
 	private final RedisTemplate<String, Object> redisTemplate;
+	private final DockerComposeService dockerComposeService;
 
 	private final String PROJECT_INVITE_URL = "http://localhost:5173/invite";
 
@@ -122,17 +127,17 @@ public class ProjectService {
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 
 		// 프로젝트 멤버 조회
-		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsDeletedFalse(
 			projectId);
 
 		// ProjectMember 목록에서 멤버 ID와 역할 추출
 		List<ProjectMemberResponse> memberResponses = projectMembers.stream()
 			.map(projectMember -> {
 				Integer memberId = projectMember.getId().getUserId();
-				String memberName = userRepository.findById(memberId)
-					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
-					.getUserName();
-				return new ProjectMemberResponse(memberId, memberName, projectMember.getRole());
+				User user = userRepository.findById(memberId)
+					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
+				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
+					projectMember.getRole(), projectMember.isApproved());
 			})
 			.toList();
 
@@ -230,7 +235,7 @@ public class ProjectService {
 	 * @return projectMemberResponse : 프로젝트 멤버 응답 DTO
 	 */
 	@Transactional(readOnly = true)
-	public List<ProjectMemberListResponse> getProjectMembers(String token, Integer projectId) {
+	public List<ProjectMemberResponse> getProjectMembers(String token, Integer projectId) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
@@ -247,10 +252,10 @@ public class ProjectService {
 		return projectMembers.stream()
 			.map(projectMember -> {
 				Integer memberId = projectMember.getId().getUserId();
-				String memberName = userRepository.findById(memberId)
-					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
-					.getUserName();
-				return new ProjectMemberListResponse(memberId, memberName, projectMember.getRole(),
+				User user = userRepository.findById(memberId)
+					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
+				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
+					projectMember.getRole(),
 					projectMember.isApproved());
 			})
 			.toList();
@@ -302,21 +307,15 @@ public class ProjectService {
 	}
 
 	/**
-	 * 프로젝트 참여 요청
+	 * 프로젝트 초대 요청
 	 * @param token : JWT 토큰
-	 * @param projectId : 프로젝트 ID
+	 * @param projectParticipateRequest : 프로젝트 초대 요청 DTO
 	 */
 	@Transactional
-	public void requestProjectParticipation(String token, Integer projectId,
+	public void requestProjectParticipation(String token,
 		ProjectParticipateRequest projectParticipateRequest) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
-
-		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-			loginUserId, projectId)) {
-			throw new CommonException(ErrorCode.ALREADY_MEMBER);
-		}
 
 		// 초대 코드로 프로젝트 ID 조회
 		String key = "invite:" + projectParticipateRequest.inviteCode();
@@ -324,6 +323,14 @@ public class ProjectService {
 
 		if (projectIdString == null) {
 			throw new CommonException(ErrorCode.INVALID_INVITE_CODE);
+		}
+
+		Integer projectId = Integer.parseInt(projectIdString);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.ALREADY_MEMBER);
 		}
 
 		// 프로젝트 ID와 회원 ID로 ProjectMemberId 생성
@@ -365,6 +372,95 @@ public class ProjectService {
 
 		// 프로젝트 멤버 승인
 		projectMember.approve();
+	}
+
+	/**
+	 * Docker Compose 생성
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param dockerComposeCreateRequest : Docker Compose 생성 요청 DTO
+	 */
+	@Transactional
+	public void createDockerCompose(String token, Integer projectId,
+		DockerComposeCreateRequest dockerComposeCreateRequest) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 생성 로직 구현
+		dockerComposeService.generateAndSaveDockerComposeFile(projectId,
+			dockerComposeCreateRequest);
+	}
+
+	/**
+	 * Docker Compose 조회
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return dockerComposeResponse : Docker Compose 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public DockerComposeResponse getDockerCompose(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 조회
+		return dockerComposeService.getDockerComposeFile(projectId);
+	}
+
+	/**
+	 * Docker Compose 수정
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param dockerComposeUpdateRequest : Docker Compose 수정 요청 DTO
+	 */
+	@Transactional
+	public void updateDockerCompose(String token, Integer projectId,
+		DockerComposeUpdateRequest dockerComposeUpdateRequest) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 수정
+		dockerComposeService.updateDockerComposeFile(projectId,
+			dockerComposeUpdateRequest);
+	}
+
+	/**
+	 * Docker Compose 삭제
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 */
+	@Transactional
+	public void deleteDockerCompose(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 삭제
+		dockerComposeService.deleteDockerComposeFile(projectId);
+	}
+
+	/**
+	 * Docker Compose 파일 다운로드
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return ByteArrayResource : Docker Compose 파일 리소스
+	 */
+	@Transactional(readOnly = true)
+	public ByteArrayResource createDockerComposeFile(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Docker Compose 파일 다운로드
+		return dockerComposeService.createDockerComposeFile(projectId);
 	}
 
 	/**

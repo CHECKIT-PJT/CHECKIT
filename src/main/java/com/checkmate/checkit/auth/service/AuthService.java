@@ -90,10 +90,12 @@ public class AuthService {
 
 		// 사용자 정보로 DB에 사용자 등록 및 OAuthToken 저장
 		User user = processUserLogin(userInfo.get("id").toString(), (String)userInfo.get("login"),
+			userInfo.get("name").toString(),
 			getEmailFromGithub(userInfo, accessToken), AuthProvider.GITHUB, accessToken, response);
 
 		// Access 토큰 생성
-		String jwtAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName());
+		String jwtAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName(),
+			user.getNickname());
 
 		return new AuthResponse(jwtAccessToken, new LoginResponse(user));
 	}
@@ -116,6 +118,7 @@ public class AuthService {
 		// 필수 정보 확인
 		String externalId = String.valueOf(userInfo.get("id"));
 		String username = (String)userInfo.get("username");
+		String nickname = (String)userInfo.get("name");
 		String email = (String)userInfo.get("email");
 
 		if (email == null || email.isEmpty()) {
@@ -124,10 +127,11 @@ public class AuthService {
 		}
 
 		// 사용자 정보로 DB에 사용자 등록 및 OAuthToken 저장
-		User user = processUserLogin(externalId, username, email, AuthProvider.GITLAB, accessToken, response);
+		User user = processUserLogin(externalId, username, nickname, email, AuthProvider.GITLAB, accessToken, response);
 
 		// Access 토큰 생성
-		String jwtAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName());
+		String jwtAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName(),
+			user.getNickname());
 
 		return new AuthResponse(jwtAccessToken, new LoginResponse(user));
 	}
@@ -136,13 +140,15 @@ public class AuthService {
 	 * 사용자 로그인 처리 공통 로직
 	 * @param externalId : 외부 ID (GitHub/GitLab ID)
 	 * @param userName : 사용자 이름
+	 * @param nickname :사용자 닉네임
 	 * @param email : 사용자 이메일
 	 * @param provider : 플랫폼(GitHub/GitLab)
 	 * @param accessToken : 액세스 토큰
 	 * @param response : HttpServletResponse
 	 * @return User : 사용자 정보
 	 */
-	public User processUserLogin(String externalId, String userName, String email, AuthProvider provider,
+	public User processUserLogin(String externalId, String userName, String nickname, String email,
+		AuthProvider provider,
 		String accessToken, HttpServletResponse response) {
 
 		// 사용자 정보 조회 또는 생성
@@ -150,6 +156,7 @@ public class AuthService {
 			User newUser = User.builder()
 				.externalId(externalId)
 				.userName(userName)
+				.nickname(nickname)
 				.userEmail(email)
 				.loginProvider(provider)
 				.build();
@@ -162,8 +169,8 @@ public class AuthService {
 		// 사용자 정보 업데이트
 		user.updateUserName(userName);
 		user.updateUserEmail(email);
+		user.updateNickname(nickname);
 		user.updateRefreshToken(jwtRefreshToken);
-		userRepository.save(user);
 
 		// OAuthToken 저장
 		saveOAuthToken(user, provider, accessToken);
@@ -387,7 +394,8 @@ public class AuthService {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
 		User user = userRepository.findById(userId).orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
 
-		String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName());
+		String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName(),
+			user.getNickname());
 
 		return new AuthResponse(newAccessToken, new LoginResponse(user));
 	}

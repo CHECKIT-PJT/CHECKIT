@@ -9,11 +9,13 @@ import lombok.NoArgsConstructor;
 public class LoginResponse {
 	private Integer userId;
 	private String userName;
+	private String nickname;
 	private String provider;
 
 	public LoginResponse(User user) {
 		this.userId = user.getId();
 		this.userName = user.getUserName();
+		this.nickname = user.getNickname();
 		this.provider = user.getLoginProvider().name();
 	}
 }

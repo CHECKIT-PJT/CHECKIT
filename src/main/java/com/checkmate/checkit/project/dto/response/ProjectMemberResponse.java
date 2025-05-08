@@ -9,5 +9,7 @@ import lombok.Getter;
 public class ProjectMemberResponse {
 	private Integer id;
 	private String userName;
+	private String nickname;
 	private ProjectMemberRole role;
+	private Boolean isApproved;
 }
