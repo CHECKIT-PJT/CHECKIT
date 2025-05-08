@@ -16,6 +16,7 @@ interface ProjectMember {
   nickname: string;
   userEmail: string;
   role: string;
+  isApproved: boolean;
 }
 
 interface ProjectDetail extends Project {
@@ -145,6 +146,56 @@ export const useCreateInvitationLink = () => {
     },
     onSuccess: (_, projectId) => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+    },
+  });
+};
+
+export const useAcceptInvite = () => {
+  return useMutation({
+    mutationFn: async (inviteCode: string) => {
+      const response = await axiosInstance.post('/api/project/participation', {
+        inviteCode,
+      });
+      console.log('초대 성공', response.data);
+      return response.data;
+    },
+  });
+};
+
+// 프로젝트 멤버 승인
+export const useApproveMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      memberId,
+    }: {
+      projectId: number;
+      memberId: number;
+    }) => {
+      console.log('승인 성공', projectId, memberId);
+      const response = await axiosInstance.post(
+        `/api/project/${projectId}/invitations/accept`,
+        {
+          userId: memberId,
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+    },
+  });
+};
+
+export const useGetProjectMembers = (projectId: number) => {
+  return useQuery({
+    queryKey: ['projectMembers', projectId],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/project/${projectId}/members`
+      );
+      return response.data;
     },
   });
 };

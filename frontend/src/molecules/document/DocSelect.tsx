@@ -18,7 +18,7 @@ const DocSelect = ({ className = '', direction = 'col' }: DocSelectProps) => {
       <ChapterCardLong
         title="README.md"
         subtitle="프로젝트 개요 및 사용법 확인"
-        icon={<VscGithubAlt size={18} className="text-gray-200" />}
+        icon={<VscGithubAlt size={18} className="text-white-500" />}
         bgColor="hover:from-slate-500 hover:to-slate-600 border-t"
         onClick={() => navigate('doc/readme')}
       />

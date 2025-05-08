@@ -1,8 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TbCloudQuestion } from 'react-icons/tb';
 
 const ToggleButton = () => {
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowShortcuts(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const shortcuts = [
     { action: '편집', keys: 'Enter' },
@@ -32,12 +49,12 @@ const ToggleButton = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={buttonRef}>
       <button
         onClick={toggleShortcuts}
-        className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-full shadow-md transition-all duration-200 z-50"
+        className="flex items-center text-xs justify-center bg-blue-800 hover:bg-blue-700 text-white font-bold p-2 rounded-full shadow-md transition-all duration-200 z-50"
       >
-        <TbCloudQuestion size={20} />
+        도움말
       </button>
 
       {showShortcuts && (

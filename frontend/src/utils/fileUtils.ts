@@ -1,4 +1,4 @@
-import { ProjectData } from "../types";
+import { ProjectData } from '../types';
 
 /**
  * 파일 개수 계산 함수
