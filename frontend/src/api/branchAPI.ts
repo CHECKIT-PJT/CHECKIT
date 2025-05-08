@@ -42,7 +42,10 @@ export const useDeleteBranchConvention = async (projectId: number) => {
 
 export const useDownloadBranchConvention = async (projectId: number) => {
   const response = await axiosInstance.get(
-    `/api/git/branch-strategy/${projectId}/download`
+    `/api/git/branch-strategy/${projectId}/download`,
+    {
+      responseType: 'blob',
+    }
   );
-  return response.data;
+  return response;
 };

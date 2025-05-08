@@ -42,8 +42,10 @@ export const useDeleteCommitConvention = async (projectId: number) => {
 
 export const useDownloadCommitConvention = async (projectId: number) => {
   const response = await axiosInstance.get(
-    `/api/git/commit-convention/${projectId}/download`
+    `/api/git/commit-convention/${projectId}/download`,
+    {
+      responseType: 'blob',
+    }
   );
-  console.log(response.data);
-  return response.data;
+  return response;
 };

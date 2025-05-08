@@ -60,10 +60,15 @@ const DevelopFunc = () => {
   const [selectedFunc, setSelectedFunc] = useState<FuncDetail | null>(null);
   const [data, setData] = useState<FuncListItem[]>(exampleFuncList);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const filteredData = data.filter(func => {
-    if (selectedCategory === 'ALL') return true;
-    return func.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === 'ALL' || func.category === selectedCategory;
+    const matchesSearch = func.category
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
   });
 
   const handleAdd = () => {
@@ -133,15 +138,21 @@ const DevelopFunc = () => {
   };
 
   return (
-    <div className="mt-5 min-h-screen w-full flex flex-col bg-gray-50">
-      <DomainButton
-        domains={categoryList}
-        selectedDomain={selectedCategory}
-        onSelect={setSelectedCategory}
-      />
+    <div className="mt-2 min-h-screen w-full flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col justify-center items-center w-full">
-        <div className="w-full text-right mb-4">
-          <FuncAddButton onClick={handleAdd} />
+        <div className="w-full flex justify-between items-center mb-4">
+          <div className="flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="카테고리로 검색"
+              className="text-sm w-full px-4 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="ml-4">
+            <FuncAddButton onClick={handleAdd} />
+          </div>
         </div>
         <div className="w-full h-full flex-1 flex justify-center items-start">
           <FuncTable

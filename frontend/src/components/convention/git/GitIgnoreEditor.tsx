@@ -7,7 +7,7 @@ interface GitIgnoreEditorProps {
 
 const GitIgnoreEditor = ({ content, onChange }: GitIgnoreEditorProps) => {
   return (
-    <div className="border rounded p-2 bg-gray-100">
+    <div className="border rounded p-4 bg-slate-200">
       <TextArea value={content} onChange={onChange} />
     </div>
   );

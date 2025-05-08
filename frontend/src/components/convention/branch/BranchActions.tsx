@@ -39,12 +39,20 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
 
     try {
       const response = await useDownloadBranchConvention(Number(projectId));
+
+      // Content-Disposition 헤더에서 파일명 추출
+      const disposition = response.headers['content-disposition'];
+      const match = disposition?.match(/filename="?(.+?)"?$/);
+      const filename = match?.[1] || 'pre-commit';
+
       // 파일 다운로드 처리
-      const blob = new Blob([response], { type: 'text/plain' });
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'],
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'branch-convention.txt';
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

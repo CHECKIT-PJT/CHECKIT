@@ -66,23 +66,20 @@ const exampleApiDetail: ApiDetail = {
   ],
 };
 
-const domainList = [
-  'APIDOCS',
-  'MEMBER',
-  'REQUIREMENTDOCS',
-  'INITIALIZER',
-  'JIRA',
-];
-
 const DevelopApi = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedApi, setSelectedApi] = useState<ApiDetail | null>(null);
   const [data, setData] = useState<ApiDocListItem[]>(exampleApiDocList);
   const [selectedDomain, setSelectedDomain] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const filteredData = data.filter(api => {
-    if (selectedDomain === 'ALL') return true;
-    return api.category === selectedDomain;
+    const matchesDomain =
+      selectedDomain === 'ALL' || api.category === selectedDomain;
+    const matchesSearch = api.category
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesDomain && matchesSearch;
   });
 
   const handleAdd = () => {
@@ -136,7 +133,6 @@ const DevelopApi = () => {
     setModalOpen(true);
   };
 
-  // 저장(등록/수정)
   const handleSave = (form: ApiDetail) => {
     const newApiItem: ApiDocListItem = {
       apiSpecId: Date.now(),
@@ -184,15 +180,21 @@ const DevelopApi = () => {
   };
 
   return (
-    <div className="mt-5 min-h-screen w-full flex flex-col bg-gray-50">
-      <DomainButton
-        domains={domainList}
-        selectedDomain={selectedDomain}
-        onSelect={setSelectedDomain}
-      />
+    <div className="mt-2 min-h-screen w-full flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col justify-center items-center w-full">
-        <div className="w-full text-right mb-4">
-          <ApiAddButton onClick={handleAdd} />
+        <div className="w-full flex justify-between items-center mb-4">
+          <div className="flex-1 max-w-md">
+            <input
+              type="text"
+              placeholder="카테고리로 검색"
+              className="text-sm w-full px-4 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="ml-4">
+            <ApiAddButton onClick={handleAdd} />
+          </div>
         </div>
         <div className="w-full h-full flex-1 flex justify-center items-start">
           <ApiTable
