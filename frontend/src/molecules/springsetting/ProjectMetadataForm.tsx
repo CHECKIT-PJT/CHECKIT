@@ -6,6 +6,10 @@ interface ProjectMetadataFormProps {
   setGroupId: (value: string) => void;
   artifactId: string;
   setArtifactId: (value: string) => void;
+  projectName: string; // 추가
+  setProjectName: (value: string) => void; // 추가
+  packageName: string; // 추가
+  setPackageName: (value: string) => void; // 추가
   description: string;
   setDescription: (value: string) => void;
   className?: string;
@@ -16,6 +20,10 @@ const ProjectMetadataForm: React.FC<ProjectMetadataFormProps> = ({
   setGroupId,
   artifactId,
   setArtifactId,
+  projectName, // 추가
+  setProjectName, // 추가
+  packageName, // 추가
+  setPackageName, // 추가
   description,
   setDescription,
   className = "",
@@ -34,6 +42,20 @@ const ProjectMetadataForm: React.FC<ProjectMetadataFormProps> = ({
         value={artifactId}
         onChange={setArtifactId}
         placeholder="demo"
+        required
+      />
+      <Input
+        label="프로젝트 이름"
+        value={projectName}
+        onChange={setProjectName}
+        placeholder="My Spring Project"
+        required
+      />
+      <Input
+        label="패키지명"
+        value={packageName}
+        onChange={setPackageName}
+        placeholder="com.example.demo"
         required
       />
       <TextArea
