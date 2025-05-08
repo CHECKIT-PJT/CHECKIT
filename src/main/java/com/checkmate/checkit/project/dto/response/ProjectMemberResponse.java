@@ -11,4 +11,5 @@ public class ProjectMemberResponse {
 	private String userName;
 	private String nickname;
 	private ProjectMemberRole role;
+	private Boolean isApproved;
 }

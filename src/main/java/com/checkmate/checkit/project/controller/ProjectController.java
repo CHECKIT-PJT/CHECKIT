@@ -30,7 +30,7 @@ import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
-import com.checkmate.checkit.project.dto.response.ProjectMemberListResponse;
+import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 
@@ -118,12 +118,12 @@ public class ProjectController {
 
 	// 프로젝트 멤버 목록 조회
 	@GetMapping("/{projectId}/members")
-	public ResponseEntity<JSONResponse<List<ProjectMemberListResponse>>> getProjectMembers(
+	public ResponseEntity<JSONResponse<List<ProjectMemberResponse>>> getProjectMembers(
 		@RequestHeader("Authorization") String authorization, @PathVariable Integer projectId) {
 
 		String token = authorization.substring(7);
 
-		List<ProjectMemberListResponse> projectMembers = projectService.getProjectMembers(token, projectId);
+		List<ProjectMemberResponse> projectMembers = projectService.getProjectMembers(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, projectMembers));
 	}
