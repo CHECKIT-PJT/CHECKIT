@@ -328,7 +328,7 @@ public class ProjectService {
 		Integer projectId = Integer.parseInt(projectIdString);
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsDeletedFalse(
 			loginUserId, projectId)) {
 			throw new CommonException(ErrorCode.ALREADY_MEMBER);
 		}

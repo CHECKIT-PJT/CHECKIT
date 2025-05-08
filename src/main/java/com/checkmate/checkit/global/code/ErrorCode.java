@@ -42,7 +42,7 @@ public enum ErrorCode {
 	CANNOT_LEAVE_PROJECT_OWNER(403, FORBIDDEN, "프로젝트 소유자는 프로젝트를 나갈 수 없습니다."),
 	CANNOT_DELETE_PROJECT_MEMBER(403, FORBIDDEN, "프로젝트 소유자만 프로젝트를 삭제할 수 있습니다."),
 	PROJECT_MEMBER_EXISTS(400, BAD_REQUEST, "프로젝트에 멤버가 존재하여 삭제할 수 없습니다."),
-	ALREADY_MEMBER(400, BAD_REQUEST, "이미 프로젝트에 참여하고 있습니다."),
+	ALREADY_MEMBER(400, BAD_REQUEST, "이미 프로젝트에 참여 요청을 했거나 가입한 상태입니다."),
 	INVALID_INVITE_CODE(400, BAD_REQUEST, "유효하지 않은 초대 코드입니다."),
 	INVALID_INVITE_MEMBER(400, BAD_REQUEST, "초대된 멤버가 아닙니다."),
 
