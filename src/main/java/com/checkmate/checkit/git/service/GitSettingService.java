@@ -11,9 +11,11 @@ import com.checkmate.checkit.git.dto.request.BranchStrategyUpdateRequest;
 import com.checkmate.checkit.git.dto.request.CommitConventionCreateRequest;
 import com.checkmate.checkit.git.dto.request.CommitConventionUpdateRequest;
 import com.checkmate.checkit.git.dto.request.GitIgnoreCreateRequest;
+import com.checkmate.checkit.git.dto.request.GitPushRequest;
 import com.checkmate.checkit.git.dto.response.BranchStrategyResponse;
 import com.checkmate.checkit.git.dto.response.CommitConventionResponse;
 import com.checkmate.checkit.git.dto.response.GitIgnoreResponse;
+import com.checkmate.checkit.git.dto.response.GitPushResponse;
 import com.checkmate.checkit.git.entity.GitSettingsEntity;
 import com.checkmate.checkit.git.repository.GitSettingRepository;
 import com.checkmate.checkit.global.code.ErrorCode;
@@ -29,6 +31,7 @@ public class GitSettingService {
 	private final GitSettingRepository gitSettingRepository;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final ProjectService projectService;
+	private final GitPushService gitPushService;
 
 	/**
 	 * GitIgnore 생성
@@ -386,6 +389,27 @@ public class GitSettingService {
 
 		// ByteArrayResource로 변환하여 반환
 		return new ByteArrayResource(scriptContent.getBytes(StandardCharsets.UTF_8));
+	}
+
+	/**
+	 * GitPushRequest를 생성하고 푸시
+	 *
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 * @param gitPushRequest GitPushRequest
+	 * @return GitPushResponse
+	 */
+	@Transactional(readOnly = true)
+	public GitPushResponse createAndPushRepository(String token, Integer projectId, GitPushRequest gitPushRequest) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// Git push 요청
+		// 내부에서는 repository를 생성하고, 코드를 생성하여 푸시
+
+		return gitPushService.pushRepository(token, projectId, gitPushRequest);
 	}
 
 	/**
