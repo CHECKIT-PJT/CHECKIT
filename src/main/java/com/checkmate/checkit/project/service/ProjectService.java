@@ -24,7 +24,6 @@ import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
-import com.checkmate.checkit.project.dto.response.ProjectMemberListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
@@ -138,7 +137,7 @@ public class ProjectService {
 				User user = userRepository.findById(memberId)
 					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
 				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
-					projectMember.getRole());
+					projectMember.getRole(), projectMember.isApproved());
 			})
 			.toList();
 
@@ -236,7 +235,7 @@ public class ProjectService {
 	 * @return projectMemberResponse : 프로젝트 멤버 응답 DTO
 	 */
 	@Transactional(readOnly = true)
-	public List<ProjectMemberListResponse> getProjectMembers(String token, Integer projectId) {
+	public List<ProjectMemberResponse> getProjectMembers(String token, Integer projectId) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
@@ -255,7 +254,7 @@ public class ProjectService {
 				Integer memberId = projectMember.getId().getUserId();
 				User user = userRepository.findById(memberId)
 					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
-				return new ProjectMemberListResponse(memberId, user.getUserName(), user.getNickname(),
+				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
 					projectMember.getRole(),
 					projectMember.isApproved());
 			})
