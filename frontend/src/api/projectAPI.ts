@@ -13,6 +13,7 @@ interface Project {
 interface ProjectMember {
   userId: number;
   userName: string;
+  nickname: string;
   userEmail: string;
   role: string;
 }
