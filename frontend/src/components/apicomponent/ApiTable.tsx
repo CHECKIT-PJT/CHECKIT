@@ -37,7 +37,7 @@ const ApiTable = ({ data, onRowClick, selectedDomain }: ApiTableProps) => {
             <td className="py-4 px-2 text-sm">{api.endpoint}</td>
             <td className="py-4 px-2 text-center text-sm">
               <span
-                className={`px-3 py-1 rounded text-white font-bold text-sm ${
+                className={`px-3 py-1 rounded text-white font-bold text-xs ${
                   api.method === 'GET'
                     ? 'bg-emerald-500'
                     : api.method === 'POST'
@@ -53,12 +53,12 @@ const ApiTable = ({ data, onRowClick, selectedDomain }: ApiTableProps) => {
               </span>
             </td>
             <td className="py-4 px-2 text-center">
-              <span className="px-4 py-2 rounded font-bold bg-white text-cyan-900">
+              <span className="px-4 py-2 rounded font-bold bg-white text-cyan-900 text-sm">
                 {api.category}
               </span>
             </td>
             <td
-              className="py-4 px-2 truncate max-w-[200px]"
+              className="py-4 px-2 truncate text-sm max-w-[200px]"
               title={api.description}
             >
               {api.description.length > 30

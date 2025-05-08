@@ -71,8 +71,7 @@ const DevelopErd = () => {
         console.log('STOMP 연결 성공');
 
         stompClient.subscribe(`/sub/erd/${projectId}`, message => {
-          const parsed = JSON.parse(message.body); // 메시지를 파싱
-          console.log('받은 메세지 :', parsed.payload);
+          const parsed = JSON.parse(message.body);
 
           const myUserId = getUserIdFromToken(token);
 
