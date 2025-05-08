@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { FiHelpCircle, FiInfo } from "react-icons/fi";
-
+import { IoArrowBack } from "react-icons/io5";
+import { useNavigate } from "react-router-dom";
 import Badge from "../components/springsetting/Badge";
 
 import ProjectMetadataForm from "../molecules/springsetting/ProjectMetadataForm";
@@ -35,7 +36,7 @@ interface SpringBootVersion {
 
 const SpringSettingsPage: React.FC = () => {
   const { projectId } = useParams();
-
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
   const [settingsExist, setSettingsExist] = useState<boolean>(false);
 
@@ -275,6 +276,9 @@ const SpringSettingsPage: React.FC = () => {
     );
   };
 
+  const onClickBack = () => {
+    navigate(`/project/${projectId}`);
+  };
   const toggleDependencyInfo = (id: string) => {
     setShowDependencyInfo(showDependencyInfo === id ? null : id);
   };
@@ -326,11 +330,6 @@ const SpringSettingsPage: React.FC = () => {
         dependencies: dependencies.filter((d) => d.selected).map((d) => d.id),
       };
 
-      console.log(
-        "요청 데이터 (camelCase 형식):",
-        JSON.stringify(requestData, null, 2)
-      );
-
       try {
         if (settingsExist) {
           console.log("기존 설정이 있어 PUT 요청으로 업데이트합니다.");
@@ -377,11 +376,17 @@ const SpringSettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* 헤더 */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="bg-gray-50">
+        <div className=" mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
+            <button
+              onClick={onClickBack}
+              className="p-1 hover:bg-gray-100 rounded-full pr-3"
+            >
+              <IoArrowBack className="w-5 h-5" />
+            </button>
             <h1 className="text-xl font-semibold text-gray-900">
               Spring 프로젝트 설정
             </h1>
@@ -389,16 +394,10 @@ const SpringSettingsPage: React.FC = () => {
               사용자 인증 서비스
             </Badge>
           </div>
-
-          <div className="flex items-center space-x-4">
-            <button className="text-gray-500 hover:text-gray-700">
-              <FiHelpCircle className="h-5 w-5" />
-            </button>
-          </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <main className="flex-0 w-full px-4 py-1">
         <div className="bg-white shadow-sm rounded-lg p-6">
           {settingsExist && (
             <div className="mb-6 p-3 bg-blue-50 rounded-md flex items-center">

@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import ProjectHeader from '../molecules/buildpreview/ProjectHeader';
-import FileExplorer from '../molecules/buildpreview/FileExplorer';
-import CodeViewer from '../molecules/buildpreview/CodeViewer';
-import ProjectStats from '../molecules/buildpreview/ProjectStats';
-import ActionBar from '../molecules/buildpreview/ActionBar';
-import useThemeDetection from '../hooks/useThemeDetection';
+import { useState, useEffect } from "react";
+import ProjectHeader from "../molecules/buildpreview/ProjectHeader";
+import FileExplorer from "../molecules/buildpreview/FileExplorer";
+import CodeViewer from "../molecules/buildpreview/CodeViewer";
+import ProjectStats from "../molecules/buildpreview/ProjectStats";
+import ActionBar from "../molecules/buildpreview/ActionBar";
+import useThemeDetection from "../hooks/useThemeDetection";
 import {
   sampleApiResponse,
   downloadProject,
   createNewProject,
-} from '../api/buildpreview';
-import { countFiles, createFilePath } from '../utils/fileUtils';
-import { ExpandedFolders, SelectedFile } from '../types';
+} from "../api/buildpreview";
+import { countFiles, createFilePath } from "../utils/fileUtils";
+import { ExpandedFolders, SelectedFile } from "../types";
 
 /**
  * 프로젝트 미리보기 페이지 컴포넌트
@@ -61,10 +61,10 @@ const BuildPreviewPage: React.FC = () => {
   const handleDownload = async (): Promise<void> => {
     try {
       await downloadProject();
-      alert('프로젝트 다운로드가 완료되었습니다.');
+      alert("프로젝트 다운로드가 완료되었습니다.");
     } catch (error) {
-      console.error('다운로드 중 오류 발생:', error);
-      alert('다운로드 중 오류가 발생했습니다.');
+      console.error("다운로드 중 오류 발생:", error);
+      alert("다운로드 중 오류가 발생했습니다.");
     }
   };
 
@@ -76,8 +76,8 @@ const BuildPreviewPage: React.FC = () => {
       await createNewProject();
       // 새 프로젝트 생성 페이지로 이동하는 로직 추가
     } catch (error) {
-      console.error('프로젝트 생성 중 오류 발생:', error);
-      alert('프로젝트 생성 중 오류가 발생했습니다.');
+      console.error("프로젝트 생성 중 오류 발생:", error);
+      alert("프로젝트 생성 중 오류가 발생했습니다.");
     }
   };
 
@@ -112,10 +112,7 @@ const BuildPreviewPage: React.FC = () => {
             setCodeDarkMode={setCodeDarkMode}
           />
 
-          <ActionBar
-            onDownload={handleDownload}
-            onCreateNew={handleCreateNew}
-          />
+          <ActionBar onDownload={handleDownload} />
         </div>
       </div>
     </div>
