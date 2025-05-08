@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FuncDetail } from '../../types/FuncDoc';
+import { FaRegSave, FaRegTrashAlt } from 'react-icons/fa';
 
 interface FuncDetailModalProps {
   func: FuncDetail | null;
@@ -72,20 +73,7 @@ const FuncDetailModal = ({
               className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium shadow hover:bg-red-700 transition flex items-center gap-2"
               onClick={onDelete}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-              </svg>
+              <FaRegTrashAlt className="w-4 h-4" />
               Delete
             </button>
 
@@ -93,21 +81,7 @@ const FuncDetailModal = ({
               className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition flex items-center gap-2"
               onClick={handleSave}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                <polyline points="7 3 7 8 15 8"></polyline>
-              </svg>
+              <FaRegSave className="w-4 h-4" />
               Save
             </button>
           </div>
@@ -201,17 +175,15 @@ const FuncDetailModal = ({
             </div>
           </div>
 
-          {/* 설명과 성공/실패 케이스를 좌우로 나누는 새로운 레이아웃 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 왼쪽: 설명 부분 */}
             <div className="border rounded-lg bg-white p-4 shadow-sm">
-              <div className="mb-4">
+              <div>
                 <div className="px-6 py-2 font-medium bg-blue-600 text-white rounded-t-lg text-center">
                   설명
                 </div>
               </div>
               <textarea
-                className="w-full p-3 border rounded-lg bg-white focus:outline-none focus:border-blue-300 overflow-y-auto resize-none"
+                className="w-full p-3 border-x border-b  rounded-b-lg bg-white focus:outline-none focus:border-blue-300 overflow-y-auto resize-none"
                 style={{ height: '350px' }}
                 value={form.description}
                 onChange={e =>
@@ -221,17 +193,15 @@ const FuncDetailModal = ({
               />
             </div>
 
-            {/* 오른쪽: 성공 케이스와 실패 케이스 (상하로 배치) */}
             <div className="flex flex-col gap-6">
-              {/* 성공 케이스 */}
               <div className="border rounded-lg bg-white p-4 shadow-sm">
-                <div className="mb-2">
-                  <div className="px-6 py-2 font-medium bg-green-600 text-white rounded-t-lg text-center">
+                <div>
+                  <div className="px-6 py-2 font-medium bg-green-800 text-white rounded-t-lg text-center">
                     성공 케이스
                   </div>
                 </div>
                 <textarea
-                  className="w-full p-3 border rounded-lg bg-green-50 focus:outline-none focus:border-green-300 overflow-y-auto resize-none"
+                  className="w-full p-3 border-x border-b rounded-b-lg bg-green-50 focus:outline-none focus:border-green-700 overflow-y-auto resize-none"
                   style={{ height: '128px' }}
                   placeholder="성공 케이스를 입력하세요"
                   value={form.successCase}
@@ -241,15 +211,14 @@ const FuncDetailModal = ({
                 />
               </div>
 
-              {/* 실패 케이스 */}
               <div className="border rounded-lg bg-white p-4 shadow-sm">
-                <div className="mb-2">
-                  <div className="px-6 py-2 font-medium bg-rose-600 text-white rounded-t-lg text-center">
+                <div>
+                  <div className="px-6 py-2 font-medium bg-rose-700 text-white rounded-t-lg text-center">
                     실패 케이스
                   </div>
                 </div>
                 <textarea
-                  className="w-full p-3 border rounded-lg bg-rose-50 focus:outline-none focus:border-rose-300 overflow-y-auto resize-none"
+                  className="w-full p-3 border-x border-b  rounded-b-lg bg-rose-50 focus:outline-none focus:border-rose-500 overflow-y-auto resize-none"
                   style={{ height: '128px' }}
                   placeholder="실패 케이스를 입력하세요"
                   value={form.failCase}

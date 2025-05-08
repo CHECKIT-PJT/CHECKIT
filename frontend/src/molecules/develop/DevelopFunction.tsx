@@ -72,15 +72,15 @@ const DevelopFunc = () => {
   };
 
   const handleRowClick = (func: FuncListItem) => {
-    // 실제 구현에서는 API 호출 등으로 상세 정보를 가져옴
-    // 여기서는 예시 데이터와 합쳐서 사용
     setSelectedFunc({
-      ...exampleFuncDetail,
       funcName: func.funcName,
       category: func.category,
       assignee: func.assignee,
       storyPoints: func.storyPoints,
       priority: func.priority,
+      description: '',
+      successCase: '',
+      failCase: '',
     });
     setModalOpen(true);
   };

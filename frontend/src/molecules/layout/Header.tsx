@@ -1,21 +1,28 @@
+import { logout } from '../../api/authAPI';
 import logo from '../../assets/logo.png';
 import title from '../../assets/title.png';
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   userName?: string;
-  onLogout?: () => void;
   isLoggedIn?: boolean;
 }
 
-const Header = ({ onLogout, isLoggedIn }: HeaderProps) => {
+const Header = ({ isLoggedIn }: HeaderProps) => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      sessionStorage.clear();
+      navigate('/');
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('로그아웃 중 오류가 발생했습니다.');
+      }
     }
-    // 로그아웃 후 리다이렉트 로직
   };
 
   return (

@@ -56,14 +56,20 @@ const ProjectDetail = () => {
             </div>
             <ul>
               {projectData.projectMembers.map(
-                (member: { id: number; userName: string; role: string }) => (
+                (member: {
+                  id: number;
+                  nickname: string;
+                  userName: string;
+                  role: string;
+                }) => (
                   <li key={member.id} className="mb-2">
-                    <span className="font-medium">{member.userName}</span>
-                    <span className="ml-2 text-xs text-gray-500">
+                    <span className="font-medium">{member.nickname}</span>
+
+                    <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                       {member.role}
                     </span>
                     <div className="text-xs text-gray-400 ml-1">
-                      ID: {member.id}
+                      {member.userName}
                     </div>
                   </li>
                 )

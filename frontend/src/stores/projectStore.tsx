@@ -9,6 +9,7 @@ interface Project {
 interface ProjectMember {
   id: number;
   userName: string;
+  nickname: string;
   userEmail: string;
   role: string;
 }

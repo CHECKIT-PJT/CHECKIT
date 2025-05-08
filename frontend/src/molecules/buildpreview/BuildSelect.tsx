@@ -19,7 +19,7 @@ const BuildSelect = ({
       className={`flex ${direction === 'row' ? 'flex-row' : 'flex-col'}  items-center justify-center px-3 ${className}`}
     >
       <ChapterCardLong
-        title="빌드 조건 설정하기"
+        title="컨벤션 설정하기"
         subtitle="빌드 전 조건들을 지정하기"
         icon={<FaPlay size={18} className="text-white-500" />}
         bgColor="hover:from-yellow-700 hover:to-yellow-800 border-t"
