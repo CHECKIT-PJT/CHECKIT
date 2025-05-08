@@ -54,6 +54,8 @@ public enum ErrorCode {
 	GIT_IGNORE_NOT_FOUND(404, NOT_FOUND, "GitIgnore를 찾을 수 없습니다."),
 	BRANCH_STRATEGY_NOT_FOUND(404, NOT_FOUND, "Branch 전략을 찾을 수 없습니다."),
 	COMMIT_CONVENTION_NOT_FOUND(404, NOT_FOUND, "Commit 규칙을 찾을 수 없습니다."),
+	FAILED_TO_CREATE_REPOSITORY(500, INTERNAL_SERVER_ERROR, "레포지토리 생성에 실패했습니다."),
+	FAILED_TO_PUSH_REPOSITORY(500, INTERNAL_SERVER_ERROR, "레포지토리 푸시에 실패했습니다."),
 
 	// 도커 관련 에러
 	INVALID_DATABASE_TYPE(400, BAD_REQUEST, "유효하지 않은 데이터베이스 타입입니다."),
