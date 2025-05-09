@@ -25,13 +25,16 @@ import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.request.ReadmeUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
+import com.checkmate.checkit.project.dto.response.ReadmeResponse;
 import com.checkmate.checkit.project.service.ProjectService;
+import com.checkmate.checkit.project.service.ReadmeService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -40,6 +43,7 @@ import lombok.RequiredArgsConstructor;
 public class ProjectController {
 
 	private final ProjectService projectService;
+	private final ReadmeService readmeService;
 
 	// 새 프로젝트 생성
 	@PostMapping
@@ -252,5 +256,45 @@ public class ProjectController {
 			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=docker-compose.yml")
 			.contentType(MediaType.parseMediaType("application/x-yaml"))
 			.body(dockerComposeFile);
+	}
+
+	// readme 조회
+	@GetMapping("/{projectId}/readme")
+	public ResponseEntity<JSONResponse<ReadmeResponse>> getReadme(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		ReadmeResponse readmeResponse = readmeService.getReadme(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, readmeResponse));
+	}
+
+	// readme 수정
+	@PutMapping("/{projectId}/readme")
+	public ResponseEntity<JSONResponse<Void>> updateReadme(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody ReadmeUpdateRequest readmeUpdateRequest) {
+
+		String token = authorization.substring(7);
+
+		readmeService.updateReadme(token, projectId, readmeUpdateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// readme 삭제
+	@DeleteMapping("/{projectId}/readme")
+	public ResponseEntity<JSONResponse<Void>> deleteReadme(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		readmeService.deleteReadme(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 }
