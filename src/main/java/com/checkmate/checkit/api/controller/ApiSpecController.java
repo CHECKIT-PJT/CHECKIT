@@ -13,13 +13,13 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/api-spec/{projectId}")
+@RequestMapping("/api/api-spec")
 @Slf4j
 public class ApiSpecController {
 
     private final ApiSpecService apiSpecService;
 
-    @PostMapping
+    @PostMapping("/{projectId}")
     public ResponseEntity<JSONResponse<Void>> saveApiSpec(@PathVariable int projectId, @RequestBody ApiSpecRequest request,@RequestHeader("Authorization") String authorization)
     {
         log.info(request.toString());
@@ -27,19 +27,19 @@ public class ApiSpecController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping
-    public ResponseEntity<JSONResponse<List<ApiSpecResponse>>> getApiSpecs(@PathVariable Long projectId,@RequestHeader("Authorization") String authorization) {
+    @GetMapping("/{projectId}")
+    public ResponseEntity<JSONResponse<List<ApiSpecResponse>>> getApiSpecs(@PathVariable int projectId,@RequestHeader("Authorization") String authorization) {
         return ResponseEntity.ok(JSONResponse.onSuccess(apiSpecService.getApiSpecsByProjectId(projectId)));
     }
 
-    @GetMapping("/{apiSpecId}")
-    public ResponseEntity<JSONResponse<ApiSpecResponse>> getApiSpec(@PathVariable Long projectId, @PathVariable Long apiSpecId,@RequestHeader("Authorization") String authorization) {
+    @GetMapping("/{projectId}/{apiSpecId}")
+    public ResponseEntity<JSONResponse<ApiSpecResponse>> getApiSpec(@PathVariable int projectId, @PathVariable Long apiSpecId,@RequestHeader("Authorization") String authorization) {
         return ResponseEntity.ok(JSONResponse.onSuccess(apiSpecService.getApiSpecsByProjectIdandApiScepId(projectId, apiSpecId)));
     }
 
-    @DeleteMapping("/{apiSpecId}")
+    @DeleteMapping("/{projectId}/{apiSpecId}")
     public ResponseEntity<Void> deleteApiSpec(
-            @PathVariable Long projectId,
+            @PathVariable int projectId,
             @PathVariable Long apiSpecId,
             @RequestHeader("Authorization") String authorization
     ) {

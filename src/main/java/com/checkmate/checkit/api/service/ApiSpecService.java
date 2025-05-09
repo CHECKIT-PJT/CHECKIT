@@ -32,16 +32,7 @@ public class ApiSpecService {
             spec = apiSpecRepository.findById(request.getId())
                     .orElseThrow(() -> new RuntimeException("해당 API 명세가 존재하지 않습니다."));
 
-            spec = ApiSpecEntity.builder()
-                    .apiName(request.getApiName())
-                    .endpoint(request.getEndpoint())
-                    .method(ApiSpecEntity.HttpMethod.valueOf(request.getMethod()))
-                    .category(request.getCategory())
-                    .description(request.getDescription())
-                    .statusCode(request.getStatusCode())
-                    .header(request.getHeader())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
+            spec.updateFrom(request);
 
             queryStringRepository.deleteByApiSpec(spec);
             pathVariableRepository.deleteByApiSpec(spec);
@@ -113,7 +104,7 @@ public class ApiSpecService {
     }
 
     @Transactional(readOnly = true)
-    public List<ApiSpecResponse> getApiSpecsByProjectId(Long projectId) {
+    public List<ApiSpecResponse> getApiSpecsByProjectId(int projectId) {
         List<ApiSpecEntity> specs = apiSpecRepository.findByProjectId(projectId);
 
         return specs.stream().map(spec -> {
@@ -151,7 +142,7 @@ public class ApiSpecService {
     }
 
     @Transactional
-    public ApiSpecResponse getApiSpecsByProjectIdandApiScepId(Long projectId, Long apiSpecId){
+    public ApiSpecResponse getApiSpecsByProjectIdandApiScepId(int projectId, Long apiSpecId){
         ApiSpecEntity spec = apiSpecRepository.findByIdAndProjectId(apiSpecId, projectId)
                 .orElseThrow(() -> new RuntimeException("해당 API 명세가 존재하지 않습니다."));
 
