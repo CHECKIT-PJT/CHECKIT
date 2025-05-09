@@ -11,7 +11,7 @@ public interface ApiSpecRepository extends JpaRepository<ApiSpecEntity, Long> {
 
 	List<ApiSpecEntity> findAllByProjectId_Id(Integer projectId);
 
-	List<ApiSpecEntity> findByProjectId(Long projectId);
+	List<ApiSpecEntity> findByProjectId(int projectId);
 
-	Optional<ApiSpecEntity> findByIdAndProjectId(Long id, Long projectId);
+	Optional<ApiSpecEntity> findByIdAndProjectId(Long id, int projectId);
 }

@@ -2,6 +2,7 @@ package com.checkmate.checkit.api.entity;
 
 import java.time.LocalDateTime;
 
+import com.checkmate.checkit.api.dto.request.ApiSpecRequest;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -77,4 +78,14 @@ public class ApiSpecEntity {
 		PATCH,
 	}
 
+	public void updateFrom(ApiSpecRequest request) {
+		this.apiName = request.getApiName();
+		this.endpoint = request.getEndpoint();
+		this.method = HttpMethod.valueOf(request.getMethod());
+		this.category = request.getCategory();
+		this.description = request.getDescription();
+		this.statusCode = request.getStatusCode();
+		this.header = request.getHeader();
+		this.updatedAt = LocalDateTime.now();
+	}
 }
