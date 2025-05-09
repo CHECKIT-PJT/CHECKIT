@@ -151,6 +151,45 @@ public class ApiSpecService {
     }
 
     @Transactional
+    public ApiSpecResponse getApiSpecsByProjectIdandApiScepId(Long projectId, Long apiSpecId){
+        ApiSpecEntity spec = apiSpecRepository.findByIdAndProjectId(apiSpecId, projectId)
+                .orElseThrow(() -> new RuntimeException("해당 API 명세가 존재하지 않습니다."));
+
+        List<QueryStringRequest> queryStrings = queryStringRepository.findByApiSpec(spec)
+                .stream()
+                .map(q -> new QueryStringRequest(q.getId(), q.getQueryStringVariable(), q.getQueryStringDataType()))
+                .toList();
+
+        List<PathVariableRequest> pathVars = pathVariableRepository.findByApiSpec(spec)
+                .stream()
+                .map(p -> new PathVariableRequest(p.getId(), p.getPathVariable(), p.getPathVariableDataType()))
+                .toList();
+
+        List<DtoEntity> dtoEntities = dtoRepository.findByApiSpecId(spec.getId());
+        List<DtoRequest> dtoList = dtoEntities.stream().map(dto -> {
+            List<DtoItemEntity> items = dtoItemRepository.findByDto(dto);
+            List<DtoItemRequest> fields = items.stream()
+                    .map(i -> new DtoItemRequest(i.getId(), i.getDtoItemName(), i.getDataType(), i.getIsList()))
+                    .toList();
+            return new DtoRequest(dto.getId(), dto.getDtoName(), dto.getDtoType(), fields);
+        }).toList();
+
+        return ApiSpecResponse.builder()
+                .id(spec.getId())
+                .apiName(spec.getApiName())
+                .endpoint(spec.getEndpoint())
+                .method(spec.getMethod().name())
+                .category(spec.getCategory())
+                .description(spec.getDescription())
+                .statusCode(spec.getStatusCode())
+                .header(spec.getHeader())
+                .queryStrings(queryStrings)
+                .pathVariables(pathVars)
+                .dtoList(dtoList)
+                .build();
+    }
+
+    @Transactional
     public void deleteApiSpec(Long specId) {
         ApiSpecEntity spec = apiSpecRepository.findById(specId)
                 .orElseThrow(() -> new RuntimeException("삭제할 API 명세가 존재하지 않습니다."));

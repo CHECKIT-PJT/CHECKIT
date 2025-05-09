@@ -1,9 +1,6 @@
 package com.checkmate.checkit.api.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -11,6 +8,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class ApiSpecRequest {
     private Long id;
     private String apiName;
@@ -24,5 +22,5 @@ public class ApiSpecRequest {
     private List<QueryStringRequest> queryStrings;
     private List<PathVariableRequest> pathVariables;
 
-    private List<DtoRequest> dtoList;  // body일 경우만 전달
+    private List<DtoRequest> dtoList;
 }
