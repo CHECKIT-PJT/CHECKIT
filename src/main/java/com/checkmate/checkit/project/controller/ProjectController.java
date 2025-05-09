@@ -33,8 +33,10 @@ import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.dto.response.ReadmeResponse;
+import com.checkmate.checkit.project.dto.response.SequenceDiagramResponse;
 import com.checkmate.checkit.project.service.ProjectService;
 import com.checkmate.checkit.project.service.ReadmeService;
+import com.checkmate.checkit.project.service.SequenceDiagramService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -44,6 +46,7 @@ public class ProjectController {
 
 	private final ProjectService projectService;
 	private final ReadmeService readmeService;
+	private final SequenceDiagramService sequenceDiagramService;
 
 	// 새 프로젝트 생성
 	@PostMapping
@@ -297,4 +300,18 @@ public class ProjectController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	// 시퀀스 다이어그램 조회
+	@GetMapping("/{projectId}/sequence")
+	public ResponseEntity<JSONResponse<SequenceDiagramResponse>> getSequenceDiagram(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		SequenceDiagramResponse sequenceDiagramResponse = sequenceDiagramService.getSequenceDiagram(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, sequenceDiagramResponse));
+	}
+
 }
