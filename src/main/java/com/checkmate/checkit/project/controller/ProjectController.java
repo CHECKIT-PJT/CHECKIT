@@ -31,7 +31,9 @@ import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
+import com.checkmate.checkit.project.dto.response.ReadmeResponse;
 import com.checkmate.checkit.project.service.ProjectService;
+import com.checkmate.checkit.project.service.ReadmeService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -40,6 +42,7 @@ import lombok.RequiredArgsConstructor;
 public class ProjectController {
 
 	private final ProjectService projectService;
+	private final ReadmeService readmeService;
 
 	// 새 프로젝트 생성
 	@PostMapping
@@ -252,5 +255,18 @@ public class ProjectController {
 			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=docker-compose.yml")
 			.contentType(MediaType.parseMediaType("application/x-yaml"))
 			.body(dockerComposeFile);
+	}
+
+	// readme 조회
+	@GetMapping("/{projectId}/readme")
+	public ResponseEntity<JSONResponse<ReadmeResponse>> getReadme(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		ReadmeResponse readmeResponse = readmeService.getReadme(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, readmeResponse));
 	}
 }
