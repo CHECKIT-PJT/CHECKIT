@@ -26,6 +26,7 @@ import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.request.ReadmeUpdateRequest;
+import com.checkmate.checkit.project.dto.request.SequenceDiagramUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
@@ -33,8 +34,10 @@ import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.dto.response.ReadmeResponse;
+import com.checkmate.checkit.project.dto.response.SequenceDiagramResponse;
 import com.checkmate.checkit.project.service.ProjectService;
 import com.checkmate.checkit.project.service.ReadmeService;
+import com.checkmate.checkit.project.service.SequenceDiagramService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -44,6 +47,7 @@ public class ProjectController {
 
 	private final ProjectService projectService;
 	private final ReadmeService readmeService;
+	private final SequenceDiagramService sequenceDiagramService;
 
 	// 새 프로젝트 생성
 	@PostMapping
@@ -294,6 +298,46 @@ public class ProjectController {
 		String token = authorization.substring(7);
 
 		readmeService.deleteReadme(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// 시퀀스 다이어그램 조회
+	@GetMapping("/{projectId}/sequence")
+	public ResponseEntity<JSONResponse<SequenceDiagramResponse>> getSequenceDiagram(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		SequenceDiagramResponse sequenceDiagramResponse = sequenceDiagramService.getSequenceDiagram(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, sequenceDiagramResponse));
+	}
+
+	// 시퀀스 다이어그램 수정
+	@PutMapping("/{projectId}/sequence")
+	public ResponseEntity<JSONResponse<Void>> updateSequenceDiagram(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody SequenceDiagramUpdateRequest sequenceDiagramUpdateRequest) {
+
+		String token = authorization.substring(7);
+
+		sequenceDiagramService.updateSequenceDiagram(token, projectId, sequenceDiagramUpdateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// 시퀀스 다이어그램 삭제
+	@DeleteMapping("/{projectId}/sequence")
+	public ResponseEntity<JSONResponse<Void>> deleteSequenceDiagram(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		sequenceDiagramService.deleteSequenceDiagram(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
