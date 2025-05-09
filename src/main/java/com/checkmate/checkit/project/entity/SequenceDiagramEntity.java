@@ -24,4 +24,8 @@ public class SequenceDiagramEntity {
 
 	@Column(name = "plant_uml_code", columnDefinition = "TEXT")
 	private String plantUmlCode;
+
+	public void updatePlantUmlCode(String plantUmlCode) {
+		this.plantUmlCode = plantUmlCode;
+	}
 }

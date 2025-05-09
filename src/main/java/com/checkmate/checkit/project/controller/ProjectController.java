@@ -26,6 +26,7 @@ import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.request.ReadmeUpdateRequest;
+import com.checkmate.checkit.project.dto.request.SequenceDiagramUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
@@ -314,4 +315,17 @@ public class ProjectController {
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, sequenceDiagramResponse));
 	}
 
+	// 시퀀스 다이어그램 수정
+	@PutMapping("/{projectId}/sequence")
+	public ResponseEntity<JSONResponse<Void>> updateSequenceDiagram(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody SequenceDiagramUpdateRequest sequenceDiagramUpdateRequest) {
+
+		String token = authorization.substring(7);
+
+		sequenceDiagramService.updateSequenceDiagram(token, projectId, sequenceDiagramUpdateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }
