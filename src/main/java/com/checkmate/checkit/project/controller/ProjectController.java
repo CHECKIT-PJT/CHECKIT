@@ -284,4 +284,17 @@ public class ProjectController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	// readme 삭제
+	@DeleteMapping("/{projectId}/readme")
+	public ResponseEntity<JSONResponse<Void>> deleteReadme(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		readmeService.deleteReadme(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }

@@ -9,5 +9,5 @@ import com.checkmate.checkit.project.entity.ReadmeEntity;
 
 @Repository
 public interface ReadmeRepository extends JpaRepository<ReadmeEntity, Integer> {
-	Optional<ReadmeEntity> findByProjectId(Integer projectId);
+	Optional<ReadmeEntity> findByProjectIdAndIsDeletedFalse(Integer projectId);
 }
