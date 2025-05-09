@@ -24,7 +24,6 @@ import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
-import com.checkmate.checkit.project.dto.response.ProjectMemberListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
@@ -128,7 +127,7 @@ public class ProjectService {
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 
 		// 프로젝트 멤버 조회
-		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsDeletedFalse(
 			projectId);
 
 		// ProjectMember 목록에서 멤버 ID와 역할 추출
@@ -138,7 +137,7 @@ public class ProjectService {
 				User user = userRepository.findById(memberId)
 					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
 				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
-					projectMember.getRole());
+					projectMember.getRole(), projectMember.isApproved());
 			})
 			.toList();
 
@@ -236,7 +235,7 @@ public class ProjectService {
 	 * @return projectMemberResponse : 프로젝트 멤버 응답 DTO
 	 */
 	@Transactional(readOnly = true)
-	public List<ProjectMemberListResponse> getProjectMembers(String token, Integer projectId) {
+	public List<ProjectMemberResponse> getProjectMembers(String token, Integer projectId) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
@@ -255,7 +254,7 @@ public class ProjectService {
 				Integer memberId = projectMember.getId().getUserId();
 				User user = userRepository.findById(memberId)
 					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
-				return new ProjectMemberListResponse(memberId, user.getUserName(), user.getNickname(),
+				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
 					projectMember.getRole(),
 					projectMember.isApproved());
 			})
@@ -329,7 +328,7 @@ public class ProjectService {
 		Integer projectId = Integer.parseInt(projectIdString);
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsDeletedFalse(
 			loginUserId, projectId)) {
 			throw new CommonException(ErrorCode.ALREADY_MEMBER);
 		}

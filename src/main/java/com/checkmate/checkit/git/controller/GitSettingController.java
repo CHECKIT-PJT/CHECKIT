@@ -20,9 +20,11 @@ import com.checkmate.checkit.git.dto.request.BranchStrategyUpdateRequest;
 import com.checkmate.checkit.git.dto.request.CommitConventionCreateRequest;
 import com.checkmate.checkit.git.dto.request.CommitConventionUpdateRequest;
 import com.checkmate.checkit.git.dto.request.GitIgnoreCreateRequest;
+import com.checkmate.checkit.git.dto.request.GitPushRequest;
 import com.checkmate.checkit.git.dto.response.BranchStrategyResponse;
 import com.checkmate.checkit.git.dto.response.CommitConventionResponse;
 import com.checkmate.checkit.git.dto.response.GitIgnoreResponse;
+import com.checkmate.checkit.git.dto.response.GitPushResponse;
 import com.checkmate.checkit.git.service.GitSettingService;
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
@@ -229,5 +231,20 @@ public class GitSettingController {
 			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=commit-msg")
 			.contentType(MediaType.APPLICATION_OCTET_STREAM)
 			.body(commitConventionFileResponse);
+	}
+
+	// GitHub/GitLab repository 생성 및 푸시
+	@PostMapping("/repository/{projectId}")
+	public ResponseEntity<JSONResponse<GitPushResponse>> createRepository(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody GitPushRequest gitPushRequest) {
+
+		String token = authorization.substring(7);
+
+		GitPushResponse gitPushResponse = gitSettingService.createAndPushRepository(token, projectId,
+			gitPushRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, gitPushResponse));
 	}
 }

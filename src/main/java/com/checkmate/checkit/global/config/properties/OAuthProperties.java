@@ -26,6 +26,7 @@ public class OAuthProperties {
 		private String tokenUri;
 		private String userInfoUri;
 		private String userNameAttribute;
+		private String apiUri;
 	}
 
 	public Provider getProvider(String name) {
