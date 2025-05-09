@@ -1,34 +1,43 @@
 import { useState, useEffect } from 'react';
-import type {
+import {
   ApiDetail,
   PathVariable,
   RequestParam,
   ApiResponse,
-} from '../../types/ApiDoc';
+  Dto,
+  DtoItem,
+} from '../../types/apiDocs';
 import DtoEditor from './DtoEditor';
 import { FaRegTrashAlt, FaRegSave } from 'react-icons/fa';
 import { FiTrash } from 'react-icons/fi';
 import DtoEditorReq from './DtoEditorReq';
 import ApiHeader from './ApiHeader';
+import {
+  convertToApiSpecRequest,
+  validateApiSpecRequest,
+} from '../../utils/apiUtils';
 
 interface ApiDetailModalProps {
   api: ApiDetail | null;
   onClose: () => void;
-  onSave: (api: ApiDetail) => void;
+  onSave: (apiSpecRequest: any) => void;
   onDelete?: () => void;
 }
 
+// 빈 API 상세 정보
 const blankApiDetail: ApiDetail = {
+  id: null,
   apiName: '',
   endpoint: '',
   method: 'GET',
   category: '',
   description: '',
+  statusCode: 200,
   header: '',
   pathVariables: [],
   requestParams: [],
-  requestDto: { dtoName: '', dtoItems: [] },
-  responseDto: { dtoName: '', dtoItems: [] },
+  requestDto: { id: null, dtoName: '', fields: [], dtoType: 'REQUEST' },
+  responseDto: { id: null, dtoName: '', fields: [], dtoType: 'RESPONSE' },
   responses: [],
 };
 
@@ -47,10 +56,6 @@ const dataTypes = [
   'enum',
 ];
 
-const emptyJsonBody = `{
-  // Add your properties here
-}`;
-
 const ApiDetailModal = ({
   api,
   onClose,
@@ -63,13 +68,16 @@ const ApiDetailModal = ({
   const [showAddPathVar, setShowAddPathVar] = useState(false);
   const [showAddParam, setShowAddParam] = useState(false);
   const [showAddHeader, setShowAddHeader] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const [newPathVar, setNewPathVar] = useState<PathVariable>({
+    id: null,
     pathVariable: '',
     pathVariableDataType: 'string',
   });
 
   const [newParam, setNewParam] = useState<RequestParam>({
+    id: null,
     requestParamName: '',
     requestParamDataType: 'string',
   });
@@ -80,7 +88,8 @@ const ApiDetailModal = ({
   });
 
   const [statusCode, setStatusCode] = useState<number>(
-    api?.responses && api.responses[0] ? api.responses[0].statusCode : 200
+    api?.statusCode ||
+      (api?.responses && api.responses[0] ? api.responses[0].statusCode : 200)
   );
 
   const [statusDescription, setStatusDescription] = useState(
@@ -91,25 +100,59 @@ const ApiDetailModal = ({
 
   useEffect(() => {
     if (api) {
-      const hasRequestDto = Boolean(
-        api.requestDto &&
-          (api.requestDto.dtoName || api.requestDto.dtoItems.length > 0)
-      );
+      setForm(api);
+      const hasRequestDto = Boolean(api.requestDto && api.requestDto.dtoName);
       const hasResponseDto = Boolean(
-        api.responseDto &&
-          (api.responseDto.dtoName || api.responseDto.dtoItems.length > 0)
+        api.responseDto && api.responseDto.dtoName
       );
       setShowDto(hasRequestDto || hasResponseDto);
+
+      // 상태 코드 설정
+      setStatusCode(
+        api.statusCode ||
+          (api.responses && api.responses[0]
+            ? api.responses[0].statusCode
+            : 200)
+      );
+      setStatusDescription(
+        api.responses && api.responses[0]
+          ? api.responses[0].responseDescription
+          : 'OK'
+      );
+    } else {
+      setForm(blankApiDetail);
+      setShowDto(false);
+      setStatusCode(200);
+      setStatusDescription('OK');
     }
   }, [api]);
 
-  if (!form) return null;
-
   const handleSave = () => {
-    let isValid = true;
+    // 기본 유효성 검사
+    const errors: string[] = [];
 
-    if (!isValid) return;
+    if (!form.apiName.trim()) {
+      errors.push('API 이름을 입력해주세요.');
+    }
 
+    if (!form.endpoint.trim()) {
+      errors.push('Endpoint를 입력해주세요.');
+    }
+
+    if (!form.category.trim()) {
+      errors.push('카테고리를 입력해주세요.');
+    }
+
+    // 유효성 검사 실패 시 에러 표시
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    // 에러가 없으면 초기화
+    setValidationErrors([]);
+
+    // 현재 응답 상태 설정
     const currentResponse: ApiResponse = {
       statusCode: statusCode,
       responseDescription: statusDescription || 'OK',
@@ -119,13 +162,27 @@ const ApiDetailModal = ({
       ? form.responses.filter(r => r.statusCode !== currentResponse.statusCode)
       : [];
 
+    // 폼 데이터 업데이트
     const updatedForm = {
       ...form,
+      statusCode: statusCode,
       responses: [currentResponse, ...otherResponses],
     };
 
+    // API 요청용 객체로 변환
+    const apiSpecRequest = convertToApiSpecRequest(updatedForm);
+
+    // 최종 유효성 검사
+    if (!validateApiSpecRequest(apiSpecRequest)) {
+      setValidationErrors(['API 정보를 다시 확인해주세요.']);
+      return;
+    }
+
     console.log('Saving form:', updatedForm);
-    onSave(updatedForm);
+    console.log('API Request:', apiSpecRequest);
+
+    // API 요청 형식만 전달
+    onSave(apiSpecRequest);
   };
 
   const handleAddPathVar = () => {
@@ -134,7 +191,11 @@ const ApiDetailModal = ({
       ...form,
       pathVariables: [...form.pathVariables, { ...newPathVar }],
     });
-    setNewPathVar({ pathVariable: '', pathVariableDataType: 'string' });
+    setNewPathVar({
+      id: null,
+      pathVariable: '',
+      pathVariableDataType: 'string',
+    });
     setShowAddPathVar(false);
   };
 
@@ -144,7 +205,11 @@ const ApiDetailModal = ({
       ...form,
       requestParams: [...form.requestParams, { ...newParam }],
     });
-    setNewParam({ requestParamName: '', requestParamDataType: 'string' });
+    setNewParam({
+      id: null,
+      requestParamName: '',
+      requestParamDataType: 'string',
+    });
     setShowAddParam(false);
   };
 
@@ -152,9 +217,7 @@ const ApiDetailModal = ({
     if (newHeader.key.trim() === '' || newHeader.value.trim() === '') return;
     setForm({
       ...form,
-      header: form.header
-        ? `${form.header}\n${newHeader.key}: ${newHeader.value}`
-        : `${newHeader.key}: ${newHeader.value}`,
+      header: `${newHeader.key}: ${newHeader.value}`,
     });
     setNewHeader({ key: '', value: '' });
     setShowAddHeader(false);
@@ -172,19 +235,16 @@ const ApiDetailModal = ({
     setForm({ ...form, requestParams: newParams });
   };
 
-  const removeHeader = (index: number) => {
-    if (!form.header) return;
-    const headers = form.header.split('\n');
-    headers.splice(index, 1);
-    setForm({ ...form, header: headers.join('\n') });
+  const removeHeader = () => {
+    setForm({ ...form, header: '' });
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-[90%] flex flex-col shadow-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl w-[90%] flex flex-col shadow-2xl overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold text-blue-700">
-            {api ? 'API 수정 하기' : 'API 추가 하기'}
+            {api && api.id ? 'API 수정 하기' : 'API 추가 하기'}
           </h2>
           <div className="flex gap-3">
             <button
@@ -194,13 +254,15 @@ const ApiDetailModal = ({
               Cancel
             </button>
 
-            <button
-              className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium shadow hover:bg-red-700 transition flex items-center gap-2"
-              onClick={onDelete}
-            >
-              <FaRegTrashAlt className="w-4 h-4" />
-              Delete
-            </button>
+            {api && api.id !== 0 && onDelete && (
+              <button
+                className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium shadow hover:bg-red-700 transition flex items-center gap-2"
+                onClick={onDelete}
+              >
+                <FaRegTrashAlt className="w-4 h-4" />
+                Delete
+              </button>
+            )}
 
             <button
               className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition flex items-center gap-2"
@@ -212,12 +274,37 @@ const ApiDetailModal = ({
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto">
-          <ApiHeader form={form} setForm={setForm} />
+        {validationErrors.length > 0 && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mx-6 mt-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  다음 오류를 확인해주세요:
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <ul className="list-disc pl-5 space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-          <div className="grid grid-cols-4 gap-6 mb-6">
-            {/* Left side takes 3 columns */}
-            <div className="col-span-3 flex border border-gray-200 rounded-lg shadow-sm">
+        <div className="p-6 overflow-y-auto flex-grow">
+          <ApiHeader
+            form={form}
+            setForm={setForm}
+            statusCode={statusCode}
+            setStatusCode={setStatusCode}
+            statusDescription={statusDescription}
+            setStatusDescription={setStatusDescription}
+          />
+
+          <div className="grid grid-cols-1 gap-6 mb-6">
+            <div className="flex border border-gray-200 rounded-lg shadow-sm">
               {/* Left side tabs */}
               <div className="border-r border-gray-200">
                 <div className="flex flex-col">
@@ -354,9 +441,9 @@ const ApiDetailModal = ({
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-gray-700 text-xs">
-                        Headers
+                        Headers (1개만 설정 가능)
                       </span>
-                      {!showAddHeader && (
+                      {!showAddHeader && !form.header && (
                         <button
                           className="text-xs text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
                           onClick={() => setShowAddHeader(true)}
@@ -366,33 +453,32 @@ const ApiDetailModal = ({
                       )}
                     </div>
 
-                    {form.header && form.header.length > 0 ? (
+                    {form.header ? (
                       <div className="space-y-1 mb-2">
-                        {form.header.split('\n').map((header, index) => {
-                          const [key, value] = header.split(': ');
-                          return (
-                            <div
-                              key={index}
-                              className="flex justify-between items-center p-1.5 bg-gray-50 rounded text-xs"
-                            >
-                              <div className="flex gap-1 items-center overflow-hidden">
-                                <span className="font-mono text-purple-600 truncate">
-                                  {key}
-                                </span>
-                                <span className="text-gray-600">:</span>
-                                <span className="text-gray-700 truncate">
-                                  {value}
-                                </span>
-                              </div>
-                              <button
-                                className="text-gray-400 hover:text-red-500 p-0.5 flex-shrink-0"
-                                onClick={() => removeHeader(index)}
-                              >
-                                <FiTrash className="w-3 h-3" />
-                              </button>
-                            </div>
-                          );
-                        })}
+                        <div className="flex justify-between items-center p-1.5 bg-gray-50 rounded text-xs">
+                          <div className="flex gap-1 items-center overflow-hidden">
+                            {(() => {
+                              const [key, value] = form.header.split(': ');
+                              return (
+                                <>
+                                  <span className="font-mono text-purple-600 truncate">
+                                    {key}
+                                  </span>
+                                  <span className="text-gray-600">:</span>
+                                  <span className="text-gray-700 truncate">
+                                    {value}
+                                  </span>
+                                </>
+                              );
+                            })()}
+                          </div>
+                          <button
+                            className="text-gray-400 hover:text-red-500 p-0.5 flex-shrink-0"
+                            onClick={removeHeader}
+                          >
+                            <FiTrash className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="text-gray-400 text-xs italic" />
@@ -537,7 +623,9 @@ const ApiDetailModal = ({
               </div>
             </div>
           </div>
+
           <hr className="mb-4" />
+
           <div>
             <label className="inline-flex items-center cursor-pointer">
               <span className="ms-2 font-semibold text-gray-700 mr-5">
@@ -552,8 +640,18 @@ const ApiDetailModal = ({
                     if (showDto) {
                       setForm({
                         ...form,
-                        requestDto: { dtoName: '', dtoItems: [], dtoType: '' },
-                        responseDto: { dtoName: '', dtoItems: [] },
+                        requestDto: {
+                          id: null,
+                          dtoName: '',
+                          fields: [],
+                          dtoType: 'REQUEST',
+                        },
+                        responseDto: {
+                          id: null,
+                          dtoName: '',
+                          fields: [],
+                          dtoType: 'RESPONSE',
+                        },
                       });
                     }
                     setShowDto(!showDto);
@@ -563,19 +661,23 @@ const ApiDetailModal = ({
               </div>
             </label>
           </div>
+
           {showDto && (
             <div className="grid grid-cols-2 gap-4 mt-6">
               <DtoEditorReq
-                dtoType={form.requestDto.dtoType || ''}
+                dtoType={form.requestDto.dtoType || 'REQUEST'}
                 onDtoTypeChange={type =>
                   setForm({
                     ...form,
-                    requestDto: { ...form.requestDto, dtoType: type },
+                    requestDto: {
+                      ...form.requestDto,
+                      dtoType: type as 'REQUEST' | 'RESPONSE',
+                    },
                   })
                 }
                 title="REQUEST DTO"
                 dtoName={form.requestDto.dtoName}
-                dtoItems={form.requestDto.dtoItems}
+                dtoItems={form.requestDto.fields}
                 onDtoNameChange={name =>
                   setForm({
                     ...form,
@@ -585,7 +687,7 @@ const ApiDetailModal = ({
                 onDtoItemsChange={items =>
                   setForm({
                     ...form,
-                    requestDto: { ...form.requestDto, dtoItems: items },
+                    requestDto: { ...form.requestDto, fields: items },
                   })
                 }
                 isRequestBody={true}
@@ -593,7 +695,12 @@ const ApiDetailModal = ({
                   if (!useDto) {
                     setForm({
                       ...form,
-                      requestDto: { dtoName: '', dtoItems: [], dtoType: '' },
+                      requestDto: {
+                        id: null,
+                        dtoName: '',
+                        fields: [],
+                        dtoType: 'REQUEST',
+                      },
                     });
                   }
                 }}
@@ -602,7 +709,8 @@ const ApiDetailModal = ({
               <DtoEditor
                 title="RESPONSE DTO"
                 dtoName={form.responseDto.dtoName}
-                dtoItems={form.responseDto.dtoItems}
+                dtoItems={form.responseDto.fields}
+                dtoType="RESPONSE"
                 onDtoNameChange={name =>
                   setForm({
                     ...form,
@@ -612,14 +720,19 @@ const ApiDetailModal = ({
                 onDtoItemsChange={items =>
                   setForm({
                     ...form,
-                    responseDto: { ...form.responseDto, dtoItems: items },
+                    responseDto: { ...form.responseDto, fields: items },
                   })
                 }
                 onUseDtoChange={useDto => {
                   if (!useDto) {
                     setForm({
                       ...form,
-                      responseDto: { dtoName: '', dtoItems: [] },
+                      responseDto: {
+                        id: null,
+                        dtoName: '',
+                        fields: [],
+                        dtoType: 'RESPONSE',
+                      },
                     });
                   }
                 }}

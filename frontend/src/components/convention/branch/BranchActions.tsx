@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import { MdOutlineDownloading } from 'react-icons/md';
+import { IoMdInformationCircleOutline } from 'react-icons/io';
 import {
   useDeleteBranchConvention,
   useDownloadBranchConvention,
@@ -15,6 +16,7 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleDelete = async () => {
     setShowConfirm(true);
@@ -67,6 +69,33 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">
+        <div className="relative">
+          <button
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm transition bg-blue-800 hover:bg-blue-700 text-white"
+          >
+            <IoMdInformationCircleOutline className="h-5 w-5" />
+            사용법
+          </button>
+
+          {showTooltip && (
+            <div className="absolute z-50 w-[345px] p-4 mt-2 text-sm text-gray-700 bg-white rounded-lg shadow-lg border border-gray-200">
+              <p className="mb-4">.git/hooks 에 다운받은 파일에 넣어주세요.</p>
+              <p className="mb-4">
+                .git 디렉토리는 숨김 폴더이므로, <br />
+                숨김 파일 보기 기능을 활성화해야 보일 수 있습니다.
+              </p>
+              <p>
+                파일이 정상적으로 실행되지 않는 경우, <br />
+                다음 명령어로 실행 권한을 부여해 주세요:
+              </p>
+              <code className="block mt-2 p-2 bg-gray-100 rounded">
+                chmod +x .git/hooks/pre-commit
+              </code>
+            </div>
+          )}
+        </div>
         <button
           onClick={handleDelete}
           disabled={isDeleting}

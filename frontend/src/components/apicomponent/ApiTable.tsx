@@ -1,4 +1,4 @@
-import type { ApiDocListItem } from '../../types/ApiDoc';
+import type { ApiDocListItem } from '../../types/apiDocs';
 
 interface ApiTableProps {
   data: ApiDocListItem[];
@@ -26,9 +26,9 @@ const ApiTable = ({ data, onRowClick, selectedDomain }: ApiTableProps) => {
         </tr>
       </thead>
       <tbody>
-        {filteredData.map(api => (
+        {filteredData.map((api, index) => (
           <tr
-            key={api.apiSpecId}
+            key={api.apiSpecId ?? `api-${index}`}
             className="cursor-pointer bg-white border-b border-gray-200 hover:bg-slate-50 transition s"
             onClick={() => onRowClick(api)}
           >
