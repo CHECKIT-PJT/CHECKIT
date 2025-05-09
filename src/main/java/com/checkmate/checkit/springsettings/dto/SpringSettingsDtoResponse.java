@@ -12,7 +12,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SpringSettingsDtoResponse {
 
-	private int id;
 	private SpringSettingsEntity.SpringProjectType springProject;
 	private SpringSettingsEntity.SpringLanguageType springLanguage;
 	private int springVersion;
@@ -26,7 +25,6 @@ public class SpringSettingsDtoResponse {
 
 	public static SpringSettingsDtoResponse fromEntity(SpringSettingsEntity entity) {
 		return new SpringSettingsDtoResponse(
-			entity.getId(),
 			entity.getSpringProject(),
 			entity.getSpringLanguage(),
 			entity.getSpringVersion(),

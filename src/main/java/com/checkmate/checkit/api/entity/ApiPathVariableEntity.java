@@ -26,7 +26,6 @@ public class ApiPathVariableEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	// 연관관계: 어떤 API 명세에 속한 path variable인지
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "api_spec_id", nullable = false)
 	private ApiSpecEntity apiSpec;

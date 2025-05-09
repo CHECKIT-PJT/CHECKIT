@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -24,12 +25,17 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SpringSettingsEntity {
 
+	// @Id
+	// @GeneratedValue(strategy = GenerationType.IDENTITY)
+	// private int id;
+
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private int id;
+	@Column(name = "project_id")
+	private Integer id;
 
 	@OneToOne
-	@JoinColumn(name = "project_id", nullable = false)
+	@JoinColumn(name = "project_id")
+	@MapsId
 	private ProjectEntity projectEntity;
 
 	@Enumerated(EnumType.STRING)
@@ -76,4 +82,28 @@ public class SpringSettingsEntity {
 	public enum SpringPackagingType {
 		JAR, WAR
 	}
+
+	public void update(SpringProjectType springProject,
+		SpringLanguageType springLanguage,
+		int springVersion,
+		String springGroup,
+		String springArtifact,
+		String springName,
+		String springDescription,
+		String springPackageName,
+		SpringPackagingType springPackaging,
+		int springJavaVersion) {
+
+		this.springProject = springProject;
+		this.springLanguage = springLanguage;
+		this.springVersion = springVersion;
+		this.springGroup = springGroup;
+		this.springArtifact = springArtifact;
+		this.springName = springName;
+		this.springDescription = springDescription;
+		this.springPackageName = springPackageName;
+		this.springPackaging = springPackaging;
+		this.springJavaVersion = springJavaVersion;
+	}
+
 }
