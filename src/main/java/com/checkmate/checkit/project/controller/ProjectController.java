@@ -25,6 +25,7 @@ import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.request.ReadmeUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
@@ -268,5 +269,19 @@ public class ProjectController {
 		ReadmeResponse readmeResponse = readmeService.getReadme(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, readmeResponse));
+	}
+
+	// readme 수정
+	@PutMapping("/{projectId}/readme")
+	public ResponseEntity<JSONResponse<Void>> updateReadme(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody ReadmeUpdateRequest readmeUpdateRequest) {
+
+		String token = authorization.substring(7);
+
+		readmeService.updateReadme(token, projectId, readmeUpdateRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 }

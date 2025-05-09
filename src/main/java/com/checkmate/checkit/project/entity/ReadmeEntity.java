@@ -25,4 +25,8 @@ public class ReadmeEntity extends BaseEntity {
 
 	@Column(name = "content", nullable = false, columnDefinition = "TEXT")
 	private String readmeContent;
+
+	public void updateReadmeContent(String readmeContent) {
+		this.readmeContent = readmeContent;
+	}
 }

@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.dto.request.ReadmeUpdateRequest;
 import com.checkmate.checkit.project.dto.response.ReadmeResponse;
 import com.checkmate.checkit.project.repository.ReadmeRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,27 @@ public class ReadmeService {
 		return readmeRepository.findByProjectId(projectId)
 			.map(readme -> new ReadmeResponse(readme.getReadmeContent()))
 			.orElseThrow(() -> new CommonException(ErrorCode.README_NOT_FOUND));
+	}
+
+	/**
+	 * README 파일 업데이트
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @param readmeUpdateRequest : README 업데이트 요청 DTO
+	 */
+	@Transactional
+	public void updateReadme(String token, Integer projectId, ReadmeUpdateRequest readmeUpdateRequest) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		projectService.validateUserAndProject(loginUserId, projectId);
+
+		// README 파일 업데이트
+		readmeRepository.findByProjectId(projectId)
+			.ifPresentOrElse(readme -> {
+				readme.updateReadmeContent(readmeUpdateRequest.content());
+			}, () -> {
+				throw new CommonException(ErrorCode.README_NOT_FOUND);
+			});
 	}
 }
