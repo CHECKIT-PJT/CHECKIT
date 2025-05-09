@@ -328,4 +328,17 @@ public class ProjectController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	// 시퀀스 다이어그램 삭제
+	@DeleteMapping("/{projectId}/sequence")
+	public ResponseEntity<JSONResponse<Void>> deleteSequenceDiagram(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		sequenceDiagramService.deleteSequenceDiagram(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }

@@ -28,4 +28,8 @@ public class SequenceDiagramEntity {
 	public void updatePlantUmlCode(String plantUmlCode) {
 		this.plantUmlCode = plantUmlCode;
 	}
+
+	public void deletePlantUmlCode() {
+		this.plantUmlCode = null;
+	}
 }

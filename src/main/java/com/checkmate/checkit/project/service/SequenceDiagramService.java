@@ -63,4 +63,26 @@ public class SequenceDiagramService {
 			}
 		);
 	}
+
+	/**
+	 * 시퀀스 다이어그램을 삭제
+	 * @param token     JWT 토큰
+	 * @param projectId 프로젝트 ID
+	 */
+	@Transactional
+	public void deleteSequenceDiagram(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		projectService.validateUserAndProject(loginUserId, projectId);
+
+		// 시퀀스 다이어그램 삭제
+		sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNull(projectId).ifPresentOrElse(
+			sequenceDiagram -> {
+				sequenceDiagram.deletePlantUmlCode();
+			}, () -> {
+				throw new CommonException(ErrorCode.SEQUENCE_DIAGRAM_NOT_FOUND);
+			}
+		);
+	}
 }
