@@ -1,6 +1,5 @@
 package com.checkmate.checkit.api.entity;
 
-import com.checkmate.checkit.codegenerator.service.DtoGenerateService;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,7 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ApiRequestParamEntity implements DtoGenerateService.ApiField {
+public class ApiRequestParamEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,15 +36,5 @@ public class ApiRequestParamEntity implements DtoGenerateService.ApiField {
 
 	@Column(name = "request_param_data_type", length = 255)
 	private String requestParamDataType;
-
-	@Override
-	public String getFieldName() {
-		return this.requestParamName;
-	}
-
-	@Override
-	public String getDataType() {
-		return this.requestParamDataType;
-	}
 
 }
