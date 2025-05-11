@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import type { ApiDetail } from '../../types/ApiDoc';
+import type { ApiDetail } from '../../types/apiDocs';
 
 interface ApiHeaderProps {
   form: ApiDetail;
   setForm: (form: ApiDetail) => void;
+  statusCode: number;
+  setStatusCode: (code: number) => void;
+  statusDescription: string;
+  setStatusDescription: (desc: string) => void;
 }
 
 const methodOptions = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
@@ -36,11 +40,16 @@ const methodColor = (method: string) => {
   return colors[method as keyof typeof colors] || 'bg-gray-500';
 };
 
-const ApiHeader = ({ form, setForm }: ApiHeaderProps) => {
+const ApiHeader = ({
+  form,
+  setForm,
+  statusCode,
+  setStatusCode,
+  statusDescription,
+  setStatusDescription,
+}: ApiHeaderProps) => {
   const [showMethodDropdown, setShowMethodDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const [statusCode, setStatusCode] = useState(200);
-  const [statusDescription, setStatusDescription] = useState('OK');
 
   const selectStatusCode = (status: { code: number; description: string }) => {
     setStatusCode(status.code);
