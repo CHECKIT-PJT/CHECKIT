@@ -120,4 +120,20 @@ public class AuthController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	/**
+	 * Jira 로그인 콜백
+	 * 사용자가 Jira 인증 후 리다이렉트되는 URL
+	 */
+	@GetMapping("/jira/callback")
+	public ResponseEntity<JSONResponse<Void>> jiraCallback(@RequestHeader("Authorization") String authorization,
+		@RequestParam("code") String code,
+		HttpServletResponse response) {
+
+		String token = authorization.substring(7);
+
+		authService.processJiraCallback(token, code, response);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }

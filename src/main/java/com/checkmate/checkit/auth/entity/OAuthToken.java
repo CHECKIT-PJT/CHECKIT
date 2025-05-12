@@ -36,10 +36,10 @@ public class OAuthToken {
 	@Column(name = "service_provider", nullable = false, length = 10)
 	private AuthProvider serviceProvider;
 
-	@Column(name = "access_token", nullable = false, length = 100)
+	@Column(name = "access_token", nullable = false, columnDefinition = "TEXT")
 	private String accessToken;
 
-	@Column(name = "refresh_token", length = 100)
+	@Column(name = "refresh_token", columnDefinition = "TEXT")
 	private String refreshToken;
 
 	@Column(name = "expires_in")
@@ -61,5 +61,17 @@ public class OAuthToken {
 
 	public void updateAccessToken(String accessToken) {
 		this.accessToken = accessToken;
+	}
+
+	public void updateRefreshToken(String refreshToken) {
+		this.refreshToken = refreshToken;
+	}
+
+	public void updateExpiresIn(LocalDateTime expiresIn) {
+		this.expiresIn = expiresIn;
+	}
+
+	public void updateCloudId(String cloudId) {
+		this.cloudId = cloudId;
 	}
 }
