@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ErdTableResponse {
-    private UUID id;
+    private String id;
     private String tblLogicName;
     private String tblPhysicName;
     private int positionX;

@@ -38,7 +38,7 @@ public class ErdJsonConverter {
             String colId = it.next();
             JsonNode colNode = columnEntities.get(colId);
             ErdColumnResponse col = new ErdColumnResponse();
-            col.setId(UUID.fromString(colId));
+            col.setId(colId);
             col.setColPhysicName(colNode.path("name").asText());
             col.setColLogicName(colNode.path("comment").asText());
             col.setDataType(colNode.path("dataType").asText());
@@ -53,7 +53,7 @@ public class ErdJsonConverter {
             String tblId = it.next();
             JsonNode tblNode = tableEntities.get(tblId);
             ErdTableResponse tbl = new ErdTableResponse();
-            tbl.setId(UUID.fromString(tblId));
+            tbl.setId(tblId);
             tbl.setTblPhysicName(tblNode.path("name").asText());
             tbl.setTblLogicName(tblNode.path("comment").asText());
             tbl.setPositionX(tblNode.path("ui").path("x").asInt());
@@ -77,9 +77,9 @@ public class ErdJsonConverter {
             JsonNode relNode = relationshipEntities.get(relId);
 
             ErdRelationshipResponse rel = new ErdRelationshipResponse();
-            rel.setId(UUID.fromString(relId));
-            rel.setSourceTableId(UUID.fromString(relNode.path("start").path("tableId").asText()));
-            rel.setTargetTableId(UUID.fromString(relNode.path("end").path("tableId").asText()));
+            rel.setId(relId);
+            rel.setSourceTableId(relNode.path("start").path("tableId").asText());
+            rel.setTargetTableId(relNode.path("end").path("tableId").asText());
             rel.setRelationshipType(String.valueOf(relNode.path("relationshipType").asInt()));
             rel.setLogicalName(""); // 논리 이름이 없으면 빈 문자열
 
@@ -89,9 +89,9 @@ public class ErdJsonConverter {
 
             for (int i = 0; i < startCols.size(); i++) {
                 ErdRelationshipColumnResponse rc = new ErdRelationshipColumnResponse();
-                rc.setId(UUID.fromString(relId));
-                rc.setSourceColumnId(UUID.fromString(startCols.get(i).asText()));
-                rc.setTargetColumnId(UUID.fromString(endCols.get(i).asText()));
+                rc.setId(relId);
+                rc.setSourceColumnId(startCols.get(i).asText());
+                rc.setTargetColumnId(endCols.get(i).asText());
                 relCols.add(rc);
             }
 
