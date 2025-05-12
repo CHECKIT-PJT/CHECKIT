@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.codegenerator.service.DtoGenerateService;
 import com.checkmate.checkit.codegenerator.service.EntityGenerateService;
+import com.checkmate.checkit.codegenerator.service.ServiceGenerateService;
 import com.checkmate.checkit.erd.dto.response.ErdRelationshipResponse;
 import com.checkmate.checkit.erd.dto.response.ErdSnapshotResponse;
 import com.checkmate.checkit.erd.dto.response.ErdTableResponse;
@@ -29,6 +30,7 @@ public class CodeGenerateController {
 	private final ErdService erdService;
 	private final SpringSettingsService springSettingsService;
 	private final DtoGenerateService dtoGenerateService;
+	private final ServiceGenerateService serviceGenerateService;
 
 	// 엔티티 코드 생성을 위한 엔드포인트
 	@PostMapping("/build/{projectId}")
@@ -75,6 +77,10 @@ public class CodeGenerateController {
 		dtoGenerateService.generateQueryDtos(projectId).forEach((fileName, content) -> {
 			codeResult.append(content).append("\n");
 		});
+
+		// 4. Service 클래스
+		serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage)
+			.forEach((category, content) -> codeResult.append(content).append("\n"));
 
 		// 최종 코드 반환
 		return ResponseEntity.ok(codeResult.toString());
