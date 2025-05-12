@@ -1,5 +1,7 @@
 package com.checkmate.checkit.springsettings.dto;
 
+import java.util.List;
+
 import com.checkmate.checkit.springsettings.entity.SpringSettingsEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,8 +24,9 @@ public class SpringSettingsDtoResponse {
 	private String springPackageName;
 	private SpringSettingsEntity.SpringPackagingType springPackaging;
 	private int springJavaVersion;
+	private List<String> dependencies;
 
-	public static SpringSettingsDtoResponse fromEntity(SpringSettingsEntity entity) {
+	public static SpringSettingsDtoResponse fromEntity(SpringSettingsEntity entity, List<String> dependencies) {
 		return new SpringSettingsDtoResponse(
 			entity.getSpringProject(),
 			entity.getSpringLanguage(),
@@ -34,7 +37,8 @@ public class SpringSettingsDtoResponse {
 			entity.getSpringDescription(),
 			entity.getSpringPackageName(),
 			entity.getSpringPackaging(),
-			entity.getSpringJavaVersion()
+			entity.getSpringJavaVersion(),
+			dependencies
 		);
 	}
 }

@@ -17,6 +17,7 @@ import com.checkmate.checkit.springsettings.entity.SpringSettingsEntity;
 import com.checkmate.checkit.springsettings.repository.DependencyRepository;
 import com.checkmate.checkit.springsettings.repository.SpringSettingsRepository;
 import com.checkmate.checkit.springsettings.util.DependencyProvider;
+import jakarta.transaction.Transactional;
 
 @Service
 public class SpringSettingsService {
@@ -30,7 +31,7 @@ public class SpringSettingsService {
 	private DependencyRepository dependencyRepository;
 
 	public SpringSettingsDtoResponse createSpringSettings(Integer projectId, DependenciesDtoRequest request) {
-		//프로젝트 정보조회 후 엔티티 생성
+		// 프로젝트 정보 조회 후 엔티티 생성
 		SpringSettingsDtoRequest settingsRequest = request.getSpringSettings();
 		SpringSettingsEntity settingsEntity = projectRepository.findById(projectId)
 			.map(settingsRequest::toEntity)
@@ -40,25 +41,37 @@ public class SpringSettingsService {
 		SpringSettingsEntity savedSettings = springSettingsRepository.save(settingsEntity);
 
 		// 선택된 의존성들 저장
-		List<DependencyEntity> dependencies = request.getSelectedDependencies().stream()
+		List<DependencyEntity> dependencyEntities = request.getSelectedDependencies().stream()
 			.map(depName -> DependencyEntity.builder()
 				.projectEntity(savedSettings.getProjectEntity())
 				.dependencyName(depName)
 				.build())
 			.collect(Collectors.toList());
 
-		dependencyRepository.saveAll(dependencies);
+		dependencyRepository.saveAll(dependencyEntities);
 
-		// 응답 객체로 변환 후 반환
-		return SpringSettingsDtoResponse.fromEntity(savedSettings);
+		// 문자열 리스트로 변환
+		List<String> dependencyNames = dependencyEntities.stream()
+			.map(DependencyEntity::getDependencyName)
+			.collect(Collectors.toList());
+
+
+		return SpringSettingsDtoResponse.fromEntity(savedSettings, dependencyNames);
 	}
 
 	public SpringSettingsDtoResponse getSpringSettings(Integer projectId) {
 		SpringSettingsEntity entity = springSettingsRepository.findByProjectEntityId(projectId)
 			.orElseThrow(() -> new RuntimeException("SpringSettings not found"));
-		return SpringSettingsDtoResponse.fromEntity(entity);
+
+		List<String> deps = dependencyRepository.findByProjectEntity_Id(projectId)
+			.stream()
+			.map(DependencyEntity::getDependencyName)
+			.collect(Collectors.toList());
+
+		return SpringSettingsDtoResponse.fromEntity(entity, deps); // ✅ 의존성 포함해서 응답
 	}
 
+	@Transactional
 	public SpringSettingsDtoResponse updateSpringSettings(Integer projectId, DependenciesDtoRequest request) {
 		ProjectEntity projectEntity = projectRepository.findById(projectId)
 			.orElseThrow(() -> new RuntimeException("Project not found"));
@@ -66,7 +79,7 @@ public class SpringSettingsService {
 		SpringSettingsEntity entity = springSettingsRepository.findByProjectEntityId(projectId)
 			.orElseThrow(() -> new RuntimeException("Spring settings not found"));
 
-		// 값 갱싱
+		// 값 갱신
 		SpringSettingsDtoRequest settings = request.getSpringSettings();
 		entity.update(
 			settings.getSpringProject(),
@@ -83,10 +96,10 @@ public class SpringSettingsService {
 
 		springSettingsRepository.save(entity);
 
-		//기존 의존성 삭제
-		dependencyRepository.deleteByProjectEntityId(projectId);
+		// ✅ 정확한 메서드 이름 사용
+		dependencyRepository.deleteByProjectEntity_Id(projectId);
 
-		//새 의존성으로 교체
+		// 새 의존성 저장
 		List<DependencyEntity> dependencies = request.getSelectedDependencies().stream()
 			.map(depName -> DependencyEntity.builder()
 				.projectEntity(projectEntity)
@@ -95,8 +108,15 @@ public class SpringSettingsService {
 			.collect(Collectors.toList());
 
 		dependencyRepository.saveAll(dependencies);
-		return SpringSettingsDtoResponse.fromEntity(entity);
+
+		// 새 의존성 목록을 포함하여 반환
+		List<String> selectedDeps = dependencies.stream()
+			.map(DependencyEntity::getDependencyName)
+			.collect(Collectors.toList());
+
+		return SpringSettingsDtoResponse.fromEntity(entity, selectedDeps);
 	}
+
 
 	public void deleteSpringSettings(Integer projectId) {
 		springSettingsRepository.deleteByProjectEntityId(projectId);
