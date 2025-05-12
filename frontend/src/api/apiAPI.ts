@@ -1,4 +1,3 @@
-// apiService.ts
 import axiosInstance from './axiosInstance';
 import useApiStore from '../stores/apiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -57,7 +56,6 @@ export const useGetApiDetail = (projectId: number, id: number) => {
     queryFn: async () => {
       setLoading(true);
       try {
-        // 여기서는 문서에 별도 API가 없으므로 목록에서 필터링
         const response = await axiosInstance.get(`/api/api-spec/${projectId}`);
 
         if (response.data && response.data.result) {

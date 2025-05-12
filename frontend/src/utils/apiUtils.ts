@@ -123,6 +123,7 @@ export const convertFromApiResponse = (response: any): ApiDetail => {
     requestDto: { ...emptyDto },
     responseDto: { ...emptyDto },
     responses,
+    dtoList: response.dtoList || [],
   };
 
   if (response.dtoList && response.dtoList.length > 0) {
