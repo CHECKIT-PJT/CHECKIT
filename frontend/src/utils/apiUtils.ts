@@ -26,7 +26,7 @@ export const convertToApiSpecRequest = (
       fields: apiDetail.requestDto.fields.map(item => ({
         id: item.id,
         dtoItemName: item.dtoItemName,
-        dataType: item.dataTypeName,
+        dataType: item.dataType,
         isList: item.isList,
       })),
     });
@@ -40,7 +40,7 @@ export const convertToApiSpecRequest = (
       fields: apiDetail.responseDto.fields.map(item => ({
         id: item.id,
         dtoItemName: item.dtoItemName,
-        dataType: item.dataTypeName,
+        dataType: item.dataType,
         isList: item.isList,
       })),
     });
@@ -132,7 +132,7 @@ export const convertFromApiResponse = (response: any): ApiDetail => {
         dto.fields?.map((field: DtoItemRequest) => ({
           id: field.id,
           dtoItemName: field.dtoItemName,
-          dataTypeName: field.dataType,
+          dataType: field.dataType,
           isList: field.isList,
         })) || [];
 
