@@ -1,23 +1,23 @@
+// 생략된 import 유지
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { FiInfo } from "react-icons/fi";
 import { IoArrowBack } from "react-icons/io5";
-import { useNavigate } from "react-router-dom";
+import { AxiosError } from "axios";
 
 import ProjectMetadataForm from "../molecules/springsetting/ProjectMetadataForm";
-
-import {
-  getSpringSettings,
-  createSpringSettings,
-  updateSpringSettings,
-} from "../api/springsettingAPI";
-
 import SpringBootConfig from "../molecules/springsetting/SpringBootConfig";
 import DependencySearch from "../molecules/springsetting/DependencySearch";
 import DependencyList from "../molecules/springsetting/DependencyList";
 import DependencyRecommendations from "../molecules/springsetting/DependencyRecommendations";
 import ActionButtons from "../molecules/springsetting/ActionButtons";
-import { AxiosError } from "axios";
+
+import {
+  getSpringSettings,
+  createSpringSettings,
+  updateSpringSettings,
+  getAvailableDependencies,
+} from "../api/springsettingAPI";
 
 interface Dependency {
   id: string;
@@ -36,92 +36,25 @@ interface SpringBootVersion {
 const SpringSettingsPage: React.FC = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [settingsExist, setSettingsExist] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [settingsExist, setSettingsExist] = useState(false);
 
-  const [springBootVersion, setSpringBootVersion] = useState<string>("3.0.6");
-  const [projectType, setProjectType] = useState<string>("Maven Project");
-  const [language, setLanguage] = useState<string>("Java");
-  const [packaging, setPackaging] = useState<string>("Jar");
-  const [javaVersion, setJavaVersion] = useState<string>("17");
+  const [springBootVersion, setSpringBootVersion] = useState("3.0.6");
+  const [projectType, setProjectType] = useState("Maven Project");
+  const [language, setLanguage] = useState("Java");
+  const [packaging, setPackaging] = useState("Jar");
+  const [javaVersion, setJavaVersion] = useState("17");
 
-  const [groupId, setGroupId] = useState<string>("com.example");
-  const [artifactId, setArtifactId] = useState<string>("demo");
-  const [description, setDescription] = useState<string>(
+  const [groupId, setGroupId] = useState("com.example");
+  const [artifactId, setArtifactId] = useState("demo");
+  const [description, setDescription] = useState(
     "Spring Boot 기반 백엔드 프로젝트"
   );
-  const [projectName, setProjectName] = useState<string>("demo");
-  const [packageName, setPackageName] = useState<string>("com.example.demo");
+  const [projectName, setProjectName] = useState("demo");
+  const [packageName, setPackageName] = useState("com.example.demo");
 
-  const [dependencies, setDependencies] = useState<Dependency[]>([
-    {
-      id: "web",
-      name: "Spring Web",
-      selected: true,
-      description:
-        "RESTful 애플리케이션 및 웹 애플리케이션을 구축하기 위한 Spring MVC 기능 제공",
-    },
-    {
-      id: "jpa",
-      name: "Spring Data JPA",
-      selected: true,
-      description:
-        "Java Persistence API를 사용하여 데이터베이스 액세스를 단순화",
-    },
-    {
-      id: "h2",
-      name: "H2 Database",
-      selected: true,
-      description: "개발 및 테스트 환경을 위한 인메모리 데이터베이스",
-    },
-    {
-      id: "mysql",
-      name: "MySQL Driver",
-      selected: false,
-      description: "MySQL 데이터베이스 연결을 위한 JDBC 드라이버",
-    },
-    {
-      id: "postgresql",
-      name: "PostgreSQL Driver",
-      selected: false,
-      description: "PostgreSQL 데이터베이스 연결을 위한 JDBC 드라이버",
-    },
-    {
-      id: "lombok",
-      name: "Lombok",
-      selected: true,
-      description: "반복적인 코드를 줄이기 위한 Java 어노테이션 라이브러리",
-    },
-    {
-      id: "security",
-      name: "Spring Security",
-      selected: false,
-      description: "인증 및 권한 부여를 위한 강력한 보안 프레임워크",
-    },
-    {
-      id: "validation",
-      name: "Validation",
-      selected: false,
-      description: "Bean Validation API 구현을 위한 라이브러리",
-    },
-    {
-      id: "actuator",
-      name: "Spring Boot Actuator",
-      selected: false,
-      description: "운영 환경에서 애플리케이션 모니터링 및 관리를 위한 도구",
-    },
-    {
-      id: "oauth2",
-      name: "OAuth2 Client",
-      selected: false,
-      description: "OAuth2 인증 클라이언트 기능 제공",
-    },
-  ]);
-
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [showDependencyInfo, setShowDependencyInfo] = useState<string | null>(
-    null
-  );
+  const [dependencies, setDependencies] = useState<Dependency[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const springBootVersions: SpringBootVersion[] = [
     {
@@ -169,18 +102,12 @@ const SpringSettingsPage: React.FC = () => {
     setProjectName("");
     setPackageName("");
 
-    setDependencies(
-      dependencies.map((dep) => ({
-        ...dep,
-        selected: false,
-      }))
-    );
-
+    setDependencies((prev) => prev.map((d) => ({ ...d, selected: false })));
     setSettingsExist(false);
   };
 
   useEffect(() => {
-    const fetchSettings = async () => {
+    const loadData = async () => {
       if (!projectId) {
         setLoading(false);
         return;
@@ -194,16 +121,31 @@ const SpringSettingsPage: React.FC = () => {
       }
 
       try {
-        const response = await getSpringSettings(
-          Number(projectId),
-          accessToken
-        );
-        if (response && response.result) {
-          setSettingsExist(true);
-          mapResponseToState(response.result);
-        }
+        // 병렬 요청
+        const [depsResponse, settingsResponse] = await Promise.all([
+          getAvailableDependencies(),
+          getSpringSettings(Number(projectId), accessToken),
+        ]);
+
+        const availableDeps: string[] =
+          depsResponse?.data?.result?.dependencies || [];
+
+        const selectedDeps: string[] =
+          settingsResponse?.result?.dependencies || [];
+
+        // dependencies 상태 구성
+        const deps: Dependency[] = availableDeps.map((name: string) => ({
+          id: name,
+          name,
+          description: "",
+          selected: selectedDeps.includes(name),
+        }));
+        setDependencies(deps);
+
+        // 나머지 설정 반영
+        setSettingsExist(true);
+        mapResponseToState(settingsResponse.result);
       } catch (error) {
-        console.error("설정 불러오기 실패:", error);
         if (error instanceof AxiosError && error.response?.status === 404) {
           resetSettings();
         }
@@ -213,30 +155,14 @@ const SpringSettingsPage: React.FC = () => {
       }
     };
 
-    fetchSettings();
+    loadData();
   }, [projectId]);
 
   const mapResponseToState = (data: any) => {
-    const versionMap: Record<number, string> = {
-      3: "3.0.6",
-      2: "2.7.10",
-    };
-
-    const projectTypeMap: Record<string, string> = {
-      MAVEN: "Maven Project",
-      GRADLE: "Gradle Project",
-    };
-
-    const languageMap: Record<string, string> = {
-      JAVA: "Java",
-      KOTLIN: "Kotlin",
-      GROOVY: "Groovy",
-    };
-
-    const packagingMap: Record<string, string> = {
-      JAR: "Jar",
-      WAR: "War",
-    };
+    const versionMap: Record<number, string> = { 3: "3.0.6", 2: "2.7.10" };
+    const projectTypeMap = { MAVEN: "Maven Project", GRADLE: "Gradle Project" };
+    const languageMap = { JAVA: "Java", KOTLIN: "Kotlin", GROOVY: "Groovy" };
+    const packagingMap = { JAR: "Jar", WAR: "War" };
 
     setSpringBootVersion(versionMap[data.springVersion] || "3.0.6");
     setProjectType(projectTypeMap[data.springProject] || "Maven Project");
@@ -249,22 +175,6 @@ const SpringSettingsPage: React.FC = () => {
     setProjectName(data.springName || data.springArtifact || "");
     setPackageName(data.springPackageName || "");
     setDescription(data.springDescription || "");
-
-    if (data.dependencies && Array.isArray(data.dependencies)) {
-      const updatedDependencies = dependencies.map((dep) => ({
-        ...dep,
-        selected: false,
-      }));
-
-      data.dependencies.forEach((depId: string) => {
-        const depIndex = updatedDependencies.findIndex((d) => d.id === depId);
-        if (depIndex !== -1) {
-          updatedDependencies[depIndex].selected = true;
-        }
-      });
-
-      setDependencies(updatedDependencies);
-    }
   };
 
   const toggleDependency = (id: string) => {
@@ -278,9 +188,6 @@ const SpringSettingsPage: React.FC = () => {
   const onClickBack = () => {
     navigate(`/project/${projectId}`);
   };
-  const toggleDependencyInfo = (id: string) => {
-    setShowDependencyInfo(showDependencyInfo === id ? null : id);
-  };
 
   const filteredDependencies = searchQuery
     ? dependencies.filter(
@@ -290,23 +197,16 @@ const SpringSettingsPage: React.FC = () => {
       )
     : dependencies;
 
-  // 선택된 의존성 개수
   const selectedCount = dependencies.filter((dep) => dep.selected).length;
 
   const handleSave = async () => {
-    if (!projectId) {
-      console.error("프로젝트 ID가 없습니다.");
-      return;
-    }
+    if (!projectId) return;
 
     const accessToken = sessionStorage.getItem("accessToken");
-    if (!accessToken) {
-      console.error("인증 토큰이 없습니다.");
-      return;
-    }
+    if (!accessToken) return;
 
-    try {
-      const requestData = {
+    const requestData = {
+      springSettings: {
         springProject: projectType === "Maven Project" ? "MAVEN" : "GRADLE",
         springLanguage:
           language === "Java"
@@ -322,43 +222,23 @@ const SpringSettingsPage: React.FC = () => {
         springPackageName: packageName,
         springPackaging: packaging === "Jar" ? "JAR" : "WAR",
         springJavaVersion: parseInt(javaVersion),
-        dependencies: dependencies.filter((d) => d.selected).map((d) => d.id),
-      };
+      },
+      selectedDependencies: dependencies
+        .filter((d) => d.selected)
+        .map((d) => d.id),
+    };
 
-      try {
-        if (settingsExist) {
-          console.log("기존 설정이 있어 PUT 요청으로 업데이트합니다.");
-          const response = await updateSpringSettings(
-            Number(projectId),
-            requestData,
-            accessToken
-          );
-          console.log("PUT 응답:", response);
-        } else {
-          console.log("설정이 없어 POST 요청으로 생성합니다.");
-          const response = await createSpringSettings(
-            Number(projectId),
-            requestData,
-            accessToken
-          );
-          console.log("POST 응답:", response);
-        }
-
-        setSettingsExist(true);
-        alert("설정이 성공적으로 저장되었습니다.");
-      } catch (error) {
-        console.error("API 호출 실패:", error);
-
-        alert(
-          `저장 실패: ${error instanceof AxiosError ? error.response?.data?.message || "서버 오류가 발생했습니다." : "알 수 없는 오류가 발생했습니다."}`
-        );
-        throw error;
+    try {
+      if (settingsExist) {
+        await updateSpringSettings(Number(projectId), requestData, accessToken);
+      } else {
+        await createSpringSettings(Number(projectId), requestData, accessToken);
       }
+      setSettingsExist(true);
+      alert("설정이 성공적으로 저장되었습니다.");
     } catch (error) {
-      console.error(
-        "프로젝트 설정 저장 실패:",
-        error instanceof AxiosError ? error.response?.data : error
-      );
+      console.error("저장 실패:", error);
+      alert("설정 저장 중 오류가 발생했습니다.");
     }
   };
 
@@ -372,9 +252,8 @@ const SpringSettingsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* 헤더 */}
       <header className="bg-gray-50">
-        <div className=" mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <button
               onClick={onClickBack}
@@ -396,8 +275,7 @@ const SpringSettingsPage: React.FC = () => {
               <div className="flex items-center text-blue-700">
                 <FiInfo className="h-5 w-5 mr-2" />
                 <p className="text-sm">
-                  이 프로젝트의 Spring 설정이 이미 구성되어 있습니다. 설정을
-                  변경하고 저장하면 업데이트됩니다.
+                  이 프로젝트의 Spring 설정이 이미 구성되어 있습니다.
                 </p>
               </div>
             </div>
@@ -423,7 +301,6 @@ const SpringSettingsPage: React.FC = () => {
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
                   프로젝트 메타데이터
                 </h2>
-
                 <ProjectMetadataForm
                   groupId={groupId}
                   setGroupId={setGroupId}
@@ -445,14 +322,10 @@ const SpringSettingsPage: React.FC = () => {
                 setSearchQuery={setSearchQuery}
                 selectedCount={selectedCount}
               />
-
               <DependencyList
                 filteredDependencies={filteredDependencies}
                 toggleDependency={toggleDependency}
-                showDependencyInfo={showDependencyInfo}
-                toggleDependencyInfo={toggleDependencyInfo}
               />
-
               <DependencyRecommendations
                 dependencies={dependencies}
                 toggleDependency={toggleDependency}
