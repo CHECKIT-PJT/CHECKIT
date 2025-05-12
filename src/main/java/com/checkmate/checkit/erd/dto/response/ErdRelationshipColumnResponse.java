@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ErdRelationshipColumnResponse {
-    private UUID id;
-    private UUID sourceColumnId;
-    private UUID targetColumnId;
+    private String id;
+    private String sourceColumnId;
+    private String targetColumnId;
 }

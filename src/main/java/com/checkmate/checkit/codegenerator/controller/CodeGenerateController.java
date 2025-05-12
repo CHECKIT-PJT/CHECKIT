@@ -36,9 +36,9 @@ public class CodeGenerateController {
 	@PostMapping("/build/{projectId}")
 	public ResponseEntity<String> generateEntityCode(@PathVariable int projectId) throws IOException {
 		//사용자가 지정한 base package  가져오기
-		String basePackage = Optional.ofNullable(
-			springSettingsService.getSpringSettings(projectId).getSpringPackageName()
-		).orElseThrow(() -> new IllegalStateException("springPackageName이 null입니다. Spring 설정을 확인하세요."));
+//		String basePackage = Optional.ofNullable(
+//			springSettingsService.getSpringSettings(projectId).getSpringPackageName()
+//		).orElseThrow(() -> new IllegalStateException("springPackageName이 null입니다. Spring 설정을 확인하세요."));
 
 		// ERD 데이터 가져오기
 		ErdSnapshotResponse erdData = erdService.getErdByProjectId(projectId);
@@ -63,13 +63,13 @@ public class CodeGenerateController {
 				table,
 				table.getColumns(),
 				tableRelationships,
-				basePackage
+				"basePackage"
 			);
 			codeResult.append(entityCodeForTable).append("\n");
 		}
 
 		// 2. Request/Response DTO 코드 생성
-		dtoGenerateService.generateDtos(projectId, basePackage).forEach((fileName, content) -> {
+		dtoGenerateService.generateDtos(projectId, "basePackage").forEach((fileName, content) -> {
 			codeResult.append(content).append("\n");
 		});
 
@@ -79,7 +79,7 @@ public class CodeGenerateController {
 		});
 
 		// 4. Service 클래스
-		serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage)
+		serviceGenerateService.generateServiceCodeByCategory(projectId, "basePackage")
 			.forEach((category, content) -> codeResult.append(content).append("\n"));
 
 		// 최종 코드 반환

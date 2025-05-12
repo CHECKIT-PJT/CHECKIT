@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ErdColumnResponse {
-    private UUID id;
+    private String id;
     private String colLogicName;
     private String colPhysicName;
     private String dataType;

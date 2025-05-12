@@ -13,9 +13,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ErdRelationshipResponse {
-    private UUID id;
-    private UUID sourceTableId;
-    private UUID targetTableId;
+    private String id;
+    private String sourceTableId;
+    private String targetTableId;
     private String relationshipType;
     private String logicalName;
     private List<ErdRelationshipColumnResponse> relationshipColumns;
