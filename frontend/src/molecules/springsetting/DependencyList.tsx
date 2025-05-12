@@ -1,27 +1,22 @@
 import React from "react";
-import { FiInfo, FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle } from "react-icons/fi";
 import Checkbox from "../../components/springsetting/checkbox";
 
 // 의존성 타입 정의
 interface Dependency {
   id: string;
   name: string;
-  description: string;
   selected: boolean;
 }
 
 interface DependencyListProps {
   filteredDependencies: Dependency[];
   toggleDependency: (id: string) => void;
-  showDependencyInfo: string | null;
-  toggleDependencyInfo: (id: string) => void;
 }
 
 const DependencyList: React.FC<DependencyListProps> = ({
   filteredDependencies,
   toggleDependency,
-  showDependencyInfo,
-  toggleDependencyInfo,
 }) => {
   return (
     <div>
@@ -42,18 +37,7 @@ const DependencyList: React.FC<DependencyListProps> = ({
                     <span className="text-sm font-medium text-gray-900">
                       {dependency.name}
                     </span>
-                    <button
-                      onClick={() => toggleDependencyInfo(dependency.id)}
-                      className="text-gray-400 hover:text-indigo-600"
-                    >
-                      <FiInfo className="h-4 w-4" />
-                    </button>
                   </div>
-                  {showDependencyInfo === dependency.id && (
-                    <div className="mt-2 text-xs text-gray-600">
-                      {dependency.description}
-                    </div>
-                  )}
                 </div>
               </div>
             </li>

@@ -4,7 +4,6 @@ import InfoBox from "../../components/springsetting/InfoBox";
 interface Dependency {
   id: string;
   name: string;
-  description: string;
   selected: boolean;
 }
 
@@ -21,9 +20,6 @@ const DependencyRecommendations: React.FC<DependencyRecommendationsProps> = ({
     dependencies.find((d) => d.id === "security")?.selected || false;
   const oauth2Selected =
     dependencies.find((d) => d.id === "oauth2")?.selected || false;
-  const actuatorSelected =
-    dependencies.find((d) => d.id === "actuator")?.selected || false;
-
   return (
     <div className="mt-4 space-y-3">
       {/* 정보 및 경고 박스 */}
@@ -48,21 +44,6 @@ const DependencyRecommendations: React.FC<DependencyRecommendationsProps> = ({
             className="text-xs text-yellow-700 underline mt-1"
           >
             OAuth2 Client 추가하기
-          </button>
-        </InfoBox>
-      )}
-
-      {/* 모니터링 의존성 체크 */}
-      {!actuatorSelected && (
-        <InfoBox variant="default">
-          <p className="text-sm">
-            프로덕션 환경 모니터링을 위해 Actuator 추가를 권장합니다.
-          </p>
-          <button
-            onClick={() => toggleDependency("actuator")}
-            className="text-xs text-indigo-600 underline mt-1"
-          >
-            Spring Boot Actuator 추가하기
           </button>
         </InfoBox>
       )}
