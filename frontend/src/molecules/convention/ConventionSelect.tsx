@@ -57,17 +57,6 @@ const ConventionSelect = ({ activePath }: SidebarMenuProps) => {
   return (
     <div className="w-64  bg-gray-50 border-r border-gray-200">
       <div className="p-4">
-        <div className="flex items-center gap-2 mb-6">
-          <button
-            onClick={onClickBack}
-            className="p-1 hover:bg-gray-100 rounded-full"
-          >
-            <IoArrowBack className="w-5 h-5" />
-          </button>
-          <p className="text-lg font-semibold text-gray-500 uppercase tracking-wider">
-            컨벤션 설정
-          </p>
-        </div>
         <nav className="space-y-3">
           {menuOptions.map(option => (
             <div

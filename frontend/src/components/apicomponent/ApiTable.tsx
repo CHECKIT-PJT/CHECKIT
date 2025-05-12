@@ -54,7 +54,7 @@ const ApiTable = ({ data, onRowClick, selectedDomain }: ApiTableProps) => {
             </td>
             <td className="py-4 px-2 text-center">
               <span className="px-4 py-2 rounded font-bold bg-white text-cyan-900 text-sm">
-                {api.category}
+                {api.category.toUpperCase()}
               </span>
             </td>
             <td
