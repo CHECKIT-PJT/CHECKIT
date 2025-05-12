@@ -157,10 +157,13 @@ const ApiHeader = ({
           <input
             className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 w-40"
             value={form.category}
-            onChange={e =>
-              setForm({ ...form, category: e.target.value.toUpperCase() })
-            }
-            placeholder="CATEGORY"
+            onChange={e => {
+              const value = e.target.value
+                .replace(/[^a-zA-Z]/g, '')
+                .toLowerCase();
+              setForm({ ...form, category: value });
+            }}
+            placeholder="category"
           />
         </div>
       </div>

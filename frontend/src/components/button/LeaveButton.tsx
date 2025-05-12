@@ -1,20 +1,42 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useDeleteProject } from '../../api/projectAPI';
+import { useDeleteProject, useLeaveProject } from '../../api/projectAPI';
+import { toast } from 'react-toastify';
+import { RiDeleteBin6Line } from 'react-icons/ri';
 
 interface LeaveButtonProps {
   onClick?: () => void;
+  role: 'OWNER' | 'MEMBER';
 }
 
-const LeaveButton = ({ onClick }: LeaveButtonProps) => {
+const LeaveButton = ({ onClick, role }: LeaveButtonProps) => {
   const [showModal, setShowModal] = useState(false);
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { mutate: deleteProject } = useDeleteProject();
+  const { mutate: leaveProject } = useLeaveProject();
 
-  const handleLeave = () => {
-    if (projectId) {
+  const handleAction = () => {
+    if (!projectId) return;
+
+    if (role === 'OWNER') {
       deleteProject(Number(projectId), {
+        onSuccess: () => {
+          setShowModal(false);
+          navigate('/project');
+          if (onClick) onClick();
+        },
+        onError: (error: any) => {
+          setShowModal(false);
+          if (error.response?.status === 400) {
+            toast.error('다른 멤버가 있어 삭제할 수 없습니다.');
+          } else {
+            toast.error('프로젝트 삭제 중 오류가 발생했습니다.');
+          }
+        },
+      });
+    } else {
+      leaveProject(Number(projectId), {
         onSuccess: () => {
           setShowModal(false);
           navigate('/project');
@@ -28,29 +50,34 @@ const LeaveButton = ({ onClick }: LeaveButtonProps) => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors w-full`}
+        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors`}
       >
-        떠나기
+        {role === 'OWNER' ? '프로젝트 삭제' : '떠나기'}
       </button>
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white px-14 py-6 rounded-lg shadow-lg text-center animate-fadeIn">
-            <p className="mb-8 mt-4 text-lg font-bold">
-              정말 팀을 떠나시겠습니까?
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg px-6 py-6 max-w-md mx-4 shadow-xl">
+            <div className="flex justify-center mb-4">
+              <RiDeleteBin6Line className="h-9 w-9 bg-red-500 opacity-40 text-white rounded-full p-2" />
+            </div>
+            <p className="text-gray-700 mb-6 text-center whitespace-pre-line mx-4 text-sm">
+              {role === 'OWNER'
+                ? '프로젝트를 정말 삭제하시겠습니까?\n 작업은 되돌릴 수 없습니다'
+                : '팀을 정말 떠나시겠습니까?\n 작업은 되돌릴 수 없습니다'}
             </p>
 
-            <div className="flex justify-between gap-4 mb-2">
-              <button
-                onClick={handleLeave}
-                className="px-4 py-2 bg-red-500 text-white rounded mr-2 hover:bg-red-600 transition-colors"
-              >
-                벗어나기
-              </button>
+            <div className="flex gap-3 justify-between">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-colors"
+                className="w-1/2 py-2 bg-gray-200 hover:bg-gray-300 rounded-md transition text-sm"
               >
-                머무르기
+                취소
+              </button>
+              <button
+                onClick={handleAction}
+                className="w-1/2 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition text-sm"
+              >
+                {role === 'OWNER' ? '삭제' : '떠나기'}
               </button>
             </div>
           </div>
