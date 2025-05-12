@@ -23,6 +23,9 @@ public class ProjectEntity extends BaseEntity {
 	@Column(name = "project_name", nullable = false, length = 100)
 	private String projectName;
 
+	@Column(name = "jira_url", length = 255)
+	private String jiraUrl;
+
 	public ProjectEntity(String projectName) {
 		this.projectName = projectName;
 	}
