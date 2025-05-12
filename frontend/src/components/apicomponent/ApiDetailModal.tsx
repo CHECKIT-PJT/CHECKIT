@@ -76,8 +76,6 @@ const ApiDetailModal = ({
     pathVariableDataType: 'string',
   });
 
-  console.log('api', api);
-
   const [newParam, setNewParam] = useState<RequestParam>({
     id: null,
     requestParamName: '',
@@ -104,7 +102,6 @@ const ApiDetailModal = ({
     if (api) {
       const dtoList = api.dtoList || [];
 
-      // dtoList에서 REQUEST/RESPONSE dto 분리
       const requestDto = dtoList.find(dto => dto.dtoType === 'REQUEST') || {
         id: null,
         dtoName: '',
@@ -193,11 +190,9 @@ const ApiDetailModal = ({
       return;
     }
 
-    console.log('Saving form:', updatedForm);
-    console.log('API Request:', apiSpecRequest);
-
     // API 요청 형식만 전달
     onSave(apiSpecRequest);
+    onClose(); // 저장 후 모달 닫기
   };
 
   const handleAddPathVar = () => {
@@ -269,7 +264,7 @@ const ApiDetailModal = ({
               Cancel
             </button>
 
-            {api && api.id !== 0 && onDelete && (
+            {api && api.id !== null && onDelete && (
               <button
                 className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium shadow hover:bg-red-700 transition flex items-center gap-2"
                 onClick={onDelete}
