@@ -1,8 +1,8 @@
-import axiosInstance from './axiosInstance';
+import axiosInstance from "./axiosInstance";
 
-interface Branch {
-  branchConventionReg: string | null;
-}
+// interface Branch {
+//   branchConventionReg: string | null;
+// }
 
 export const useGetBranchConventionReg = async (projectId: number) => {
   const response = await axiosInstance.get(
@@ -44,7 +44,7 @@ export const useDownloadBranchConvention = async (projectId: number) => {
   const response = await axiosInstance.get(
     `/api/git/branch-strategy/${projectId}/download`,
     {
-      responseType: 'blob',
+      responseType: "blob",
     }
   );
   return response;

@@ -1,7 +1,7 @@
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Layout from "../pages/Layout";
 import Testpage from "../pages/Testpage";
-import DevelopSelect from "../molecules/chapter/DevelopSelect";
+// import DevelopSelect from "../molecules/chapter/DevelopSelect";
 import DevelopErd from "../molecules/develop/DevelopErd";
 import DevelopApi from "../molecules/develop/DevelopApi";
 import DevelopFunction from "../molecules/develop/DevelopFunction";
@@ -22,6 +22,8 @@ import SpringSettingPage from "../pages/SpringSettingPage";
 import GitignoreConvention from "../molecules/convention/GitignoreConvention";
 import InvitePage from "../pages/InvitePage";
 import SequenceDiagramPage from "../pages/SequenceDiagramPage";
+import MarkdownEditorPage from "../pages/MarkdownEditorPage";
+
 const Router = () => {
   // 로그인 체크
   //   const ProtectedRoute = ({ element }) => {
@@ -55,6 +57,10 @@ const Router = () => {
         <Route
           path="/project/:projectId/doc/sequence"
           element={<SequenceDiagramPage />}
+        />
+        <Route
+          path="/project/:projectId/doc/readme"
+          element={<MarkdownEditorPage />}
         />
         <Route
           path="/project/:projectId/buildpreview"

@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { Navigate, useParams } from "react-router-dom";
-import { FiHelpCircle, FiInfo } from "react-icons/fi";
+import { useParams } from "react-router-dom";
+import { FiInfo } from "react-icons/fi";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import Badge from "../components/springsetting/Badge";
 
 import ProjectMetadataForm from "../molecules/springsetting/ProjectMetadataForm";
 
@@ -283,10 +282,6 @@ const SpringSettingsPage: React.FC = () => {
     setShowDependencyInfo(showDependencyInfo === id ? null : id);
   };
 
-  const clearSearch = () => {
-    setSearchQuery("");
-  };
-
   const filteredDependencies = searchQuery
     ? dependencies.filter(
         (dep) =>
@@ -390,9 +385,6 @@ const SpringSettingsPage: React.FC = () => {
             <h1 className="text-xl font-semibold text-gray-900">
               Spring 프로젝트 설정
             </h1>
-            <Badge variant="primary" className="ml-4">
-              사용자 인증 서비스
-            </Badge>
           </div>
         </div>
       </header>
