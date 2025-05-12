@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.checkmate.checkit.codegenerator.service.ControllerGenerateService;
 import com.checkmate.checkit.codegenerator.service.DtoGenerateService;
 import com.checkmate.checkit.codegenerator.service.EntityGenerateService;
 import com.checkmate.checkit.codegenerator.service.RepositoryGenerateService;
@@ -29,6 +30,7 @@ public class CodeGenerateController {
 	private final DtoGenerateService dtoGenerateService;
 	private final ServiceGenerateService serviceGenerateService;
 	private final RepositoryGenerateService repositoryGenerateService;
+	private final ControllerGenerateService controllerGenerateService;
 
 	/**
 	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository)
@@ -66,6 +68,10 @@ public class CodeGenerateController {
 
 		// 7. Repository 코드 생성
 		codeResult.append(repositoryGenerateService.generateRepositoriesFromErdJson(erdJson, basePackage)).append("\n");
+
+		// 8. Controller 코드 생성 ← 추가됨
+		controllerGenerateService.generateControllersByCategory(projectId, basePackage)
+			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
 		// 최종 코드 반환
 		return ResponseEntity.ok(codeResult.toString());
