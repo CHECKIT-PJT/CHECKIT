@@ -104,6 +104,23 @@ export const useDeleteProject = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (projectId: number) => {
+      const response = await axiosInstance.delete(`/api/project/${projectId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+    onError: (error: any) => {
+      throw error;
+    },
+  });
+};
+
+// 프로젝트 떠나기
+export const useLeaveProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (projectId: number) => {
       const response = await axiosInstance.delete(
         `/api/project/${projectId}/leave`
       );

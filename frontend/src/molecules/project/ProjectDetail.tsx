@@ -2,30 +2,34 @@ import { IoArrowBack } from 'react-icons/io5';
 import InputSelect from '../develop/InputSelect';
 import LeaveButton from '../../components/button/LeaveButton';
 import MoveGitlabButton from '../../components/button/MoveGitlabButton';
-import MemberAddButton from '../../components/button/MemberAddButton';
-import { data, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import DocSelect from '../document/DocSelect';
 import BuildSelect from '../buildpreview/BuildSelect';
-import {
-  useGetProjectById,
-  useApproveMember,
-  useGetProjectMembers,
-} from '../../api/projectAPI';
+import { useGetProjectById } from '../../api/projectAPI';
 import JiraButton from '../../components/button/JiraButton';
+import { getToken } from '../../api/authAPI';
+import ProjectMemberList from '../../components/project/ProjectMemberList';
+
+const getUserIdFromToken = (): string | null => {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded.userName;
+  } catch (err) {
+    return null;
+  }
+};
 
 const ProjectDetail = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
 
   const { data: response } = useGetProjectById(Number(projectId));
-  const { mutate: approveMember } = useApproveMember();
 
   const onClickBack = () => {
     navigate('/project');
-  };
-
-  const handleApprove = (memberId: number) => {
-    approveMember({ projectId: Number(projectId), memberId });
   };
 
   if (!response?.result) {
@@ -33,9 +37,15 @@ const ProjectDetail = () => {
   }
 
   const projectData = response.result;
+  const currentUserId = getUserIdFromToken();
   const isOwner = projectData.projectMembers.some(
-    (member: any) => member.role === 'OWNER' && member.isApproved
+    (member: any) =>
+      member.userName === currentUserId &&
+      member.role === 'OWNER' &&
+      member.isApproved
   );
+  const userRole = isOwner ? 'OWNER' : 'MEMBER';
+  const handleClick = () => {};
 
   return (
     <div className="flex flex-col h-full">
@@ -52,7 +62,7 @@ const ProjectDetail = () => {
           </h3>
         </div>
         <div className="flex gap-2">
-          <LeaveButton />
+          <LeaveButton role={userRole} onClick={handleClick} />
           <JiraButton />
           <MoveGitlabButton />
         </div>
@@ -60,50 +70,12 @@ const ProjectDetail = () => {
 
       <div className="flex flex-1">
         <div className="w-1/5 py-2 pr-4 border-r border-gray-200 flex flex-col">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg">팀 멤버</h3>
-              <MemberAddButton
-                projectId={projectData.projectId}
-                projectName={projectData.projectName}
-              />
-            </div>
-            <ul>
-              {projectData.projectMembers.map(
-                (member: {
-                  id: number;
-                  nickname: string;
-                  userName: string;
-                  role: string;
-                  isApproved: boolean;
-                }) => (
-                  <li key={member.id} className="mb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-medium">{member.nickname}</span>
-                        <span className="ml-4 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                          {member.role}
-                        </span>
-                        <div className="text-xs text-gray-400 ml-1 mt-1">
-                          {member.userName}
-                        </div>
-                      </div>
-                      {isOwner &&
-                        !member.isApproved &&
-                        member.role !== 'OWNER' && (
-                          <button
-                            onClick={() => handleApprove(member.id)}
-                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                          >
-                            승인 하기
-                          </button>
-                        )}
-                    </div>
-                  </li>
-                )
-              )}
-            </ul>
-          </div>
+          <ProjectMemberList
+            projectId={projectData.projectId}
+            projectName={projectData.projectName}
+            members={projectData.projectMembers}
+            isOwner={isOwner}
+          />
         </div>
         {/* 설계 */}
         <div className="w-4/5 pb-4">
