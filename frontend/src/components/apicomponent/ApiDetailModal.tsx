@@ -76,6 +76,8 @@ const ApiDetailModal = ({
     pathVariableDataType: 'string',
   });
 
+  console.log('api', api);
+
   const [newParam, setNewParam] = useState<RequestParam>({
     id: null,
     requestParamName: '',
@@ -100,25 +102,38 @@ const ApiDetailModal = ({
 
   useEffect(() => {
     if (api) {
-      setForm(api);
-      const hasRequestDto = Boolean(api.requestDto && api.requestDto.dtoName);
-      const hasResponseDto = Boolean(
-        api.responseDto && api.responseDto.dtoName
-      );
-      setShowDto(hasRequestDto || hasResponseDto);
+      const dtoList = api.dtoList || [];
 
-      // 상태 코드 설정
-      setStatusCode(
-        api.statusCode ||
-          (api.responses && api.responses[0]
-            ? api.responses[0].statusCode
-            : 200)
-      );
-      setStatusDescription(
-        api.responses && api.responses[0]
-          ? api.responses[0].responseDescription
-          : 'OK'
-      );
+      // dtoList에서 REQUEST/RESPONSE dto 분리
+      const requestDto = dtoList.find(dto => dto.dtoType === 'REQUEST') || {
+        id: null,
+        dtoName: '',
+        fields: [],
+        dtoType: 'REQUEST',
+      };
+
+      const responseDto = dtoList.find(dto => dto.dtoType === 'RESPONSE') || {
+        id: null,
+        dtoName: '',
+        fields: [],
+        dtoType: 'RESPONSE',
+      };
+
+      // form 상태에 request/responseDto를 dtoList로부터 명확히 주입
+      setForm({
+        ...api,
+        requestDto,
+        responseDto,
+        pathVariables: api.pathVariables ?? [],
+        requestParams: api.requestParams ?? [],
+        responses: api.responses ?? [],
+        header: api.header ?? '',
+      });
+
+      setShowDto(dtoList.length > 0);
+
+      setStatusCode(api.statusCode ?? api.responses?.[0]?.statusCode ?? 200);
+      setStatusDescription(api.responses?.[0]?.responseDescription ?? 'OK');
     } else {
       setForm(blankApiDetail);
       setShowDto(false);
@@ -241,7 +256,7 @@ const ApiDetailModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-[90%] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-white rounded-2xl w-[90%] max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold text-blue-700">
             {api && api.id ? 'API 수정 하기' : 'API 추가 하기'}

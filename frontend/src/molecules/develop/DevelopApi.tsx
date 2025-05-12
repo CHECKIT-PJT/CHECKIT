@@ -13,6 +13,7 @@ import {
   useDeleteApiSpec,
 } from '../../api/apiAPI';
 import { useParams } from 'react-router-dom';
+import { convertFromApiResponse } from '../../utils/apiUtils';
 
 // 예시 API 세부 정보 (백엔드에서 받을 데이터 형식)
 const exampleApiDetails: ApiDetail[] = [
@@ -195,26 +196,10 @@ const DevelopApi = () => {
   };
 
   const handleRowClick = (apiItem: ApiDocListItem) => {
-    setSelectedApi({
-      id: apiItem.apiSpecId,
-      apiName: apiItem.apiName,
-      endpoint: apiItem.endpoint,
-      method: apiItem.method,
-      category: apiItem.category,
-      description: apiItem.description,
-      statusCode: 200,
-      header: apiItem.header || '',
-      pathVariables: [],
-      requestParams: [],
-      requestDto: { id: 0, dtoName: '', fields: [], dtoType: 'REQUEST' },
-      responseDto: { id: 0, dtoName: '', fields: [], dtoType: 'RESPONSE' },
-      responses: [
-        {
-          statusCode: 200,
-          responseDescription: 'OK',
-        },
-      ],
-    });
+    const fullApi = apiListItems.find(
+      (api: { id: number | null }) => api.id === apiItem.apiSpecId
+    );
+    if (fullApi) setSelectedApi(fullApi);
     setModalOpen(true);
   };
 

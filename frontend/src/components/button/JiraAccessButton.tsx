@@ -5,7 +5,7 @@ const JiraConnectButton = () => {
   return (
     <button
       onClick={redirectToJiraLogin}
-      className="text-slate-500 flex items-center justify-center gap-2 bg-white border border-slate-200 px-3 py-1 rounded-md"
+      className="text-blue-700 flex items-center justify-center gap-2 bg-white border border-blue-700 px-3 py-1 rounded-md"
     >
       <img
         src={jiraLogo}
