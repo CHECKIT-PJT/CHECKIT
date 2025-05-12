@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -19,6 +20,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.checkmate.checkit.auth.dto.response.AuthResponse;
+import com.checkmate.checkit.auth.dto.response.JiraProjectListResponse;
 import com.checkmate.checkit.auth.entity.OAuthToken;
 import com.checkmate.checkit.auth.repository.OAuthTokenRepository;
 import com.checkmate.checkit.global.code.ErrorCode;
@@ -439,6 +441,7 @@ public class AuthService {
 	 * @param code : Jira에서 받은 인증 코드
 	 * @param response :HttpServletResponse
 	 */
+	@Transactional
 	public void processJiraCallback(String token, String code, HttpServletResponse response) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
@@ -516,6 +519,54 @@ public class AuthService {
 			.bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
 			})
 			.map(list -> (String)list.get(0).get("id"))
+			.block(); // 동기 호출 (결과 기다림)
+	}
+
+	/**
+	 * Jira 프로젝트 목록 조회
+	 * @param token : 액세스 토큰
+	 * @return List<JiraProjectListResponse> : Jira 프로젝트 목록
+	 */
+	@Transactional(readOnly = true)
+	public List<JiraProjectListResponse> getJiraProjects(String token) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// Jira OAuthToken 조회
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA)
+			.orElseThrow(() -> new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter));
+
+		// Jira API 호출
+		Map<String, Object> response = getJiraProjectsFromApi(oAuthToken);
+
+		// 응답 값에서 values 필드에 프로젝트 리스트 존재.
+		List<Map<String, Object>> projects = (List<Map<String, Object>>)response.get("values");
+
+		return projects.stream()
+			.map(project -> new JiraProjectListResponse(
+				String.valueOf(project.get("id")),
+				String.valueOf(project.get("key")),
+				String.valueOf(project.get("name")),
+				String.valueOf(project.get("projectTypeKey"))
+			))
+			.collect(Collectors.toList());
+	}
+
+	/**
+	 * Jira API 호출
+	 * @param oAuthToken : OAuthToken
+	 * @return Map<String, Object> : Jira 프로젝트 목록
+	 */
+	private Map<String, Object> getJiraProjectsFromApi(OAuthToken oAuthToken) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		return webClient.get()
+			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/project/search", oAuthToken.getCloudId())
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+			})
 			.block(); // 동기 호출 (결과 기다림)
 	}
 }
