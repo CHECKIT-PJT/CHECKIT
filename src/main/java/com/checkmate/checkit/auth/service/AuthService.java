@@ -569,4 +569,51 @@ public class AuthService {
 			})
 			.block(); // 동기 호출 (결과 기다림)
 	}
+
+	/**
+	 * Jira 보드 ID 조회
+	 * @param loginUserId : 로그인한 사용자 ID
+	 * @param jiraProjectKey : Jira 프로젝트 키
+	 * @return Long : Jira 보드 ID
+	 */
+	public Long getBoardId(Integer loginUserId, String jiraProjectKey) {
+		// Jira OAuthToken 조회
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA)
+			.orElseThrow(() -> new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter));
+
+		// Jira API 호출
+		Map<String, Object> response = getJiraBoardIdFromApi(oAuthToken, jiraProjectKey);
+
+		// 응답 값에서 values 필드에 보드 ID 존재.
+		List<Map<String, Object>> boards = (List<Map<String, Object>>)response.get("values");
+
+		log.info("Jira 보드 ID 조회 결과: {}", boards);
+
+		if (boards.isEmpty()) {
+			log.error("Jira 보드를 찾을 수 없습니다.");
+			throw new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter);
+		}
+
+		return Long.valueOf(boards.get(0).get("id").toString());
+	}
+
+	/**
+	 * Jira API 호출
+	 * @param oAuthToken : OAuthToken
+	 * @param jiraProjectKey : Jira 프로젝트 키
+	 * @return Map<String, Object> : Jira 보드 ID
+	 */
+	private Map<String, Object> getJiraBoardIdFromApi(OAuthToken oAuthToken, String jiraProjectKey) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		return webClient.get()
+			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/agile/1.0/board?projectKeyOrId={jiraProjectKey}",
+				oAuthToken.getCloudId(), jiraProjectKey)
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+			})
+			.block(); // 동기 호출 (결과 기다림)
+	}
 }

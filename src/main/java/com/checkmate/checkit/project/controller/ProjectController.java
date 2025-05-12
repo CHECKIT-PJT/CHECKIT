@@ -21,6 +21,7 @@ import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
 import com.checkmate.checkit.project.dto.request.DockerComposeCreateRequest;
 import com.checkmate.checkit.project.dto.request.DockerComposeUpdateRequest;
+import com.checkmate.checkit.project.dto.request.JiraProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectCreateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
@@ -35,6 +36,7 @@ import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.dto.response.ReadmeResponse;
 import com.checkmate.checkit.project.dto.response.SequenceDiagramResponse;
+import com.checkmate.checkit.project.service.JiraProjectService;
 import com.checkmate.checkit.project.service.ProjectService;
 import com.checkmate.checkit.project.service.ReadmeService;
 import com.checkmate.checkit.project.service.SequenceDiagramService;
@@ -48,6 +50,7 @@ public class ProjectController {
 	private final ProjectService projectService;
 	private final ReadmeService readmeService;
 	private final SequenceDiagramService sequenceDiagramService;
+	private final JiraProjectService jiraProjectService;
 
 	// 새 프로젝트 생성
 	@PostMapping
@@ -338,6 +341,20 @@ public class ProjectController {
 		String token = authorization.substring(7);
 
 		sequenceDiagramService.deleteSequenceDiagram(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	// 프로젝트 Jira 등록
+	@PutMapping("/{projectId}/jira")
+	public ResponseEntity<JSONResponse<Void>> registerJira(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody JiraProjectUpdateRequest jiraProjectUpdateRequest) {
+
+		String token = authorization.substring(7);
+
+		jiraProjectService.registerJira(token, projectId, jiraProjectUpdateRequest);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
