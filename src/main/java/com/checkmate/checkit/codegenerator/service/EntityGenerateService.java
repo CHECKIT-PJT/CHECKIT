@@ -1,119 +1,140 @@
 package com.checkmate.checkit.codegenerator.service;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
-import com.checkmate.checkit.erd.dto.response.ErdColumnResponse;
-import com.checkmate.checkit.erd.dto.response.ErdRelationshipResponse;
-import com.checkmate.checkit.erd.dto.response.ErdTableResponse;
+import com.checkmate.checkit.codegenerator.model.MinimalColumn;
+import com.checkmate.checkit.codegenerator.model.MinimalTable;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class EntityGenerateService {
 
-	private StringBuilder imports = new StringBuilder(); // Entity 클래스에서 필요한 import 문들을 누적 저장
-	private Set<String> importSet = new HashSet<>(); // 중복 import 방지용 Set
+	private final StringBuilder imports = new StringBuilder();
+	private final Set<String> importSet = new HashSet<>();
 
 	/**
-	 * 하나의 ERD 컬럼 정보를 기반으로 자바 필드 선언 코드를 생성
-	 * 예:
-	 *   @Column(name = "user_name", nullable = false)
-	 *   private String userName;
+	 * ERD JSON 문자열을 받아 모든 Entity 코드를 생성합니다.
 	 */
-	public String generateField(ErdColumnResponse column) {
-		StringBuilder fieldCode = new StringBuilder();
+	public String generateEntitiesFromErdJson(String erdJson, String basePackage) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode root = mapper.readTree(erdJson);
 
-		// 1. 기본키(Primary Key)인 경우: @Id, @GeneratedValue 추가
-		if (column.isPrimaryKey()) {
-			fieldCode.append("    @Id\n");
-			fieldCode.append("    @GeneratedValue(strategy = GenerationType.IDENTITY)\n");
+		JsonNode tableEntities = root.path("collections").path("tableEntities");
+		JsonNode columnEntities = root.path("collections").path("tableColumnEntities");
 
-			// 관련 import 추가 (중복 방지)
-			addImport("import jakarta.persistence.Id;");
-			addImport("import jakarta.persistence.GeneratedValue;");
-			addImport("import jakarta.persistence.GenerationType;");
-		}
+		StringBuilder result = new StringBuilder();
 
-		// 2. @Column 어노테이션 설정
-		fieldCode.append("    @Column(name = \"").append(column.getColPhysicName()).append("\"");
-		if (!column.isNullable()) {
-			fieldCode.append(", nullable = false");
-		}
+		for (Iterator<String> it = tableEntities.fieldNames(); it.hasNext(); ) {
+			String tableId = it.next();
+			JsonNode tableNode = tableEntities.get(tableId);
+			String tableName = tableNode.path("name").asText();
 
-		// defaultValue가 존재할 경우 columnDefinition 추가
-		if (column.getDefaultValue() != null && !column.getDefaultValue().isBlank()) {
-			String dataType = column.getDataType().toUpperCase();
-			String defaultVal = column.getDefaultValue().trim();
-
-			// 문자열이면 작은 따옴표 붙이기
-			if (dataType.contains("CHAR") || dataType.contains("TEXT") || dataType.contains("VARCHAR")) {
-				defaultVal = "'" + defaultVal + "'";
+			List<MinimalColumn> columns = new ArrayList<>();
+			for (JsonNode colId : tableNode.path("columnIds")) {
+				JsonNode colNode = columnEntities.get(colId.asText());
+				String colName = colNode.path("name").asText();
+				String colType = colNode.path("dataType").asText();
+				boolean isPk = colNode.path("options").asInt() == 10 || colNode.path("ui").path("keys").asInt() == 1;
+				boolean isNullable = !colNode.path("options").toString().contains("notNull");
+				String defaultValue = colNode.path("default").asText();
+				columns.add(new MinimalColumn(colName, colType, isPk, isNullable, defaultValue));
 			}
 
-			fieldCode.append(", columnDefinition = \"")
-				.append(dataType.split("\\(")[0]) // VARCHAR(255) → VARCHAR
-				.append(" DEFAULT ").append(defaultVal).append("\"");
+			MinimalTable table = new MinimalTable(tableName, columns);
+			result.append(generateEntityCode(table, basePackage)).append("\n");
 		}
-		fieldCode.append(")\n");
 
-		// @Column import 추가 (중복 방지)
-		addImport("import jakarta.persistence.Column;");
-
-		// 3. 실제 필드 선언 (ex: private String userName;)
-		String javaType = toJavaType(column.getDataType());
-		String fieldName = toCamelCase(column.getColPhysicName());
-		fieldCode.append("    private ").append(javaType).append(" ").append(fieldName).append(";\n\n");
-
-		return fieldCode.toString();
+		return result.toString();
 	}
 
 	/**
-	 * 하나의 테이블과 그에 속한 컬럼 리스트를 바탕으로 Entity 전체 클래스 코드를 생성
-	 *
-	 * @param table        ERD 테이블 정보
-	 * @param columns      해당 테이블에 포함된 컬럼 리스트
-	 * @param relationships 해당 테이블의 연관관계 리스트
-	 * @param basePackage  생성할 클래스의 기본 패키지 이름
-	 * @return 완성된 자바 Entity 클래스 코드
+	 * 단일 테이블에 대한 Entity 코드 생성
 	 */
-	public String generateEntityCode(ErdTableResponse table, List<ErdColumnResponse> columns,
-		List<ErdRelationshipResponse> relationships, String basePackage) {
+	public String generateEntityCode(MinimalTable table, String basePackage) {
+		imports.setLength(0);
+		importSet.clear();
+
 		StringBuilder sb = new StringBuilder();
-		imports = new StringBuilder(); // 매번 새롭게 초기화
-		importSet.clear(); // 중복 방지 Set 초기화
+		String className = table.name();
 
 		// 1. package 선언
 		sb.append("package ").append(basePackage).append(".entity;\n\n");
 
-		// 2. import 구문 선언
-		addImport("import jakarta.persistence.Entity;");
-		addImport("import jakarta.persistence.Table;");
+		// 2. 기본 import
+		addImport("import jakarta.persistence.*;");
 		addImport("import lombok.*;");
+
 		sb.append(imports).append("\n");
 
-		// 3. 클래스에 붙일 어노테이션
+		// 3. 어노테이션 선언
 		sb.append("@Entity\n");
-		sb.append("@Table(name = \"").append(table.getTblPhysicName().toLowerCase()).append("\")\n");
+		sb.append("@Table(name = \"").append(className.toLowerCase()).append("\")\n");
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
 
 		// 4. 클래스 선언
-		sb.append("public class ").append(table.getTblPhysicName()).append(" {\n\n");
+		sb.append("public class ").append(className).append(" {\n\n");
 
-		// 5. 각 필드 생성
-		for (ErdColumnResponse column : columns) {
-			sb.append(generateField(column));
+		// 5. 필드 생성
+		for (MinimalColumn col : table.columns()) {
+			sb.append(generateField(col));
 		}
 
-		// 6. 연관관계 생성
-		for (ErdRelationshipResponse relation : relationships) {
-			sb.append(generateRelationField(relation, table.getTblPhysicName()));
-		}
-
-		// 7. 클래스 닫기
+		// 6. 클래스 종료
 		sb.append("}\n");
+		return sb.toString();
+	}
 
+	/**
+	 * 컬럼 하나에 대한 필드 정의
+	 */
+	private String generateField(MinimalColumn column) {
+		StringBuilder sb = new StringBuilder();
+
+		if (column.isPrimaryKey()) {
+			sb.append("    @Id\n");
+			sb.append("    @GeneratedValue(strategy = GenerationType.IDENTITY)\n");
+		}
+
+		sb.append("    @Column(name = \"").append(column.name()).append("\"");
+		if (!column.isNullable()) {
+			sb.append(", nullable = false");
+		}
+		if (column.defaultValue() != null && !column.defaultValue().isBlank()) {
+			String defaultVal = column.defaultValue().trim();
+			if (column.type().toUpperCase().contains("CHAR") || column.type().toUpperCase().contains("TEXT")
+				|| column.type().toUpperCase().contains("VARCHAR")) {
+				defaultVal = "'" + defaultVal + "'";
+			}
+			sb.append(", columnDefinition = \"")
+				.append(column.type())
+				.append(" DEFAULT ")
+				.append(defaultVal)
+				.append("\"");
+		}
+		sb.append(")\n");
+
+		sb.append("    private ")
+			.append(toJavaType(column.type()))
+			.append(" ")
+			.append(toCamelCase(column.name()))
+			.append(";\n\n");
+		return sb.toString();
+	}
+
+	private String toCamelCase(String name) {
+		String[] parts = name.split("_");
+		StringBuilder sb = new StringBuilder(parts[0]);
+		for (int i = 1; i < parts.length; i++) {
+			sb.append(parts[i].substring(0, 1).toUpperCase()).append(parts[i].substring(1));
+		}
 		return sb.toString();
 	}
 
@@ -195,115 +216,8 @@ public class EntityGenerateService {
 		return "String";
 	}
 
-	/**
-	 * 예: "user_name" → "userName"
-	 */
-	private String toCamelCase(String text) {
-		if (text == null)
-			return "";
-		String[] parts = text.split("_");
-		StringBuilder camel = new StringBuilder(parts[0]);
-		for (int i = 1; i < parts.length; i++) {
-			camel.append(parts[i].substring(0, 1).toUpperCase()).append(parts[i].substring(1));
-		}
-		return camel.toString();
+	private void addImport(String imp) {
+		if (importSet.add(imp))
+			imports.append(imp).append("\n");
 	}
-
-	/**
-	 * 누적된 import 구문을 가져옵니다.
-	 */
-	public String getImportStatements() {
-		return imports.toString();
-	}
-
-	/**
-	 * 연관관계 필드를 생성합니다.
-	 * (1:N, N:1, 1:1 관계에 대한 필드 생성)
-	 */
-	public String generateRelationField(ErdRelationshipResponse relation, String tableName) {
-		StringBuilder fieldCode = new StringBuilder();
-
-		// 1. 1:N 관계 (OneToMany, ManyToOne)
-		if (relation.getRelationshipType().equals("1:N") || relation.getRelationshipType().equals("N:1")) {
-			// Source 테이블이 OneToMany 관계를 가질 경우
-			if (tableName.equals(relation.getSourceTableId())) {
-				fieldCode.append("    @OneToMany(mappedBy = \"")
-					.append(relation.getLogicalName())  // 논리적 이름
-					.append(")\n");
-				fieldCode.append("    private List<")
-					.append(relation.getTargetTableId()) // 대상 테이블
-					.append("> ")
-					.append(relation.getTargetTableId().toString().toLowerCase())
-					.append("List = new ArrayList<>();\n\n");
-			}
-			// Target 테이블이 ManyToOne 관계를 가질 경우
-			else {
-				fieldCode.append("    @ManyToOne\n");
-				fieldCode.append("    @JoinColumn(name = \"")
-					.append(relation.getSourceTableId())  // 외래키 설정
-					.append("_id\")\n");
-				fieldCode.append("    private ")
-					.append(relation.getSourceTableId().toString())
-					.append(" ")
-					.append(relation.getSourceTableId().toString().toLowerCase())
-					.append(";\n\n");
-			}
-		}
-
-		// 2. 1:1 관계 (OneToOne)
-		if (relation.getRelationshipType().equals("1:1")) {
-			// 1:1 관계에서 양쪽 테이블은 모두 OneToOne 관계를 가짐
-			if (tableName.equals(relation.getSourceTableId())) {
-				fieldCode.append("    @OneToOne\n");
-				fieldCode.append("    @JoinColumn(name = \"")
-					.append(relation.getTargetTableId())  // 외래키 설정
-					.append("_id\")\n");
-				fieldCode.append("    private ")
-					.append(relation.getTargetTableId().toString())
-					.append(" ")
-					.append(relation.getTargetTableId().toString().toLowerCase())
-					.append(";\n\n");
-			} else {
-				fieldCode.append("    @OneToOne\n");
-				fieldCode.append("    @JoinColumn(name = \"")
-					.append(relation.getSourceTableId())  // 외래키 설정
-					.append("_id\")\n");
-				fieldCode.append("    private ")
-					.append(relation.getSourceTableId().toString())
-					.append(" ")
-					.append(relation.getSourceTableId().toString().toLowerCase())
-					.append(";\n\n");
-			}
-		}
-
-		// 3. ManyToMany 관계
-		if (relation.getRelationshipType().equals("M:N")) {
-			fieldCode.append("    @ManyToMany\n");
-			fieldCode.append("    @JoinTable(name = \"")
-				.append(relation.getSourceTableId())  // 중간 테이블 이름 설정
-				.append("_")
-				.append(relation.getTargetTableId())  // 대상 테이블 이름 설정
-				.append("\", joinColumns = @JoinColumn(name = \"")
-				.append(relation.getSourceTableId())  // Source 테이블의 외래키
-				.append("_id\"), inverseJoinColumns = @JoinColumn(name = \"")
-				.append(relation.getTargetTableId())  // Target 테이블의 외래키
-				.append("_id\"))\n");
-			fieldCode.append("    private Set<")
-				.append(relation.getTargetTableId())
-				.append("> ")
-				.append(relation.getTargetTableId().toString().toLowerCase())
-				.append("s = new HashSet<>();\n\n");
-		}
-
-		return fieldCode.toString();
-	}
-
-	// 중복된 import 문을 추가하지 않도록 관리
-	private void addImport(String importStatement) {
-		if (!importSet.contains(importStatement)) {
-			imports.append(importStatement).append("\n");
-			importSet.add(importStatement);
-		}
-	}
-
 }
