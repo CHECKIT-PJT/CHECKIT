@@ -16,6 +16,9 @@ const CodePanel: React.FC<CodePanelProps> = ({
       .then(() => alert("코드가 클립보드에 복사되었습니다."))
       .catch((err) => console.error("클립보드 복사 실패:", err));
   },
+  onCreate = () => {
+    console.log("생성");
+  },
 }) => {
   return (
     <div className="w-1/2 pr-4">
@@ -28,8 +31,9 @@ const CodePanel: React.FC<CodePanelProps> = ({
           {code}
         </pre>
 
-        <div className="mt-4 flex justify-end">
-          <Button label="저장" onClick={onSave} />
+        <div className="mt-4 flex justify-end gap-2">
+          <Button label="생성" onClick={onCreate} variant="primary" />
+          <Button label="저장" onClick={onSave} variant="outline" />
         </div>
       </div>
     </div>

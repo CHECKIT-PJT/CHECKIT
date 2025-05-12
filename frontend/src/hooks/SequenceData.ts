@@ -7,6 +7,7 @@ export const dummyCategories = [
   { id: "product", name: "상품" },
   { id: "order", name: "주문" },
   { id: "payment", name: "결제" },
+  { id: "sequence", name: "시퀀스" },
 ];
 
 /**
