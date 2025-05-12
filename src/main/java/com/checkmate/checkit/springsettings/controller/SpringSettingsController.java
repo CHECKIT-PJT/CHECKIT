@@ -64,11 +64,10 @@ public class SpringSettingsController {
 		@PathVariable Integer projectId,
 		@RequestBody DependenciesDtoRequest request) {
 		try {
-			SpringSettingsDtoResponse response = springSettingsService.updateSpringSettings(projectId, request);
+			SpringSettingsDtoResponse response = springSettingsService.updateSpringSettings(projectId, request); // 재사용
 			return ResponseEntity.ok(JSONResponse.onSuccess(response));
 		} catch (RuntimeException e) {
-			e.printStackTrace(); // 👈 예외 로그 출력
-			return ResponseEntity.status(500).body(JSONResponse.onFailure(ErrorCode.SERVER_ERROR));
+			return ResponseEntity.status(404).body(JSONResponse.onFailure(ErrorCode.NOT_FOUND_ENDPOINT));
 		}
 	}
 
