@@ -11,6 +11,7 @@ import {
   useApproveMember,
   useGetProjectMembers,
 } from '../../api/projectAPI';
+import JiraButton from '../../components/button/JiraButton';
 
 const ProjectDetail = () => {
   const navigate = useNavigate();
@@ -50,8 +51,9 @@ const ProjectDetail = () => {
             {projectData.projectName}
           </h3>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <LeaveButton />
+          <JiraButton />
           <MoveGitlabButton />
         </div>
       </div>

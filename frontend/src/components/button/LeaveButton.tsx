@@ -28,7 +28,7 @@ const LeaveButton = ({ onClick }: LeaveButtonProps) => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors w-full`}
+        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors`}
       >
         떠나기
       </button>
