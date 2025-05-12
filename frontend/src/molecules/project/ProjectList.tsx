@@ -5,6 +5,7 @@ import ProjectSearch from '../../components/project/ProjectSearch';
 import ProjectAddButton from '../../components/project/ProjectAddButton';
 import { useGetProjects } from '../../api/projectAPI';
 import { getToken } from '../../api/authAPI';
+import JiraConnectButton from '../../components/button/JiraAccessButton';
 
 interface Project {
   projectId: number;
@@ -60,6 +61,7 @@ const ProjectList = () => {
         <p className="text-gray-500 mt-2 text-sm">
           프로젝트의 시작은 <b>CHEKIT</b>과 함께 진행하세요.
         </p>
+        <JiraConnectButton />
       </div>
 
       <div className="flex justify-between items-center mb-6">

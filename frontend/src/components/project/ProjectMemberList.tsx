@@ -51,14 +51,14 @@ const ProjectMemberList = ({
           })
           .map(member => (
             <li key={member.id} className="mb-4">
-              <div className="flex items-center justify-between">
+              <div className="px-3 flex items-center justify-between border-b border-gray-200 pb-2">
                 <div>
                   <span className="font-medium">{member.nickname}</span>
                   <span className="ml-4 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
                     {member.role}
                   </span>
                   <div className="text-xs text-gray-400 ml-1 mt-1">
-                    {member.userName}
+                    @ {member.userName}
                   </div>
                 </div>
                 {isOwner && !member.isApproved && member.role !== 'OWNER' && (
