@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import type { DtoItem } from '../../types/ApiDoc';
+import type { DtoItem } from '../../types/apiDocs';
 import { FiTrash } from 'react-icons/fi';
 
 interface DtoEditorProps {
   title: string;
   dtoName: string;
-  dtoItems: DtoItem[];
+  dtoItems?: DtoItem[];
   onDtoNameChange: (name: string) => void;
   onDtoItemsChange: (items: DtoItem[]) => void;
-  dtoType: string;
-  onDtoTypeChange: (type: string) => void;
+  dtoType: 'REQUEST' | 'RESPONSE' | '';
+  onDtoTypeChange: (type: 'REQUEST' | 'RESPONSE') => void;
   isRequestBody?: boolean;
   onUseDtoChange?: (useDto: boolean) => void;
 }
@@ -35,7 +35,7 @@ const dataTypes = [
 const DtoEditorReq = ({
   title,
   dtoName,
-  dtoItems,
+  dtoItems = [],
   onDtoNameChange,
   onDtoItemsChange,
   dtoType,
@@ -45,16 +45,18 @@ const DtoEditorReq = ({
 }: DtoEditorProps) => {
   const [showAddDto, setShowAddDto] = useState(false);
   const [newDtoItem, setNewDtoItem] = useState<DtoItem>({
+    id: 0,
     dtoItemName: '',
     dataTypeName: 'String',
     isList: false,
   });
-  const [useDto, setUseDto] = useState(dtoItems.length > 0);
+  const [useDto, setUseDto] = useState(dtoItems.length > 0 || Boolean(dtoName));
 
   const handleAddDtoItem = () => {
     if (newDtoItem.dtoItemName.trim() === '') return;
     onDtoItemsChange([...dtoItems, { ...newDtoItem }]);
     setNewDtoItem({
+      id: 0,
       dtoItemName: '',
       dataTypeName: 'String',
       isList: false,
@@ -68,16 +70,15 @@ const DtoEditorReq = ({
     onDtoItemsChange(newItems);
   };
 
-  const handleDtoTypeChange = (type: string) => {
-    if (onDtoTypeChange) {
-      onDtoTypeChange(type);
-    }
+  const handleDtoTypeChange = (type: 'REQUEST' | 'RESPONSE') => {
+    onDtoTypeChange(type);
   };
 
   const handleUseDtoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUseDto(e.target.checked);
     if (!e.target.checked) {
       onDtoItemsChange([]);
+      onDtoNameChange('');
     }
     if (onUseDtoChange) {
       onUseDtoChange(e.target.checked);
@@ -103,56 +104,20 @@ const DtoEditorReq = ({
           {useDto && isRequestBody && (
             <div className="ml-2 flex text-xs">
               <button
-                className={`px-3 py-1 rounded-l-lg ${
-                  dtoType === 'QUERY'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                onClick={() => handleDtoTypeChange('QUERY')}
-              >
-                QUERY
-              </button>
-              <button
-                className={`px-3 py-1 rounded-r-lg ${
+                className={`px-3 py-1 rounded-lg ${
                   dtoType === 'REQUEST'
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-200 text-gray-700'
                 }`}
                 onClick={() => handleDtoTypeChange('REQUEST')}
               >
-                Request
-              </button>
-            </div>
-          )}
-
-          {/* Show the original DTO type selector when not a requestbody */}
-          {useDto && !isRequestBody && (
-            <div className="ml-2 flex text-xs">
-              <button
-                className={`px-3 py-1 rounded-l-lg ${
-                  dtoType === 'QUERY'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                onClick={() => handleDtoTypeChange('QUERY')}
-              >
-                QUERY
-              </button>
-              <button
-                className={`px-3 py-1 rounded-r-lg ${
-                  dtoType === 'REQUEST'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                onClick={() => handleDtoTypeChange('REQUEST')}
-              >
-                Request
+                REQUEST
               </button>
             </div>
           )}
         </div>
 
-        {useDto && dtoType !== 'QUERY' && (
+        {useDto && (
           <button
             className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center gap-1"
             onClick={() => setShowAddDto(!showAddDto)}

@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import type { DtoItem } from '../../types/ApiDoc';
+import type { DtoItem } from '../../types/apiDocs';
 import { FiTrash } from 'react-icons/fi';
 
 interface DtoEditorProps {
   title: string;
   dtoName: string;
-  dtoItems: DtoItem[];
+  dtoItems?: DtoItem[];
   onDtoNameChange: (name: string) => void;
   onDtoItemsChange: (items: DtoItem[]) => void;
-  dtoType?: string;
-  onDtoTypeChange?: (type: string) => void;
+  dtoType?: 'REQUEST' | 'RESPONSE';
+  onDtoTypeChange?: (type: 'REQUEST' | 'RESPONSE') => void;
   onUseDtoChange?: (useDto: boolean) => void;
 }
 
@@ -34,7 +34,7 @@ const dataTypes = [
 const DtoEditor = ({
   title,
   dtoName,
-  dtoItems,
+  dtoItems = [],
   onDtoNameChange,
   onDtoItemsChange,
   dtoType,
@@ -43,16 +43,18 @@ const DtoEditor = ({
 }: DtoEditorProps) => {
   const [showAddDto, setShowAddDto] = useState(false);
   const [newDtoItem, setNewDtoItem] = useState<DtoItem>({
+    id: 0,
     dtoItemName: '',
     dataTypeName: 'String',
     isList: false,
   });
-  const [useDto, setUseDto] = useState(dtoItems.length > 0);
+  const [useDto, setUseDto] = useState(dtoItems.length > 0 || Boolean(dtoName));
 
   const handleAddDtoItem = () => {
     if (newDtoItem.dtoItemName.trim() === '') return;
     onDtoItemsChange([...dtoItems, { ...newDtoItem }]);
     setNewDtoItem({
+      id: 0,
       dtoItemName: '',
       dataTypeName: 'String',
       isList: false,
@@ -66,7 +68,7 @@ const DtoEditor = ({
     onDtoItemsChange(newItems);
   };
 
-  const handleDtoTypeChange = (type: string) => {
+  const handleDtoTypeChange = (type: 'REQUEST' | 'RESPONSE') => {
     if (onDtoTypeChange) {
       onDtoTypeChange(type);
     }
@@ -76,6 +78,10 @@ const DtoEditor = ({
     setUseDto(e.target.checked);
     if (!e.target.checked) {
       onDtoItemsChange([]);
+      onDtoNameChange('');
+    }
+    if (onUseDtoChange) {
+      onUseDtoChange(e.target.checked);
     }
   };
 
@@ -99,23 +105,23 @@ const DtoEditor = ({
             <div className="ml-2 flex text-xs">
               <button
                 className={`px-3 py-1 rounded-l-lg ${
-                  dtoType === 'QUERY'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-                onClick={() => handleDtoTypeChange('QUERY')}
-              >
-                Query Params
-              </button>
-              <button
-                className={`px-3 py-1 rounded-r-lg ${
                   dtoType === 'REQUEST'
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-200 text-gray-700'
                 }`}
                 onClick={() => handleDtoTypeChange('REQUEST')}
               >
-                Request
+                REQUEST
+              </button>
+              <button
+                className={`px-3 py-1 rounded-r-lg ${
+                  dtoType === 'RESPONSE'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-700'
+                }`}
+                onClick={() => handleDtoTypeChange('RESPONSE')}
+              >
+                RESPONSE
               </button>
             </div>
           )}
