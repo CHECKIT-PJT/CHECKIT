@@ -14,125 +14,6 @@ import {
 } from '../../api/apiAPI';
 import { useParams } from 'react-router-dom';
 
-// 예시 API 세부 정보 (백엔드에서 받을 데이터 형식)
-const exampleApiDetails: ApiDetail[] = [
-  {
-    id: 1,
-    apiName: 'User API',
-    endpoint: '/api/user/info',
-    method: 'GET',
-    category: 'USER',
-    description: '사용자 정보를 조회합니다.',
-    statusCode: 200,
-    header: 'Authorization: Bearer {token}',
-    pathVariables: [
-      { id: 1, pathVariable: 'userId', pathVariableDataType: 'Long' },
-    ],
-    requestParams: [
-      { id: 1, requestParamName: 'active', requestParamDataType: 'Boolean' },
-    ],
-    requestDto: {
-      id: 1,
-      dtoName: 'UserRequestDto',
-      dtoType: 'REQUEST',
-      fields: [
-        {
-          id: 1,
-          dtoItemName: 'username',
-          dataTypeName: 'String',
-          isList: false,
-        },
-        { id: 2, dtoItemName: 'roles', dataTypeName: 'String', isList: true },
-      ],
-    },
-    responseDto: {
-      id: 2,
-      dtoName: 'UserResponseDto',
-      dtoType: 'RESPONSE',
-      fields: [
-        { id: 3, dtoItemName: 'id', dataTypeName: 'Long', isList: false },
-        {
-          id: 4,
-          dtoItemName: 'username',
-          dataTypeName: 'String',
-          isList: false,
-        },
-        { id: 5, dtoItemName: 'email', dataTypeName: 'String', isList: false },
-        { id: 6, dtoItemName: 'roles', dataTypeName: 'String', isList: true },
-      ],
-    },
-    responses: [
-      {
-        statusCode: 200,
-        responseDescription: '요청 성공',
-      },
-      {
-        statusCode: 404,
-        responseDescription: '사용자를 찾을 수 없음',
-      },
-    ],
-  },
-  {
-    id: 2,
-    apiName: 'Post API',
-    endpoint: '/api/post',
-    method: 'POST',
-    category: 'POST',
-    description: '게시글 생성',
-    statusCode: 201,
-    header: 'Authorization: Bearer {token}',
-    pathVariables: [],
-    requestParams: [],
-    requestDto: {
-      id: 3,
-      dtoName: 'PostRequestDto',
-      dtoType: 'REQUEST',
-      fields: [
-        { id: 7, dtoItemName: 'title', dataTypeName: 'String', isList: false },
-        {
-          id: 8,
-          dtoItemName: 'content',
-          dataTypeName: 'String',
-          isList: false,
-        },
-        { id: 9, dtoItemName: 'tags', dataTypeName: 'String', isList: true },
-      ],
-    },
-    responseDto: {
-      id: 4,
-      dtoName: 'PostResponseDto',
-      dtoType: 'RESPONSE',
-      fields: [
-        { id: 10, dtoItemName: 'id', dataTypeName: 'Long', isList: false },
-        { id: 11, dtoItemName: 'title', dataTypeName: 'String', isList: false },
-        {
-          id: 12,
-          dtoItemName: 'content',
-          dataTypeName: 'String',
-          isList: false,
-        },
-        {
-          id: 13,
-          dtoItemName: 'createdAt',
-          dataTypeName: 'LocalDateTime',
-          isList: false,
-        },
-        { id: 14, dtoItemName: 'tags', dataTypeName: 'String', isList: true },
-      ],
-    },
-    responses: [
-      {
-        statusCode: 201,
-        responseDescription: '생성 성공',
-      },
-      {
-        statusCode: 400,
-        responseDescription: '잘못된 요청',
-      },
-    ],
-  },
-];
-
 // API 세부 정보를 목록 형식으로 변환하는 유틸리티 함수
 const convertDetailToListItem = (apiDetail: ApiDetail): ApiDocListItem => {
   return {
@@ -195,26 +76,10 @@ const DevelopApi = () => {
   };
 
   const handleRowClick = (apiItem: ApiDocListItem) => {
-    setSelectedApi({
-      id: apiItem.apiSpecId,
-      apiName: apiItem.apiName,
-      endpoint: apiItem.endpoint,
-      method: apiItem.method,
-      category: apiItem.category,
-      description: apiItem.description,
-      statusCode: 200,
-      header: apiItem.header || '',
-      pathVariables: [],
-      requestParams: [],
-      requestDto: { id: 0, dtoName: '', fields: [], dtoType: 'REQUEST' },
-      responseDto: { id: 0, dtoName: '', fields: [], dtoType: 'RESPONSE' },
-      responses: [
-        {
-          statusCode: 200,
-          responseDescription: 'OK',
-        },
-      ],
-    });
+    const fullApi = apiListItems.find(
+      (api: { id: number | null }) => api.id === apiItem.apiSpecId
+    );
+    if (fullApi) setSelectedApi(fullApi);
     setModalOpen(true);
   };
 

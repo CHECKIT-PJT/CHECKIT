@@ -54,35 +54,37 @@ const ProjectList = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">
-          <span className="text-blue-600">{username}</span> 님의 프로젝트
-        </h1>
-        <p className="text-gray-500 mt-2 text-sm">
-          프로젝트의 시작은 <b>CHEKIT</b>과 함께 진행하세요.
-        </p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h2 className=" font-bold text-gray-800">
+            <span className="text-blue-600">{username}</span> 님의 프로젝트
+          </h2>
+          <p className="text-gray-500 mt-2 text-sm">
+            프로젝트의 시작은 <b>CHEKIT</b>과 함께 진행하세요.
+          </p>
+        </div>
         <JiraConnectButton />
       </div>
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold">프로젝트 목록</h2>
+          <h2 className="text-2xl font-bold text-gray-800">프로젝트 목록</h2>
           {filteredProjects.length > 0 && (
-            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
+            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
               총 {filteredProjects.length}개
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <ProjectSearch search={search} onSearchChange={setSearch} />
           <ProjectAddButton />
         </div>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">로딩 중...</p>
+        <div className="text-center py-16 bg-gray-50 rounded-lg shadow-sm">
+          <p className="text-gray-500 font-medium">로딩 중...</p>
         </div>
       ) : filteredProjects.length > 0 ? (
         <ProjectTable
@@ -90,14 +92,14 @@ const ProjectList = () => {
           onDetail={handleProjectClick}
         />
       ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">
+        <div className="text-center py-16 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
+          <p className="text-gray-600">
             {search ? '검색 결과가 없습니다.' : '아직 프로젝트가 없습니다.'}
           </p>
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="mt-4 text-blue-600 hover:underline"
+              className="mt-4 text-blue-600 hover:text-blue-800 hover:underline font-medium"
             >
               전체 프로젝트 보기
             </button>

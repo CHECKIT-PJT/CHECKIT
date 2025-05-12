@@ -1,25 +1,20 @@
-import { FiInfo, FiCheck } from "react-icons/fi";
+import { FiCheck } from "react-icons/fi";
 
 export interface Dependency {
   id: string;
   name: string;
-  description: string;
   selected: boolean;
 }
 
 interface DependencyItemProps {
   dependency: Dependency;
   onToggle: (id: string) => void;
-  showInfo: boolean;
-  onToggleInfo: () => void;
   className?: string;
 }
 
 const DependencyItem: React.FC<DependencyItemProps> = ({
   dependency,
   onToggle,
-  showInfo,
-  onToggleInfo,
   className = "",
 }) => {
   return (
@@ -44,19 +39,7 @@ const DependencyItem: React.FC<DependencyItemProps> = ({
             <span className="text-sm font-medium text-gray-900">
               {dependency.name}
             </span>
-            <button
-              onClick={onToggleInfo}
-              className="text-gray-400 hover:text-indigo-600"
-              aria-label={`${dependency.name} 정보 ${showInfo ? "숨기기" : "보기"}`}
-            >
-              <FiInfo className="h-4 w-4" />
-            </button>
           </div>
-          {showInfo && (
-            <div className="mt-2 text-xs text-gray-600">
-              {dependency.description}
-            </div>
-          )}
         </div>
       </div>
     </li>

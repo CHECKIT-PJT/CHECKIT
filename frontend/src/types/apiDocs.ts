@@ -20,7 +20,7 @@ export interface Dto {
 export interface DtoItem {
   id: number | null;
   dtoItemName: string;
-  dataTypeName: string;
+  dataType: string;
   isList: boolean;
 }
 
@@ -53,10 +53,11 @@ export interface ApiDetail {
   requestDto: Dto;
   responseDto: Dto;
   responses: ApiResponse[];
+  dtoList?: Dto[];
 }
 
 export interface ApiSpecRequest {
-  id?: number;
+  id?: number | null;
   apiName: string;
   endpoint: string;
   method: string;
@@ -71,13 +72,13 @@ export interface ApiSpecRequest {
 }
 
 export interface QueryStringRequest {
-  id: number;
+  id: number | null;
   queryStringVariable: string;
   queryStringDataType: string;
 }
 
 export interface PathVariableRequest {
-  id: number;
+  id: number | null;
   pathVariable: string;
   pathVariableDataType: string;
 }

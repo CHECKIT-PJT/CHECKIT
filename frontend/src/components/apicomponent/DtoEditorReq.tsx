@@ -47,7 +47,7 @@ const DtoEditorReq = ({
   const [newDtoItem, setNewDtoItem] = useState<DtoItem>({
     id: 0,
     dtoItemName: '',
-    dataTypeName: 'String',
+    dataType: 'String',
     isList: false,
   });
   const [useDto, setUseDto] = useState(dtoItems.length > 0 || Boolean(dtoName));
@@ -58,7 +58,7 @@ const DtoEditorReq = ({
     setNewDtoItem({
       id: 0,
       dtoItemName: '',
-      dataTypeName: 'String',
+      dataType: 'String',
       isList: false,
     });
     setShowAddDto(false);
@@ -84,7 +84,7 @@ const DtoEditorReq = ({
       onUseDtoChange(e.target.checked);
     }
   };
-
+  console.log('dtoItems', dtoItems);
   return (
     <div className="border rounded-xl p-4 bg-white shadow-sm">
       <div className="flex justify-between items-center mb-3">
@@ -148,7 +148,7 @@ const DtoEditorReq = ({
                   <div className="flex gap-4 items-center justify-between">
                     <span className="text-blue-600">{item.dtoItemName}</span>
                     <span className="text-xs bg-gray-200 px-2 py-1 rounded">
-                      {item.dataTypeName}
+                      {item.dataType}
                       {item.isList ? '[ ]' : ''}
                     </span>
                   </div>
@@ -181,11 +181,11 @@ const DtoEditorReq = ({
                 />
                 <select
                   className="p-2 border rounded col-span-4"
-                  value={newDtoItem.dataTypeName}
+                  value={newDtoItem.dataType}
                   onChange={e =>
                     setNewDtoItem({
                       ...newDtoItem,
-                      dataTypeName: e.target.value,
+                      dataType: e.target.value,
                     })
                   }
                 >
