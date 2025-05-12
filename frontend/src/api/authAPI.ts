@@ -11,6 +11,18 @@ export const redirectToGitLabLogin = () => {
   window.location.href = gitlabUrl;
 };
 
+// Jira OAuth 리다이렉션
+export const redirectToJiraLogin = () => {
+  const clientId = import.meta.env.VITE_JIRA_CLIENT_ID;
+  const redirectUri = 'http://localhost:5173/jira/callback';
+  const scope = 'read:jira-work write:jira-work';
+  const authorizeUrl = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${encodeURIComponent(
+    scope
+  )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&prompt=consent`;
+
+  window.location.href = authorizeUrl;
+};
+
 // 인증 상태 확인
 export const verifyToken = async () => {
   try {
@@ -73,6 +85,29 @@ export const handleAuthCallback = async (code: string): Promise<boolean> => {
   }
 };
 
+export const handleJiraAuthCallback = async (
+  code: string
+): Promise<boolean> => {
+  try {
+    const response = await axiosInstance.get(
+      `/api/auth/jira/callback?code=${code}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    if (response.data.result.accessToken) {
+      sessionStorage.setItem('accessToken', response.data.result.accessToken);
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.log('error', error);
+    return false;
+  }
+};
+
 // sessionStorage에서 토큰 가져오기
 export const getToken = () => {
   return sessionStorage.getItem('accessToken');
@@ -80,7 +115,9 @@ export const getToken = () => {
 
 export default {
   redirectToGitLabLogin,
+  redirectToJiraLogin,
   handleAuthCallback,
+  handleJiraAuthCallback,
   verifyToken,
   refreshToken,
   logout,
