@@ -60,6 +60,12 @@ public enum ErrorCode {
 	// 도커 관련 에러
 	INVALID_DATABASE_TYPE(400, BAD_REQUEST, "유효하지 않은 데이터베이스 타입입니다."),
 	DOCKER_COMPOSE_NOT_FOUND(404, NOT_FOUND, "Docker Compose 파일을 찾을 수 없습니다."),
+
+	// README 관련 에러
+	README_NOT_FOUND(404, NOT_FOUND, "README 파일을 찾을 수 없습니다."),
+
+	// 시퀀스 다이어그램 관련 에러
+	SEQUENCE_DIAGRAM_NOT_FOUND(404, NOT_FOUND, "시퀀스 다이어그램을 찾을 수 없습니다."),
 	;
 
 	private final int code;

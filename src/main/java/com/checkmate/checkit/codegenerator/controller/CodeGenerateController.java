@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import com.checkmate.checkit.erd.mapper.ErdJsonConverter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,9 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.codegenerator.service.DtoGenerateService;
 import com.checkmate.checkit.codegenerator.service.EntityGenerateService;
+import com.checkmate.checkit.codegenerator.service.ServiceGenerateService;
 import com.checkmate.checkit.erd.dto.response.ErdRelationshipResponse;
 import com.checkmate.checkit.erd.dto.response.ErdSnapshotResponse;
 import com.checkmate.checkit.erd.dto.response.ErdTableResponse;
+import com.checkmate.checkit.erd.mapper.ErdJsonConverter;
 import com.checkmate.checkit.erd.service.ErdService;
 import com.checkmate.checkit.springsettings.service.SpringSettingsService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,8 @@ public class CodeGenerateController {
 	private final EntityGenerateService entityGenerateService;
 	private final ErdService erdService;
 	private final SpringSettingsService springSettingsService;
-	private final DtoGenerateService dtoGenerateService; // 추가
+	private final DtoGenerateService dtoGenerateService;
+	private final ServiceGenerateService serviceGenerateService;
 
 	// 엔티티 코드 생성을 위한 엔드포인트
 	@PostMapping("/build/{projectId}")
@@ -66,10 +68,19 @@ public class CodeGenerateController {
 			codeResult.append(entityCodeForTable).append("\n");
 		}
 
-		// 2. DTO 코드 생성 추가
+		// 2. Request/Response DTO 코드 생성
 		dtoGenerateService.generateDtos(projectId, basePackage).forEach((fileName, content) -> {
 			codeResult.append(content).append("\n");
 		});
+
+		// 3. Query DTO 코드 생성
+		dtoGenerateService.generateQueryDtos(projectId).forEach((fileName, content) -> {
+			codeResult.append(content).append("\n");
+		});
+
+		// 4. Service 클래스
+		serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage)
+			.forEach((category, content) -> codeResult.append(content).append("\n"));
 
 		// 최종 코드 반환
 		return ResponseEntity.ok(codeResult.toString());

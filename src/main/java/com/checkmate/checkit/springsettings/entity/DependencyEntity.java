@@ -1,8 +1,8 @@
-package com.checkmate.checkit.api.entity;
+package com.checkmate.checkit.springsettings.entity;
 
+import com.checkmate.checkit.project.entity.ProjectEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,24 +15,22 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "Api_path_variables")
+@Table(name = "Dependencies")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ApiPathVariableEntity {
+public class DependencyEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private int id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "api_spec_id", nullable = false)
-	private ApiSpecEntity apiSpec;
+	@ManyToOne
+	@JoinColumn(name = "project_id", nullable = false)
+	private ProjectEntity projectEntity;
 
-	@Column(name = "path_variable", length = 255)
-	private String pathVariable;
+	@Column(name = "dependency_name", length = 100, nullable = false)
+	private String dependencyName;
 
-	@Column(name = "path_variable_data_type", length = 255)
-	private String pathVariableDataType;
 }
