@@ -68,18 +68,18 @@ const BuildPreviewPage: React.FC = () => {
     }
   };
 
-  /**
-   * 새 프로젝트 생성 핸들러
-   */
-  const handleCreateNew = async (): Promise<void> => {
-    try {
-      await createNewProject();
-      // 새 프로젝트 생성 페이지로 이동하는 로직 추가
-    } catch (error) {
-      console.error("프로젝트 생성 중 오류 발생:", error);
-      alert("프로젝트 생성 중 오류가 발생했습니다.");
-    }
-  };
+  // /**
+  //  * 새 프로젝트 생성 핸들러
+  //  */
+  // const handleCreateNew = async (): Promise<void> => {
+  //   try {
+  //     await createNewProject();
+  //     // 새 프로젝트 생성 페이지로 이동하는 로직 추가
+  //   } catch (error) {
+  //     console.error("프로젝트 생성 중 오류 발생:", error);
+  //     alert("프로젝트 생성 중 오류가 발생했습니다.");
+  //   }
+  // };
 
   // 파일 개수 계산
   const fileCount = countFiles(sampleApiResponse.data);

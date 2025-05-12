@@ -47,10 +47,6 @@ const greeting = (name: string): string => {
     setMarkdown(e.target.value);
   };
 
-  const handleFileNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setFileName(e.target.value);
-  };
-
   const createNewFile = () => {
     setMarkdown("# 새 마크다운 파일");
     setFileName("NEW_FILE.md");

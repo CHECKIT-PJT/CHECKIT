@@ -6,6 +6,7 @@ interface DiagramPanelProps {
   isLoading: boolean;
   title?: string;
   onDownload?: () => void;
+  onCreate?: () => void;
 }
 
 const DiagramPanel: React.FC<DiagramPanelProps> = ({
@@ -13,6 +14,7 @@ const DiagramPanel: React.FC<DiagramPanelProps> = ({
   isLoading,
   title = "시퀀스 다이어그램",
   onDownload,
+  onCreate,
 }) => {
   const handleDownload = () => {
     if (!diagramUrl) return;
@@ -25,6 +27,14 @@ const DiagramPanel: React.FC<DiagramPanelProps> = ({
     onDownload();
   };
 
+  const handleCreate = () => {
+    if (!onCreate) {
+      window.open(diagramUrl, "_blank");
+      return;
+    }
+
+    onCreate();
+  };
   return (
     <div className="w-1/2 pl-4">
       <div className="h-full p-4 bg-white border rounded-lg overflow-auto shadow-sm flex flex-col">
@@ -46,27 +56,16 @@ const DiagramPanel: React.FC<DiagramPanelProps> = ({
           )}
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-2">
           <Button
-            label="이미지 다운로드"
+            label="이미지 생성"
+            onClick={handleCreate}
+            variant="primary"
+          />
+          <Button
+            label="다운로드"
             onClick={handleDownload}
             variant="outline"
-            icon={
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-            }
             className={!diagramUrl ? "opacity-50 cursor-not-allowed" : ""}
           />
         </div>
