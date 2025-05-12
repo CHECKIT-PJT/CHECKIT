@@ -27,34 +27,22 @@ const Header = ({ isLoggedIn }: HeaderProps) => {
 
   return (
     <header className="w-full border-b-2 border-gray-200 px-6 py-3 flex items-center justify-between h-20 bg-slate-100">
-      <div className="flex items-center gap-2 w-1/6">
+      <div
+        className="flex items-center gap-2 w-1/6 cursor-pointer hover:opacity-80 transition-opacity duration-200"
+        onClick={() => navigate('/project')}
+      >
         <img src={logo} className="w-1/4 h-full" />
         <img src={title} className="w-1/2 h-full" />
       </div>
 
       <nav className="flex items-center gap-11 text-sm font-semibold mr-4">
         {isLoggedIn ? (
-          <>
-            <span
-              className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"
-              onClick={() => navigate('/project')}
-            >
-              팀 보러 가기
-            </span>
-
-            <span
-              className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"
-              onClick={() => navigate('/invite')}
-            >
-              요청 메세지
-            </span>
-            <span
-              className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"
-              onClick={handleLogout}
-            >
-              로그아웃
-            </span>
-          </>
+          <span
+            className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"
+            onClick={handleLogout}
+          >
+            로그아웃
+          </span>
         ) : (
           <span
             className="cursor-pointer hover:text-blue-800 hover:scale-105 transition-transform duration-200 text-base"

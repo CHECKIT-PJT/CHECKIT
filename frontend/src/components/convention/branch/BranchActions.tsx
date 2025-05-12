@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { RiDeleteBin6Line } from 'react-icons/ri';
 import { MdOutlineDownloading } from 'react-icons/md';
 import { IoMdInformationCircleOutline } from 'react-icons/io';
+import { toast } from 'react-toastify';
 import {
   useDeleteBranchConvention,
   useDownloadBranchConvention,
@@ -17,6 +18,24 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isTooltipFixed, setIsTooltipFixed] = useState(false);
+
+  const toggleTooltip = () => {
+    setIsTooltipFixed(!isTooltipFixed);
+    setShowTooltip(!isTooltipFixed);
+  };
+
+  const handleMouseEnter = () => {
+    if (!isTooltipFixed) {
+      setShowTooltip(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isTooltipFixed) {
+      setShowTooltip(false);
+    }
+  };
 
   const handleDelete = async () => {
     setShowConfirm(true);
@@ -61,6 +80,7 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('파일 다운로드 실패:', error);
+      toast.error('파일 다운로드에 실패했습니다.');
     } finally {
       setIsDownloading(false);
     }
@@ -71,9 +91,12 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
       <div className="flex flex-wrap gap-3">
         <div className="relative">
           <button
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm transition bg-blue-800 hover:bg-blue-700 text-white"
+            onClick={toggleTooltip}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm transition ${
+              isTooltipFixed ? 'bg-blue-700' : 'bg-blue-800 hover:bg-blue-700'
+            } text-white`}
           >
             <IoMdInformationCircleOutline className="h-5 w-5" />
             사용법
@@ -81,7 +104,9 @@ const BranchActions = ({ projectId, onUpdate }: Props) => {
 
           {showTooltip && (
             <div className="absolute z-50 w-[345px] p-4 mt-2 text-sm text-gray-700 bg-white rounded-lg shadow-lg border border-gray-200">
-              <p className="mb-4">.git/hooks 에 다운받은 파일에 넣어주세요.</p>
+              <p className="mb-4">
+                <b>.git/hooks </b> 에 다운받은 파일에 넣어주세요.
+              </p>
               <p className="mb-4">
                 .git 디렉토리는 숨김 폴더이므로, <br />
                 숨김 파일 보기 기능을 활성화해야 보일 수 있습니다.
