@@ -42,7 +42,7 @@ const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
             <td className="py-4 px-2 text-center">{func.funcId}</td>
             <td className="py-4 px-2 text-center">
               <span className="px-4 py-2 rounded font-bold bg-white text-cyan-900">
-                {func.category}
+                {func.category.toUpperCase()}
               </span>
             </td>
             <td className="py-4 px-2 text-center">{func.funcName}</td>
