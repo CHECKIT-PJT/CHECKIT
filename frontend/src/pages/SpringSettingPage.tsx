@@ -1,23 +1,23 @@
 // 생략된 import 유지
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { FiInfo } from "react-icons/fi";
-import { IoArrowBack } from "react-icons/io5";
-import { AxiosError } from "axios";
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { FiInfo } from 'react-icons/fi';
+import { IoArrowBack } from 'react-icons/io5';
+import { AxiosError } from 'axios';
 
-import ProjectMetadataForm from "../molecules/springsetting/ProjectMetadataForm";
-import SpringBootConfig from "../molecules/springsetting/SpringBootConfig";
-import DependencySearch from "../molecules/springsetting/DependencySearch";
-import DependencyList from "../molecules/springsetting/DependencyList";
-import DependencyRecommendations from "../molecules/springsetting/DependencyRecommendations";
-import ActionButtons from "../molecules/springsetting/ActionButtons";
+import ProjectMetadataForm from '../molecules/springsetting/ProjectMetadataForm';
+import SpringBootConfig from '../molecules/springsetting/SpringBootConfig';
+import DependencySearch from '../molecules/springsetting/DependencySearch';
+import DependencyList from '../molecules/springsetting/DependencyList';
+import DependencyRecommendations from '../molecules/springsetting/DependencyRecommendations';
+import ActionButtons from '../molecules/springsetting/ActionButtons';
 
 import {
   getSpringSettings,
   createSpringSettings,
   updateSpringSettings,
   getAvailableDependencies,
-} from "../api/springsettingAPI";
+} from '../api/springsettingAPI';
 
 interface Dependency {
   id: string;
@@ -39,68 +39,68 @@ const SpringSettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [settingsExist, setSettingsExist] = useState(false);
 
-  const [springBootVersion, setSpringBootVersion] = useState("3.0.6");
-  const [projectType, setProjectType] = useState("Maven Project");
-  const [language, setLanguage] = useState("Java");
-  const [packaging, setPackaging] = useState("Jar");
-  const [javaVersion, setJavaVersion] = useState("17");
+  const [springBootVersion, setSpringBootVersion] = useState('3.0.6');
+  const [projectType, setProjectType] = useState('Maven Project');
+  const [language, setLanguage] = useState('Java');
+  const [packaging, setPackaging] = useState('Jar');
+  const [javaVersion, setJavaVersion] = useState('17');
 
-  const [groupId, setGroupId] = useState("com.example");
-  const [artifactId, setArtifactId] = useState("demo");
+  const [groupId, setGroupId] = useState('com.example');
+  const [artifactId, setArtifactId] = useState('demo');
   const [description, setDescription] = useState(
-    "Spring Boot 기반 백엔드 프로젝트"
+    'Spring Boot 기반 백엔드 프로젝트',
   );
-  const [projectName, setProjectName] = useState("demo");
-  const [packageName, setPackageName] = useState("com.example.demo");
+  const [projectName, setProjectName] = useState('demo');
+  const [packageName, setPackageName] = useState('com.example.demo');
 
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   const springBootVersions: SpringBootVersion[] = [
     {
-      version: "3.0.6",
-      releaseDate: "2023-04-20",
-      springVersion: "6.0.9",
-      javaCompatibility: "17+",
+      version: '3.0.6',
+      releaseDate: '2023-04-20',
+      springVersion: '6.0.9',
+      javaCompatibility: '17+',
     },
     {
-      version: "3.0.5",
-      releaseDate: "2023-03-23",
-      springVersion: "6.0.8",
-      javaCompatibility: "17+",
+      version: '3.0.5',
+      releaseDate: '2023-03-23',
+      springVersion: '6.0.8',
+      javaCompatibility: '17+',
     },
     {
-      version: "2.7.10",
-      releaseDate: "2023-03-23",
-      springVersion: "5.3.26",
-      javaCompatibility: "8+",
+      version: '2.7.10',
+      releaseDate: '2023-03-23',
+      springVersion: '5.3.26',
+      javaCompatibility: '8+',
     },
     {
-      version: "2.7.9",
-      releaseDate: "2023-02-23",
-      springVersion: "5.3.25",
-      javaCompatibility: "8+",
+      version: '2.7.9',
+      releaseDate: '2023-02-23',
+      springVersion: '5.3.25',
+      javaCompatibility: '8+',
     },
     {
-      version: "2.6.14",
-      releaseDate: "2023-02-23",
-      springVersion: "5.3.25",
-      javaCompatibility: "8+",
+      version: '2.6.14',
+      releaseDate: '2023-02-23',
+      springVersion: '5.3.25',
+      javaCompatibility: '8+',
     },
   ];
 
   const resetSettings = () => {
-    setSpringBootVersion("3.0.6");
-    setProjectType("Maven Project");
-    setLanguage("Java");
-    setPackaging("Jar");
-    setJavaVersion("17");
+    setSpringBootVersion('3.0.6');
+    setProjectType('Maven Project');
+    setLanguage('Java');
+    setPackaging('Jar');
+    setJavaVersion('17');
 
-    setGroupId("");
-    setArtifactId("");
-    setDescription("");
-    setProjectName("");
-    setPackageName("");
+    setGroupId('');
+    setArtifactId('');
+    setDescription('');
+    setProjectName('');
+    setPackageName('');
 
     setDependencies((prev) => prev.map((d) => ({ ...d, selected: false })));
     setSettingsExist(false);
@@ -113,9 +113,9 @@ const SpringSettingsPage: React.FC = () => {
         return;
       }
 
-      const accessToken = sessionStorage.getItem("accessToken");
+      const accessToken = sessionStorage.getItem('accessToken');
       if (!accessToken) {
-        console.error("인증 토큰이 없습니다.");
+        console.error('인증 토큰이 없습니다.');
         setLoading(false);
         return;
       }
@@ -137,7 +137,7 @@ const SpringSettingsPage: React.FC = () => {
         const deps: Dependency[] = availableDeps.map((name: string) => ({
           id: name,
           name,
-          description: "",
+          description: '',
           selected: selectedDeps.includes(name),
         }));
         setDependencies(deps);
@@ -159,29 +159,39 @@ const SpringSettingsPage: React.FC = () => {
   }, [projectId]);
 
   const mapResponseToState = (data: any) => {
-    const versionMap: Record<number, string> = { 3: "3.0.6", 2: "2.7.10" };
-    const projectTypeMap = { MAVEN: "Maven Project", GRADLE: "Gradle Project" };
-    const languageMap = { JAVA: "Java", KOTLIN: "Kotlin", GROOVY: "Groovy" };
-    const packagingMap = { JAR: "Jar", WAR: "War" };
+    const formatSpringVersion = (num: number): string => {
+      const str = num.toString();
+      if (str.length === 3) {
+        return `${str[0]}.0.${str[1]}${str[2]}`;
+      } else if (str.length === 4) {
+        return `${str[0]}.${str[1]}.${str[2]}${str[3]}`;
+      } else {
+        return '3.0.6';
+      }
+    };
 
-    setSpringBootVersion(versionMap[data.springVersion] || "3.0.6");
-    setProjectType(projectTypeMap[data.springProject] || "Maven Project");
-    setLanguage(languageMap[data.springLanguage] || "Java");
-    setPackaging(packagingMap[data.springPackaging] || "Jar");
-    setJavaVersion(data.springJavaVersion?.toString() || "17");
+    const projectTypeMap = { MAVEN: 'Maven Project', GRADLE: 'Gradle Project' };
+    const languageMap = { JAVA: 'Java', KOTLIN: 'Kotlin', GROOVY: 'Groovy' };
+    const packagingMap = { JAR: 'Jar', WAR: 'War' };
 
-    setGroupId(data.springGroup || "");
-    setArtifactId(data.springArtifact || "");
-    setProjectName(data.springName || data.springArtifact || "");
-    setPackageName(data.springPackageName || "");
-    setDescription(data.springDescription || "");
+    setSpringBootVersion(formatSpringVersion(data.springVersion));
+    setProjectType(projectTypeMap[data.springProject] || 'Maven Project');
+    setLanguage(languageMap[data.springLanguage] || 'Java');
+    setPackaging(packagingMap[data.springPackaging] || 'Jar');
+    setJavaVersion(data.springJavaVersion?.toString() || '17');
+
+    setGroupId(data.springGroup || '');
+    setArtifactId(data.springArtifact || '');
+    setProjectName(data.springName || data.springArtifact || '');
+    setPackageName(data.springPackageName || '');
+    setDescription(data.springDescription || '');
   };
 
   const toggleDependency = (id: string) => {
     setDependencies(
       dependencies.map((dep) =>
-        dep.id === id ? { ...dep, selected: !dep.selected } : dep
-      )
+        dep.id === id ? { ...dep, selected: !dep.selected } : dep,
+      ),
     );
   };
 
@@ -193,7 +203,7 @@ const SpringSettingsPage: React.FC = () => {
     ? dependencies.filter(
         (dep) =>
           dep.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          dep.description.toLowerCase().includes(searchQuery.toLowerCase())
+          dep.description.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : dependencies;
 
@@ -202,25 +212,25 @@ const SpringSettingsPage: React.FC = () => {
   const handleSave = async () => {
     if (!projectId) return;
 
-    const accessToken = sessionStorage.getItem("accessToken");
+    const accessToken = sessionStorage.getItem('accessToken');
     if (!accessToken) return;
 
     const requestData = {
       springSettings: {
-        springProject: projectType === "Maven Project" ? "MAVEN" : "GRADLE",
+        springProject: projectType === 'Maven Project' ? 'MAVEN' : 'GRADLE',
         springLanguage:
-          language === "Java"
-            ? "JAVA"
-            : language === "Kotlin"
-              ? "KOTLIN"
-              : "GROOVY",
-        springVersion: parseInt(springBootVersion.split(".")[0]),
+          language === 'Java'
+            ? 'JAVA'
+            : language === 'Kotlin'
+              ? 'KOTLIN'
+              : 'GROOVY',
+        springVersion: parseInt(springBootVersion.split('.').join('')),
         springGroup: groupId,
         springArtifact: artifactId,
         springName: projectName,
         springDescription: description,
         springPackageName: packageName,
-        springPackaging: packaging === "Jar" ? "JAR" : "WAR",
+        springPackaging: packaging === 'Jar' ? 'JAR' : 'WAR',
         springJavaVersion: parseInt(javaVersion),
       },
       selectedDependencies: dependencies
@@ -235,10 +245,10 @@ const SpringSettingsPage: React.FC = () => {
         await createSpringSettings(Number(projectId), requestData, accessToken);
       }
       setSettingsExist(true);
-      alert("설정이 성공적으로 저장되었습니다.");
+      alert('설정이 성공적으로 저장되었습니다.');
     } catch (error) {
-      console.error("저장 실패:", error);
-      alert("설정 저장 중 오류가 발생했습니다.");
+      console.error('저장 실패:', error);
+      alert('설정 저장 중 오류가 발생했습니다.');
     }
   };
 
