@@ -138,7 +138,7 @@ const FuncDetailModal = ({
               >
                 <option value="">담당자 선택</option>
                 {members.map(member => (
-                  <option key={member.id} value={member.id}>
+                  <option key={member.id} value={member.id.toString()}>
                     {member.nickname} (@ {member.userName})
                   </option>
                 ))}

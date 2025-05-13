@@ -20,22 +20,23 @@ const InputSelect = ({
       <ChapterCardLong
         title="ERD 설계"
         subtitle="데이터베이스 구조 설계"
-        icon={<FaDatabase size={18} className="text-white-500" />}
-        bgColor="hover:from-slate-500 hover:to-slate-600 border-t"
+        icon={<FaDatabase size={18} />}
+        bgColor="hover:bg-blue-200 hover:bg-opacity-40 border-t"
         onClick={() => navigate('develop/erd')}
       />
+
       <ChapterCardLong
         title="API 설계"
         subtitle="API 엔드포인트 설계"
-        icon={<FaCode size={18} className="text-white-700" />}
-        bgColor="hover:from-green-700 hover:to-green-800"
+        icon={<FaCode size={18} />}
+        bgColor="hover:bg-blue-200 hover:bg-opacity-40"
         onClick={() => navigate('develop/api')}
       />
       <ChapterCardLong
         title="기능 명세서"
         subtitle="시스템 기능 상세 설계"
-        icon={<FaFileAlt size={18} className="text-white-500" />}
-        bgColor="hover:from-blue-700 hover:to-blue-800"
+        icon={<FaFileAlt size={18} />}
+        bgColor="hover:bg-blue-200 hover:bg-opacity-40"
         onClick={() => navigate('develop/function')}
       />
     </div>
