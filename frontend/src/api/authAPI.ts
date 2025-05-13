@@ -3,7 +3,7 @@ import axiosInstance from './axiosInstance';
 // GitLab OAuth 리다이렉션
 export const redirectToGitLabLogin = () => {
   const clientId = import.meta.env.VITE_GITLAB_CLIENT_ID;
-  const redirectUri = 'http://localhost:5173/gitlab/callback';
+  const redirectUri = 'https://checkit.my/gitlab/callback';
   const scope = 'read_user read_repository write_repository api';
   const encodedScope = encodeURIComponent(scope);
   const gitlabUrl = `https://lab.ssafy.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodedScope}`;
@@ -14,7 +14,7 @@ export const redirectToGitLabLogin = () => {
 // Jira OAuth 리다이렉션
 export const redirectToJiraLogin = () => {
   const clientId = import.meta.env.VITE_JIRA_CLIENT_ID;
-  const redirectUri = 'http://localhost:5173/jira/callback';
+  const redirectUri = 'https://checkit.my/jira/callback';
   const scope =
     'read:jira-work write:jira-work read:board-scope:jira-software read:project:jira read:jira-user offline_access';
   const authorizeUrl = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${encodeURIComponent(
