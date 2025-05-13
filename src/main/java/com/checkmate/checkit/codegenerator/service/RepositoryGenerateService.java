@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.checkmate.checkit.codegenerator.dto.MinimalColumn;
 import com.checkmate.checkit.codegenerator.dto.MinimalTable;
+import com.checkmate.checkit.codegenerator.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,12 +23,6 @@ public class RepositoryGenerateService {
 	private final StringBuilder imports = new StringBuilder();
 	private final Set<String> importSet = new HashSet<>();
 
-	/**
-	 * ERD JSON을 기반으로 Repository Java 파일들을 생성합니다.
-	 * @param erdJson ERD JSON 문자열
-	 * @param basePackage 예: com.checkmate.demo
-	 * @return Map<파일경로, 코드 문자열>
-	 */
 	public Map<String, String> generateRepositoriesFromErdJson(String erdJson, String basePackage) throws IOException {
 		Map<String, String> result = new HashMap<>();
 
@@ -54,28 +49,23 @@ public class RepositoryGenerateService {
 			}
 
 			MinimalTable table = new MinimalTable(tableName, columns);
-
-			// 도메인 추출: 테이블 이름 기준으로 소문자 처리
 			String domain = table.name().toLowerCase();
-			String filePath = domain + "/repository/" + table.name() + "Repository.java";
+			String className = StringUtils.capitalize(table.name()); // PascalCase 클래스 이름
+			String filePath = domain + "/repository/" + className + "Repository.java"; // PascalCase 파일명
 			String fullPackage = basePackage + "." + domain;
 
-			String repositoryCode = generateRepositoryCode(table, fullPackage);
+			String repositoryCode = generateRepositoryCode(table, fullPackage, className);
 			result.put(filePath, repositoryCode);
 		}
 
 		return result;
 	}
 
-	/**
-	 * 단일 테이블 정보를 바탕으로 Repository 코드 생성
-	 */
-	private String generateRepositoryCode(MinimalTable table, String fullPackage) {
+	private String generateRepositoryCode(MinimalTable table, String fullPackage, String className) {
 		imports.setLength(0);
 		importSet.clear();
 
 		StringBuilder sb = new StringBuilder();
-		String className = table.name();
 		String packageName = fullPackage + ".repository";
 		String entityPackage = fullPackage + ".entity." + className;
 
@@ -86,14 +76,12 @@ public class RepositoryGenerateService {
 			.map(col -> toJavaType(col.type()))
 			.orElse("Long");
 
-		// package 선언 및 import
 		sb.append("package ").append(packageName).append(";\n\n");
 		sb.append("import ").append(entityPackage).append(";\n");
 		sb.append("import org.springframework.data.jpa.repository.JpaRepository;\n");
 		sb.append("import org.springframework.stereotype.Repository;\n");
 		sb.append(imports).append("\n");
 
-		// 클래스 선언
 		sb.append("@Repository\n");
 		sb.append("public interface ").append(className).append("Repository ")
 			.append("extends JpaRepository<").append(className).append(", ").append(pkType).append("> {\n\n");

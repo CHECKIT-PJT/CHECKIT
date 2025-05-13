@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.checkmate.checkit.codegenerator.dto.MinimalColumn;
 import com.checkmate.checkit.codegenerator.dto.MinimalTable;
+import com.checkmate.checkit.codegenerator.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,11 +23,6 @@ public class EntityGenerateService {
 	private final StringBuilder imports = new StringBuilder();
 	private final Set<String> importSet = new HashSet<>();
 
-	/**
-	 * ERD JSON 문자열을 받아 모든 Entity 코드를 생성합니다.
-	 * - 도메인 기준 패키지(com.checkmate.demo.user.entity)로 생성
-	 * - 결과는 Map<파일 경로, 코드 문자열> 형태로 반환
-	 */
 	public Map<String, String> generateEntitiesFromErdJson(String erdJson, String basePackage) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode root = mapper.readTree(erdJson);
@@ -54,44 +50,38 @@ public class EntityGenerateService {
 
 			MinimalTable table = new MinimalTable(tableName, columns);
 			String domain = table.name().toLowerCase();
+			String className = StringUtils.capitalize(table.name());
 			String fullPackage = basePackage + "." + domain + ".entity";
-			String classCode = generateEntityCode(table, fullPackage);
-			String filePath = domain + "/entity/" + table.name() + ".java";
+			String classCode = generateEntityCode(table, fullPackage, className);
+			String filePath = domain + "/entity/" + className + ".java";
 			entityFiles.put(filePath, classCode);
 		}
 
 		return entityFiles;
 	}
 
-	public String generateEntityCode(MinimalTable table, String fullPackage) {
+	public String generateEntityCode(MinimalTable table, String fullPackage, String className) {
 		imports.setLength(0);
 		importSet.clear();
 
 		StringBuilder sb = new StringBuilder();
-		String className = table.name();
 
-		// 1. package 선언
 		sb.append("package ").append(fullPackage).append(";\n\n");
 
-		// 2. 기본 import
 		addImport("import jakarta.persistence.*;");
 		addImport("import lombok.*;");
 		sb.append(imports).append("\n");
 
-		// 3. 어노테이션 선언
 		sb.append("@Entity\n");
-		sb.append("@Table(name = \"").append(className.toLowerCase()).append("\")\n");
+		sb.append("@Table(name = \"").append(table.name().toLowerCase()).append("\")\n");
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
 
-		// 4. 클래스 선언
 		sb.append("public class ").append(className).append(" {\n\n");
 
-		// 5. 필드 생성
 		for (MinimalColumn col : table.columns()) {
 			sb.append(generateField(col));
 		}
 
-		// 6. 클래스 종료
 		sb.append("}\n");
 		return sb.toString();
 	}

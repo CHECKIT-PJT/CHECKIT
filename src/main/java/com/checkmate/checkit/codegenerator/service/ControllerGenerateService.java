@@ -17,6 +17,7 @@ import com.checkmate.checkit.api.repository.ApiQueryStringRepository;
 import com.checkmate.checkit.api.repository.ApiSpecRepository;
 import com.checkmate.checkit.api.repository.DtoItemRepository;
 import com.checkmate.checkit.api.repository.DtoRepository;
+import com.checkmate.checkit.codegenerator.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -38,8 +39,11 @@ public class ControllerGenerateService {
 		for (Map.Entry<String, List<ApiSpecEntity>> entry : categorized.entrySet()) {
 			String category = entry.getKey();
 			List<ApiSpecEntity> specs = entry.getValue();
+
+			String className = StringUtils.toPascalCase(category) + "Controller";
+			String filePath = category.toLowerCase() + "/controller/" + className + ".java";
 			String code = generateControllerClassCode(category, specs, basePackage);
-			String filePath = category.toLowerCase() + "/controller/" + capitalize(category) + "Controller.java";
+
 			controllerFiles.put(filePath, code);
 		}
 		return controllerFiles;
@@ -47,10 +51,11 @@ public class ControllerGenerateService {
 
 	private String generateControllerClassCode(String category, List<ApiSpecEntity> specs, String basePackage) {
 		StringBuilder sb = new StringBuilder();
-		String className = capitalize(category) + "Controller";
-		String serviceName = decapitalize(category) + "Service";
-		String serviceType = capitalize(category) + "Service";
+
 		String domain = category.toLowerCase();
+		String className = StringUtils.toPascalCase(category) + "Controller";
+		String serviceType = StringUtils.toPascalCase(category) + "Service";
+		String serviceName = StringUtils.toCamelCase(category) + "Service";
 
 		sb.append("package ")
 			.append(basePackage)
@@ -91,7 +96,7 @@ public class ControllerGenerateService {
 
 	private String generateControllerMethod(ApiSpecEntity spec, String serviceName) {
 		StringBuilder sb = new StringBuilder();
-		String apiName = spec.getApiName();
+		String methodName = StringUtils.toCamelCase(spec.getApiName());
 		String path = spec.getEndpoint();
 		String method = spec.getMethod().name();
 		int statusCode = spec.getStatusCode();
@@ -109,7 +114,7 @@ public class ControllerGenerateService {
 		List<DtoEntity> dtos = dtoRepository.findByApiSpecId(spec.getId());
 		for (DtoEntity dto : dtos) {
 			if (dto.getDtoType() == DtoEntity.DtoType.RESPONSE) {
-				returnType = dto.getDtoName();
+				returnType = StringUtils.toPascalCase(dto.getDtoName());
 				break;
 			}
 		}
@@ -135,7 +140,7 @@ public class ControllerGenerateService {
 
 		for (DtoEntity dto : dtos) {
 			if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
-				String className = dto.getDtoName();
+				String className = StringUtils.toPascalCase(dto.getDtoName());
 				paramLines.add("@RequestBody @Valid " + className + " request");
 				argNames.add("request");
 				break;
@@ -143,19 +148,16 @@ public class ControllerGenerateService {
 		}
 
 		sb.append("    ").append(httpAnnotation).append("(\"").append(path).append("\")\n");
-		sb.append("    public ResponseEntity<").append(returnType).append("> ").append(apiName).append("(");
-		sb.append(String.join(", ", paramLines)).append(") {\n");
+		sb.append("    public ResponseEntity<").append(returnType).append("> ").append(methodName).append("(")
+			.append(String.join(", ", paramLines)).append(") {\n");
 
 		sb.append("        ");
 		if (!returnType.equals("Void")) {
 			sb.append(returnType).append(" result = ");
 		}
 		sb.append(serviceName)
-			.append(".")
-			.append(apiName)
-			.append("(")
-			.append(String.join(", ", argNames))
-			.append(");\n");
+			.append(".").append(methodName)
+			.append("(").append(String.join(", ", argNames)).append(");\n");
 
 		sb.append("        return ResponseEntity.status(HttpStatus.valueOf(").append(statusCode).append("))");
 		if (!returnType.equals("Void")) {
@@ -166,18 +168,6 @@ public class ControllerGenerateService {
 
 		sb.append("    }\n");
 		return sb.toString();
-	}
-
-	private String capitalize(String str) {
-		if (str == null || str.isEmpty())
-			return str;
-		return str.substring(0, 1).toUpperCase() + str.substring(1);
-	}
-
-	private String decapitalize(String str) {
-		if (str == null || str.isEmpty())
-			return str;
-		return str.substring(0, 1).toLowerCase() + str.substring(1);
 	}
 
 	private String toJavaType(String dataType) {
