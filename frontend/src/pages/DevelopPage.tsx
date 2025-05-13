@@ -47,8 +47,8 @@ function DevelopPage() {
         </div>
 
         {/* 탭을 오른쪽으로 이동 */}
-        <div className="flex ">
-          {tabs.map(tab => {
+        <div className="flex">
+          {tabs.map((tab) => {
             const isActive = currentPath.includes(tab.id);
             return (
               <div
