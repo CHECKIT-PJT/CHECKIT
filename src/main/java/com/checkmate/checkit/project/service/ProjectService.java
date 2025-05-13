@@ -480,4 +480,24 @@ public class ProjectService {
 		projectRepository.findByIdAndIsDeletedFalse(projectId)
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 	}
+
+	/**
+	 * 프로젝트 소속 및 사용자 검증 후 ProjectEntity 조회
+	 * @param loginUserId : 로그인한 사용자 ID
+	 * @param projectId : 프로젝트 ID
+	 *
+	 * @return ProjectEntity : 프로젝트 엔티티
+	 */
+	@Transactional(readOnly = true)
+	public ProjectEntity validateAndGetProject(Integer loginUserId, Integer projectId) {
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
+			loginUserId, projectId)) {
+			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
+		}
+
+		// 프로젝트 ID로 ProjectEntity 반환
+		return projectRepository.findByIdAndIsDeletedFalse(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+	}
 }

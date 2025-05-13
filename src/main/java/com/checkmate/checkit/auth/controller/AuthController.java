@@ -1,6 +1,7 @@
 package com.checkmate.checkit.auth.controller;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.auth.dto.response.AuthResponse;
+import com.checkmate.checkit.auth.dto.response.JiraProjectListResponse;
 import com.checkmate.checkit.auth.service.AuthService;
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
@@ -119,5 +121,35 @@ public class AuthController {
 		authService.logout(token, response);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	/**
+	 * Jira 로그인 콜백
+	 * 사용자가 Jira 인증 후 리다이렉트되는 URL
+	 */
+	@GetMapping("/jira/callback")
+	public ResponseEntity<JSONResponse<Void>> jiraCallback(@RequestHeader("Authorization") String authorization,
+		@RequestParam("code") String code,
+		HttpServletResponse response) {
+
+		String token = authorization.substring(7);
+
+		authService.processJiraCallback(token, code, response);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
+
+	/**
+	 * Jira 프로젝트 목록 조회
+	 */
+	@GetMapping("/jira/projects")
+	public ResponseEntity<JSONResponse<List<JiraProjectListResponse>>> getJiraProjects(
+		@RequestHeader("Authorization") String authorization) {
+
+		String token = authorization.substring(7);
+
+		List<JiraProjectListResponse> response = authService.getJiraProjects(token);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, response));
 	}
 }

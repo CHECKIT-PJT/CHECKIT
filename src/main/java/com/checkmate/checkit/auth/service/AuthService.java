@@ -2,9 +2,11 @@ package com.checkmate.checkit.auth.service;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,6 +20,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.checkmate.checkit.auth.dto.response.AuthResponse;
+import com.checkmate.checkit.auth.dto.response.JiraProjectListResponse;
 import com.checkmate.checkit.auth.entity.OAuthToken;
 import com.checkmate.checkit.auth.repository.OAuthTokenRepository;
 import com.checkmate.checkit.global.code.ErrorCode;
@@ -90,8 +93,8 @@ public class AuthService {
 
 		// 사용자 정보로 DB에 사용자 등록 및 OAuthToken 저장
 		User user = processUserLogin(userInfo.get("id").toString(), (String)userInfo.get("login"),
-			userInfo.get("name").toString(),
-			getEmailFromGithub(userInfo, accessToken), AuthProvider.GITHUB, accessToken, response);
+			userInfo.get("name").toString(), getEmailFromGithub(userInfo, accessToken), AuthProvider.GITHUB,
+			accessToken, response);
 
 		// Access 토큰 생성
 		String jwtAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName(),
@@ -148,8 +151,7 @@ public class AuthService {
 	 * @return User : 사용자 정보
 	 */
 	public User processUserLogin(String externalId, String userName, String nickname, String email,
-		AuthProvider provider,
-		String accessToken, HttpServletResponse response) {
+		AuthProvider provider, String accessToken, HttpServletResponse response) {
 
 		// 사용자 정보 조회 또는 생성
 		User user = userRepository.findByExternalIdAndLoginProvider(externalId, provider).orElseGet(() -> {
@@ -432,5 +434,186 @@ public class AuthService {
 			log.error("Access Token이 유효하지 않습니다.");
 			throw new CommonException(ErrorCode.INVALID_JWT_TOKEN);
 		}
+	}
+
+	/**
+	 * Jira 롤백 처리
+	 * @param code : Jira에서 받은 인증 코드
+	 * @param response :HttpServletResponse
+	 */
+	@Transactional
+	public void processJiraCallback(String token, String code, HttpServletResponse response) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// Jira에서 받은 인증 코드로 토큰 요청
+		Map<String, Object> tokenResponse = exchangeCodeForTokens(code);
+
+		String accessToken = (String)tokenResponse.get("access_token");
+		String refreshToken = (String)tokenResponse.get("refresh_token");
+		int expiresIn = (int)tokenResponse.get("expires_in");
+
+		// 액세스 토큰으로 jira 인스턴스 id 가져오기
+		String cloudId = fetchCloudId(accessToken);
+
+		// 사용자 정보 조회
+		User user = userRepository.findById(loginUserId)
+			.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
+
+		// Jira OAuthToken 저장
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(user.getId(), AuthProvider.JIRA)
+			.orElseGet(() -> {
+				OAuthToken newOAuthToken = OAuthToken.builder()
+					.user(user)
+					.serviceProvider(AuthProvider.JIRA)
+					.accessToken(accessToken)
+					.refreshToken(refreshToken)
+					.expiresIn(LocalDateTime.now().plusSeconds(expiresIn))
+					.cloudId(cloudId)
+					.build();
+				return oAuthTokenRepository.save(newOAuthToken);
+			});
+
+		oAuthToken.updateAccessToken(accessToken);
+		oAuthToken.updateRefreshToken(refreshToken);
+		oAuthToken.updateExpiresIn(LocalDateTime.now().plusSeconds(expiresIn));
+		oAuthToken.updateCloudId(cloudId);
+	}
+
+	/**
+	 * Jira에서 받은 인증 코드로 액세스 토큰 요청
+	 * @param code : Jira에서 받은 인증 코드
+	 * @return Map<String, Object> : 액세스 토큰과 리프레시 토큰을 포함한 응답
+	 */
+	private Map<String, Object> exchangeCodeForTokens(String code) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+		formData.add("client_id", jira.getClientId());
+		formData.add("client_secret", jira.getClientSecret());
+		formData.add("code", code);
+		formData.add("grant_type", "authorization_code");
+		formData.add("redirect_uri", jira.getRedirectUri());
+
+		return webClient.post()
+			.uri(jira.getTokenUri())
+			.body(BodyInserters.fromFormData(formData))
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+			})
+			.block(); // 동기 호출 (결과 기다림)
+	}
+
+	/**
+	 * Jira에서 클라우드 ID를 가져오는 메서드
+	 * @param accessToken : 액세스 토큰
+	 * @return String : 클라우드 ID
+	 */
+	private String fetchCloudId(String accessToken) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		return webClient.get()
+			.uri(jira.getApiUri() + "/oauth/token/accessible-resources")
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
+			})
+			.map(list -> (String)list.get(0).get("id"))
+			.block(); // 동기 호출 (결과 기다림)
+	}
+
+	/**
+	 * Jira 프로젝트 목록 조회
+	 * @param token : 액세스 토큰
+	 * @return List<JiraProjectListResponse> : Jira 프로젝트 목록
+	 */
+	@Transactional(readOnly = true)
+	public List<JiraProjectListResponse> getJiraProjects(String token) {
+
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// Jira OAuthToken 조회
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA)
+			.orElseThrow(() -> new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter));
+
+		// Jira API 호출
+		Map<String, Object> response = getJiraProjectsFromApi(oAuthToken);
+
+		// 응답 값에서 values 필드에 프로젝트 리스트 존재.
+		List<Map<String, Object>> projects = (List<Map<String, Object>>)response.get("values");
+
+		return projects.stream()
+			.map(project -> new JiraProjectListResponse(
+				String.valueOf(project.get("id")),
+				String.valueOf(project.get("key")),
+				String.valueOf(project.get("name")),
+				String.valueOf(project.get("projectTypeKey"))
+			))
+			.collect(Collectors.toList());
+	}
+
+	/**
+	 * Jira API 호출
+	 * @param oAuthToken : OAuthToken
+	 * @return Map<String, Object> : Jira 프로젝트 목록
+	 */
+	private Map<String, Object> getJiraProjectsFromApi(OAuthToken oAuthToken) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		return webClient.get()
+			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/project/search", oAuthToken.getCloudId())
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+			})
+			.block(); // 동기 호출 (결과 기다림)
+	}
+
+	/**
+	 * Jira 보드 ID 조회
+	 * @param loginUserId : 로그인한 사용자 ID
+	 * @param jiraProjectKey : Jira 프로젝트 키
+	 * @return Long : Jira 보드 ID
+	 */
+	public Long getBoardId(Integer loginUserId, String jiraProjectKey) {
+		// Jira OAuthToken 조회
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA)
+			.orElseThrow(() -> new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter));
+
+		// Jira API 호출
+		Map<String, Object> response = getJiraBoardIdFromApi(oAuthToken, jiraProjectKey);
+
+		// 응답 값에서 values 필드에 보드 ID 존재.
+		List<Map<String, Object>> boards = (List<Map<String, Object>>)response.get("values");
+
+		log.info("Jira 보드 ID 조회 결과: {}", boards);
+
+		if (boards.isEmpty()) {
+			log.error("Jira 보드를 찾을 수 없습니다.");
+			throw new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter);
+		}
+
+		return Long.valueOf(boards.get(0).get("id").toString());
+	}
+
+	/**
+	 * Jira API 호출
+	 * @param oAuthToken : OAuthToken
+	 * @param jiraProjectKey : Jira 프로젝트 키
+	 * @return Map<String, Object> : Jira 보드 ID
+	 */
+	private Map<String, Object> getJiraBoardIdFromApi(OAuthToken oAuthToken, String jiraProjectKey) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		return webClient.get()
+			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/agile/1.0/board?projectKeyOrId={jiraProjectKey}",
+				oAuthToken.getCloudId(), jiraProjectKey)
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+			})
+			.block(); // 동기 호출 (결과 기다림)
 	}
 }
