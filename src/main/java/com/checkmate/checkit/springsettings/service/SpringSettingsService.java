@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.checkmate.checkit.global.code.ErrorCode;
+import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.repository.ProjectRepository;
 import com.checkmate.checkit.springsettings.dto.DependenciesDtoRequest;
@@ -35,7 +37,7 @@ public class SpringSettingsService {
 		SpringSettingsDtoRequest settingsRequest = request.getSpringSettings();
 		SpringSettingsEntity settingsEntity = projectRepository.findById(projectId)
 			.map(settingsRequest::toEntity)
-			.orElseThrow(() -> new RuntimeException("Project not found"));
+			.orElseThrow(() -> new CommonException(ErrorCode.SPRING_SETTINGS_NOT_FOUND));
 
 		// 스프링 세팅 저장
 		SpringSettingsEntity savedSettings = springSettingsRepository.save(settingsEntity);
@@ -55,29 +57,28 @@ public class SpringSettingsService {
 			.map(DependencyEntity::getDependencyName)
 			.collect(Collectors.toList());
 
-
 		return SpringSettingsDtoResponse.fromEntity(savedSettings, dependencyNames);
 	}
 
 	public SpringSettingsDtoResponse getSpringSettings(Integer projectId) {
 		SpringSettingsEntity entity = springSettingsRepository.findByProjectEntityId(projectId)
-			.orElseThrow(() -> new RuntimeException("SpringSettings not found"));
+			.orElseThrow(() -> new CommonException(ErrorCode.SPRING_SETTINGS_NOT_FOUND));
 
 		List<String> deps = dependencyRepository.findByProjectEntity_Id(projectId)
 			.stream()
 			.map(DependencyEntity::getDependencyName)
 			.collect(Collectors.toList());
 
-		return SpringSettingsDtoResponse.fromEntity(entity, deps); // ✅ 의존성 포함해서 응답
+		return SpringSettingsDtoResponse.fromEntity(entity, deps); // 의존성 포함해서 응답
 	}
 
 	@Transactional
 	public SpringSettingsDtoResponse updateSpringSettings(Integer projectId, DependenciesDtoRequest request) {
 		ProjectEntity projectEntity = projectRepository.findById(projectId)
-			.orElseThrow(() -> new RuntimeException("Project not found"));
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 
 		SpringSettingsEntity entity = springSettingsRepository.findByProjectEntityId(projectId)
-			.orElseThrow(() -> new RuntimeException("Spring settings not found"));
+			.orElseThrow(() -> new CommonException(ErrorCode.SPRING_SETTINGS_NOT_FOUND));
 
 		// 값 갱신
 		SpringSettingsDtoRequest settings = request.getSpringSettings();
@@ -96,7 +97,7 @@ public class SpringSettingsService {
 
 		springSettingsRepository.save(entity);
 
-		// ✅ 정확한 메서드 이름 사용
+		// 정확한 메서드 이름 사용
 		dependencyRepository.deleteByProjectEntity_Id(projectId);
 
 		// 새 의존성 저장
@@ -116,7 +117,6 @@ public class SpringSettingsService {
 
 		return SpringSettingsDtoResponse.fromEntity(entity, selectedDeps);
 	}
-
 
 	public void deleteSpringSettings(Integer projectId) {
 		springSettingsRepository.deleteByProjectEntityId(projectId);
