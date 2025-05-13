@@ -6,19 +6,15 @@ interface Gitignore {
 
 // .gitignore 조회
 export const useGetGitignore = async (projectId: number) => {
-  try {
-    const response = await axiosInstance.get(`/api/git/gitignore/${projectId}`);
-    console.log(response.data);
+  const response = await axiosInstance.get(`/api/git/gitignore/${projectId}`);
+  console.log(response.data);
 
-    // 응답 구조에 맞게 데이터 추출
-    if (response.data && response.data.result && response.data.result.content) {
-      return response.data.result.content;
-    }
-
-    return null;
-  } catch (error) {
-    throw error;
+  // 응답 구조에 맞게 데이터 추출
+  if (response.data && response.data.result && response.data.result.content) {
+    return response.data.result.content;
   }
+
+  return null;
 };
 
 // .gitignore 생성
