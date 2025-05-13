@@ -1,4 +1,4 @@
-package com.checkmate.checkit.codegenerator.model;
+package com.checkmate.checkit.codegenerator.dto;
 
 /**
  * ERD의 컬럼 정보를 담는 최소 단위 DTO
