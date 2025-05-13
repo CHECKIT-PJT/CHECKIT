@@ -1,4 +1,12 @@
 import type { FuncListItem } from '../../types/FuncDoc';
+import {
+  FaAnglesUp,
+  FaAngleUp,
+  FaEquals,
+  FaAngleDown,
+  FaAnglesDown,
+} from 'react-icons/fa6';
+import { FaEquals as FaEqualsOld } from 'react-icons/fa';
 
 interface FuncTableProps {
   data: FuncListItem[];
@@ -7,17 +15,25 @@ interface FuncTableProps {
 }
 
 const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
-  // Filter data based on selected category
   const filteredData =
     selectedCategory === 'ALL'
       ? data
       : data.filter(func => func.category === selectedCategory);
 
-  // Priority color mapping
   const priorityColors = {
-    HIGH: 'bg-rose-500',
-    MEDIUM: 'bg-amber-500',
-    LOW: 'bg-emerald-500',
+    // HIGHEST: 'bg-red-600',
+    // HIGH: 'bg-rose-500',
+    // MEDIUM: 'bg-amber-500',
+    // LOW: 'bg-emerald-500',
+    // LOWEST: 'bg-teal-500',
+  };
+
+  const priorityIcons = {
+    HIGHEST: <FaAnglesUp className="inline mr-1 text-red-500" />,
+    HIGH: <FaAngleUp className="inline mr-1 text-rose-500" />,
+    MEDIUM: <FaEqualsOld className="inline mr-1 text-amber-500" />,
+    LOW: <FaAngleDown className="inline mr-1 text-emerald-500" />,
+    LOWEST: <FaAnglesDown className="inline mr-1 text-teal-500" />,
   };
 
   return (
@@ -36,7 +52,7 @@ const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
         {filteredData.map(func => (
           <tr
             key={func.funcId}
-            className="cursor-pointer bg-white border-b border-gray-200 hover:bg-slate-50 transition"
+            className="cursor-pointer bg-white border-b border-gray-200 hover:bg-blue-50 transition"
             onClick={() => onRowClick(func)}
           >
             <td className="py-4 px-2 text-center">{func.funcId}</td>
@@ -49,13 +65,8 @@ const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
             <td className="py-4 px-2 text-center">{func.assignee}</td>
             <td className="py-4 px-2 text-center">{func.storyPoints}</td>
             <td className="py-4 px-2 text-center">
-              <span
-                className={`px-3 py-1 rounded text-white font-bold text-sm ${
-                  priorityColors[
-                    func.priority as keyof typeof priorityColors
-                  ] || 'bg-slate-400'
-                }`}
-              >
+              <span className="px-4 py-2 rounded font-bold bg-white text-cyan-900">
+                {priorityIcons[func.priority as keyof typeof priorityIcons]}
                 {func.priority}
               </span>
             </td>
