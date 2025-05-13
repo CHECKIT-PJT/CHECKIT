@@ -33,7 +33,7 @@ public class CodeGenerateController {
 	private final ControllerGenerateService controllerGenerateService;
 
 	/**
-	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository)
+	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository + Controller)
 	 */
 	@PostMapping("/build/{projectId}")
 	public ResponseEntity<String> generateEntityCode(@PathVariable int projectId) throws IOException {
@@ -50,26 +50,26 @@ public class CodeGenerateController {
 		StringBuilder codeResult = new StringBuilder();
 
 		// 3. Entity 코드 생성
-		codeResult.append(entityGenerateService.generateEntitiesFromErdJson(erdJson, basePackage)).append("\n");
+		entityGenerateService.generateEntitiesFromErdJson(erdJson, basePackage)
+			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
 		// 4. DTO 코드 생성
-		dtoGenerateService.generateDtos(projectId, basePackage).forEach((fileName, content) -> {
-			codeResult.append(content).append("\n");
-		});
+		dtoGenerateService.generateDtos(projectId, basePackage)
+			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
 		// 5. Query DTO 코드 생성
-		dtoGenerateService.generateQueryDtos(projectId).forEach((fileName, content) -> {
-			codeResult.append(content).append("\n");
-		});
+		dtoGenerateService.generateQueryDtos(projectId)
+			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
 		// 6. Service 코드 생성
 		serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage)
-			.forEach((category, content) -> codeResult.append(content).append("\n"));
+			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
-		// 7. Repository 코드 생성
-		codeResult.append(repositoryGenerateService.generateRepositoriesFromErdJson(erdJson, basePackage)).append("\n");
+		// 7. Repository 코드 생성 (변경됨)
+		repositoryGenerateService.generateRepositoriesFromErdJson(erdJson, basePackage)
+			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
-		// 8. Controller 코드 생성 ← 추가됨
+		// 8. Controller 코드 생성
 		controllerGenerateService.generateControllersByCategory(projectId, basePackage)
 			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 

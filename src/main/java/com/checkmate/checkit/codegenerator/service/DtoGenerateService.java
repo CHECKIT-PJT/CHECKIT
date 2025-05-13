@@ -51,20 +51,18 @@ public class DtoGenerateService {
 	public Map<String, String> generateDtos(int projectId, String basePackage) {
 		Map<String, String> dtoFiles = new HashMap<>();
 
-		// 프로젝트에 연결된 모든 API 명세 조회
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
 
 		for (ApiSpecEntity apiSpec : apiSpecs) {
 			Long apiSpecId = apiSpec.getId();
+			String domain = apiSpec.getCategory().toLowerCase(); // 도메인 추출 (ex. user, product)
 
-			//API 명세서에 연결된 모든 DTO 목록 조회
 			List<DtoEntity> dtoList = dtoRepository.findByApiSpecId(apiSpecId);
 
 			for (DtoEntity dto : dtoList) {
-				String className = dto.getDtoName();// class 명
+				String className = dto.getDtoName();
 				List<DtoItemEntity> dtoItems = new ArrayList<>(dtoItemRepository.findByDto(dto));
 
-				//Request 타입일 경우 쿼리 스트링 정보도 병합
 				if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
 					List<ApiQueryStringEntity> queryStrings = apiQueryStringRepository.findByApiSpec(apiSpec);
 					for (ApiQueryStringEntity query : queryStrings) {
@@ -78,9 +76,9 @@ public class DtoGenerateService {
 				}
 
 				String dtoCode = generateDtoClass(className, dtoItems);
-				dtoFiles.put(className + ".java", dtoCode);
+				String filePath = domain + "/dto/" + className + ".java";
+				dtoFiles.put(filePath, dtoCode);
 			}
-
 		}
 
 		return dtoFiles;
@@ -102,18 +100,18 @@ public class DtoGenerateService {
 			if (queryStrings.isEmpty())
 				continue;
 
+			String domain = apiSpec.getCategory().toLowerCase(); // 도메인 추출
 			String className = toClassName(apiSpec.getApiName() + "QueryDto");
 
 			List<SimpleField> fields = queryStrings.stream()
-				.map(q -> new SimpleField(q.getQueryStringVariable(),
-					q.getQueryStringDataType()))
+				.map(q -> new SimpleField(q.getQueryStringVariable(), q.getQueryStringDataType()))
 				.toList();
 
 			String dtoCode = generateSimpleDtoClass(className, fields);
-			dtoFiles.put(className + ".java", dtoCode);
+			String filePath = domain + "/dto/" + className + ".java";
+			dtoFiles.put(filePath, dtoCode);
 		}
 		return dtoFiles;
-
 	}
 
 	private String generateSimpleDtoClass(String className, List<SimpleField> fields) {
