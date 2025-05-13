@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { AxiosError } from 'axios';
 import { ApiResponse } from '../types';
 
 /**
@@ -13,23 +14,16 @@ const parseApiResponse = (response: string): ApiResponse => {
     repository: {},
   };
 
-  // 파일 내용을 분리 (package 선언을 기준으로)
   const fileContents = response
     .split('package ')
     .filter((content) => content.trim());
 
   fileContents.forEach((content) => {
-    if (!content) return;
-
-    // package 선언 추가
     const fullContent = 'package ' + content;
     const lines = fullContent.split('\n');
-
-    // package 경로 추출
     const packageLine = lines[0];
     const packagePath = packageLine.replace('package ', '').replace(';', '');
 
-    // 파일 이름 추출 (클래스/인터페이스 선언에서)
     const classLine = lines.find(
       (line) => line.includes('class ') || line.includes('interface '),
     );
@@ -40,7 +34,6 @@ const parseApiResponse = (response: string): ApiResponse => {
         classLine.split('interface ')[1]?.split(' ')[0];
 
       if (fileName) {
-        // 폴더 타입 결정
         const folder = packagePath.includes('.entity')
           ? 'entity'
           : packagePath.includes('.dto')
@@ -54,7 +47,6 @@ const parseApiResponse = (response: string): ApiResponse => {
                   : '';
 
         if (folder) {
-          // 파일 내용 정리 (중복 import 제거 등)
           const cleanedContent = fullContent
             .replace(
               /import jakarta\.persistence\.\*;.*?import jakarta\.persistence\.\*;/s,
@@ -72,8 +64,6 @@ const parseApiResponse = (response: string): ApiResponse => {
     }
   });
 
-  console.log('Parsed files:', files);
-
   return {
     status: 'success',
     message: '코드 생성이 완료되었습니다.',
@@ -81,18 +71,30 @@ const parseApiResponse = (response: string): ApiResponse => {
   };
 };
 
+/**
+ * 코드 생성 요청 및 파싱 처리
+ */
 export const generateCode = async (projectId: string): Promise<ApiResponse> => {
   try {
-    console.log('Generating code for project:', projectId);
     const response = await axiosInstance.post(
       `/api/generate/build/${projectId}`,
     );
-    console.log('Code generation response:', response.data);
-
-    // API 응답을 파싱하여 변환
     return parseApiResponse(response.data);
   } catch (error) {
-    console.error('Code generation error:', error);
-    throw error;
+    const axiosError = error as AxiosError;
+
+    const status = axiosError.response?.status;
+    const data = axiosError.response?.data;
+
+    const code = data?.code;
+    const message =
+      data?.message || '코드 생성 중 알 수 없는 오류가 발생했습니다.';
+
+    // 서버에서 내려준 에러코드 문자열이 있으면 그대로 전달
+    throw {
+      status,
+      code,
+      message,
+    };
   }
 };
