@@ -13,7 +13,12 @@ const Header = ({ isLoggedIn }: HeaderProps) => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      const result = await logout();
+      if (result === 'unauthorized') {
+        sessionStorage.clear();
+        navigate('/');
+        return;
+      }
       sessionStorage.clear();
       navigate('/');
     } catch (error) {

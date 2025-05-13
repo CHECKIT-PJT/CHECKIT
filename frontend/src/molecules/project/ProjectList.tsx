@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProjectTable from '../../components/project/ProjectTable';
 import ProjectSearch from '../../components/project/ProjectSearch';
 import ProjectAddButton from '../../components/project/ProjectAddButton';
 import { useGetProjects } from '../../api/projectAPI';
 import { getToken } from '../../api/authAPI';
-import JiraConnectButton from '../../components/button/JiraAccessButton';
+import JiraAccessButton from '../../components/button/JiraAccessButton';
+import { checkJiraLinked } from '../../api/jiraAPI';
 
 interface Project {
   projectId: number;
@@ -37,8 +38,22 @@ const ProjectList = () => {
   const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [isJiraLinked, setIsJiraLinked] = useState(false);
   const navigate = useNavigate();
   const { data: projects = [], isLoading } = useGetProjects();
+
+  useEffect(() => {
+    const checkJiraStatus = async () => {
+      try {
+        const linked = await checkJiraLinked();
+        setIsJiraLinked(linked);
+      } catch (error) {
+        console.error('Failed to check Jira status:', error);
+        setIsJiraLinked(false);
+      }
+    };
+    checkJiraStatus();
+  }, []);
 
   const username = getUserNameFromToken();
 
@@ -63,7 +78,7 @@ const ProjectList = () => {
             프로젝트의 시작은 <b>CHEKIT</b>과 함께 진행하세요.
           </p>
         </div>
-        <JiraConnectButton />
+        <JiraAccessButton isLinked={isJiraLinked} />
       </div>
 
       <div className="flex justify-between items-center mb-8">
