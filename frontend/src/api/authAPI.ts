@@ -16,7 +16,7 @@ export const redirectToJiraLogin = () => {
   const clientId = import.meta.env.VITE_JIRA_CLIENT_ID;
   const redirectUri = 'http://localhost:5173/jira/callback';
   const scope =
-    'read:jira-work write:jira-work read:board-scope:jira-software read:project:jira';
+    'read:jira-work write:jira-work read:board-scope:jira-software read:project:jira read:jira-user offline_access';
   const authorizeUrl = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${encodeURIComponent(
     scope
   )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&prompt=consent`;
@@ -54,13 +54,16 @@ export const refreshToken = async () => {
 export const logout = async () => {
   try {
     await axiosInstance.post('/api/auth/logout');
-    sessionStorage.removeItem('accessToken');
-    console.log('logout');
-    return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Logout error:', error);
-    // sessionStorage.removeItem('accessToken');
-    throw error;
+    // 401 에러인 경우 특별한 값 반환
+    if (error.response?.status === 401) {
+      return 'unauthorized';
+    }
+  } finally {
+    // 서버 요청 성공/실패와 관계없이 토큰 제거
+    sessionStorage.removeItem('accessToken');
+    return true;
   }
 };
 
@@ -91,20 +94,21 @@ export const handleJiraAuthCallback = async (
 ): Promise<boolean> => {
   try {
     const response = await axiosInstance.get(
-      `/api/auth/jira/callback?code=${code}`,
-      {
-        withCredentials: true,
-      }
+      `/api/auth/jira/callback?code=${code}`
     );
 
-    if (response.data.result.accessToken) {
-      sessionStorage.setItem('accessToken', response.data.result.accessToken);
+    const result = response.data?.result;
+    if (result) {
       return true;
     }
 
+    console.warn(
+      'Jira 응답에 accessToken이 포함되어 있지 않습니다:',
+      response.data
+    );
     return false;
   } catch (error) {
-    console.log('error', error);
+    console.error('Jira 인증 콜백 처리 중 에러:', error);
     return false;
   }
 };

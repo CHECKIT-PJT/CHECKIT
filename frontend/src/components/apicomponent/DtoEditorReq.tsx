@@ -84,7 +84,6 @@ const DtoEditorReq = ({
       onUseDtoChange(e.target.checked);
     }
   };
-  console.log('dtoItems', dtoItems);
   return (
     <div className="border rounded-xl p-4 bg-white shadow-sm">
       <div className="flex justify-between items-center mb-3">

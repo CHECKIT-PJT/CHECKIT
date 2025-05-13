@@ -66,7 +66,7 @@ const ProjectMemberList = ({
                     onClick={() => handleApprove(member.id)}
                     className="text-xs bg-blue-500 text-white px-1.5 py-1 rounded hover:bg-blue-600"
                   >
-                    승인 하기
+                    수락
                   </button>
                 )}
               </div>
