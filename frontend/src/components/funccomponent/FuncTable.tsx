@@ -7,14 +7,22 @@ import {
   FaAnglesDown,
 } from 'react-icons/fa6';
 import { FaEquals as FaEqualsOld } from 'react-icons/fa';
+import ActiveUsers from '../apicomponent/ActiveUsers';
+
+interface User {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface FuncTableProps {
   data: FuncListItem[];
   onRowClick: (func: FuncListItem) => void;
   selectedCategory: string;
+  activeUsersByFunc: { [key: string]: User[] };
 }
 
-const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
+const FuncTable = ({ data, onRowClick, selectedCategory, activeUsersByFunc }: FuncTableProps) => {
   const filteredData =
     selectedCategory === 'ALL'
       ? data
@@ -41,6 +49,7 @@ const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
       <thead>
         <tr className="bg-gray-100 border-b-2 border-gray-300">
           <th className="py-3 px-2">ID</th>
+          <th className="py-3 px-2">참여자</th>
           <th className="py-3 px-2">카테고리</th>
           <th className="py-3 px-2">기능</th>
           <th className="py-3 px-2">담당자</th>
@@ -49,23 +58,29 @@ const FuncTable = ({ data, onRowClick, selectedCategory }: FuncTableProps) => {
         </tr>
       </thead>
       <tbody>
-        {filteredData.map(func => (
+        {filteredData.map((func) => (
           <tr
             key={func.funcId}
-            className="cursor-pointer bg-white border-b border-gray-200 hover:bg-blue-50 transition"
             onClick={() => onRowClick(func)}
+            className="cursor-pointer bg-white border-b border-gray-200 hover:bg-slate-50 transition"
           >
             <td className="py-4 px-2 text-center">{func.funcId}</td>
+            <td className="py-4 px-2 flex justify-center">
+              <ActiveUsers 
+                users={activeUsersByFunc[func.funcId?.toString() || ''] || []} 
+                size="small" 
+              />
+            </td>
             <td className="py-4 px-2 text-center">
-              <span className="px-4 py-2 rounded font-bold bg-white text-cyan-900">
+              <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">
                 {func.category.toUpperCase()}
               </span>
             </td>
-            <td className="py-4 px-2 text-center">{func.funcName}</td>
+            <td className="py-4 px-2">{func.funcName}</td>
             <td className="py-4 px-2 text-center">{func.assignee}</td>
             <td className="py-4 px-2 text-center">{func.storyPoints}</td>
             <td className="py-4 px-2 text-center">
-              <span className="px-4 py-2 rounded font-bold bg-white text-cyan-900">
+              <span className="flex items-center justify-center">
                 {priorityIcons[func.priority as keyof typeof priorityIcons]}
                 {func.priority}
               </span>
