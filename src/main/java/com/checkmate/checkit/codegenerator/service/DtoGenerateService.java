@@ -33,23 +33,32 @@ public class DtoGenerateService {
 	private StringBuilder imports = new StringBuilder();
 
 	/**
-	 * 프로젝트 내 API 명세 기반으로 Request/Response DTO 생성
+	 * Request/Response DTO를 자동 생성
 	 */
 	public Map<String, String> generateDtos(int projectId, String basePackage) {
 		Map<String, String> dtoFiles = new HashMap<>();
-
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
 
 		for (ApiSpecEntity apiSpec : apiSpecs) {
 			Long apiSpecId = apiSpec.getId();
 			String domain = apiSpec.getCategory().toLowerCase();
-
 			List<DtoEntity> dtoList = dtoRepository.findByApiSpecId(apiSpecId);
 
 			for (DtoEntity dto : dtoList) {
-				String className = StringUtils.toPascalCase(dto.getDtoName()); // PascalCase 적용
+				String rawName = dto.getDtoName();
+				String className;
+
+				if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
+					className = StringUtils.toPascalCase(rawName) + "Request";
+				} else if (dto.getDtoType() == DtoEntity.DtoType.RESPONSE) {
+					className = StringUtils.toPascalCase(rawName) + "Response";
+				} else {
+					className = StringUtils.toPascalCase(rawName);
+				}
+
 				List<DtoItemEntity> dtoItems = new ArrayList<>(dtoItemRepository.findByDto(dto));
 
+				// 쿼리스트링을 Request DTO에 포함
 				if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
 					List<ApiQueryStringEntity> queryStrings = apiQueryStringRepository.findByApiSpec(apiSpec);
 					for (ApiQueryStringEntity query : queryStrings) {
@@ -63,21 +72,18 @@ public class DtoGenerateService {
 				}
 
 				String dtoCode = generateDtoClass(className, dtoItems);
-				String filePath = domain + "/dto/" + className + ".java"; // PascalCase 적용
+				String filePath = domain + "/dto/" + className + ".java";
 				dtoFiles.put(filePath, dtoCode);
 			}
 		}
-
 		return dtoFiles;
 	}
 
 	/**
-	 * 쿼리스트링만 따로 사용하는 DTO 생성기
-	 * - 이름: {ApiName}QueryDto
+	 * API 쿼리스트링을 위한 Query DTO 클래스 생성
 	 */
 	public Map<String, String> generateQueryDtos(int projectId) {
 		Map<String, String> dtoFiles = new HashMap<>();
-
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
 
 		for (ApiSpecEntity apiSpec : apiSpecs) {
@@ -86,17 +92,16 @@ public class DtoGenerateService {
 				continue;
 
 			String domain = apiSpec.getCategory().toLowerCase();
-			String className = StringUtils.toPascalCase(apiSpec.getApiName() + "QueryDto"); // PascalCase 적용
+			String className = StringUtils.toPascalCase(apiSpec.getApiName()) + "QueryDto";
 
 			List<SimpleField> fields = queryStrings.stream()
 				.map(q -> new SimpleField(q.getQueryStringVariable(), q.getQueryStringDataType()))
 				.toList();
 
 			String dtoCode = generateSimpleDtoClass(className, fields);
-			String filePath = domain + "/dto/" + className + ".java"; // PascalCase 적용
+			String filePath = domain + "/dto/" + className + ".java";
 			dtoFiles.put(filePath, dtoCode);
 		}
-
 		return dtoFiles;
 	}
 
