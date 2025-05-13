@@ -30,6 +30,7 @@ import com.checkmate.checkit.project.dto.request.ReadmeUpdateRequest;
 import com.checkmate.checkit.project.dto.request.SequenceDiagramUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
+import com.checkmate.checkit.project.dto.response.JiraLinkResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectJiraResponse;
@@ -375,15 +376,15 @@ public class ProjectController {
 
 	// Jira에 Issue 등록
 	@PostMapping("/{projectId}/jira/issues")
-	public ResponseEntity<JSONResponse<Void>> createJiraIssue(
+	public ResponseEntity<JSONResponse<JiraLinkResponse>> createJiraIssue(
 		@RequestHeader("Authorization") String authorization,
 		@PathVariable Integer projectId
 	) {
 
 		String token = authorization.substring(7);
 
-		jiraProjectService.createJiraIssues(token, projectId);
+		JiraLinkResponse jiraLinkResponse = jiraProjectService.createJiraIssues(token, projectId);
 
-		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, jiraLinkResponse));
 	}
 }

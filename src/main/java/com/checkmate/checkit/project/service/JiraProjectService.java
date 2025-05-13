@@ -13,6 +13,7 @@ import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.project.dto.request.JiraProjectUpdateRequest;
+import com.checkmate.checkit.project.dto.response.JiraLinkResponse;
 import com.checkmate.checkit.project.dto.response.ProjectJiraResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberWithEmailResponse;
 import com.checkmate.checkit.project.entity.JiraProjectEntity;
@@ -64,12 +65,13 @@ public class JiraProjectService {
 	 * 기능 명세서 기반으로 Jira 이슈 생성
 	 * @param token : JWT 토큰
 	 * @param projectId : 프로젝트 ID
+	 * @return JiraLinkResponse : Jira 이슈 생성 결과 프로젝트 링크 주소
 	 */
-	public void createJiraIssues(String token, Integer projectId) {
+	public JiraLinkResponse createJiraIssues(String token, Integer projectId) {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
-		// 프로젝트 소속 유저인지 확인 후, 프로젝트 정보 가져오기
-		ProjectEntity projectEntity = projectService.validateAndGetProject(loginUserId, projectId);
+		// 프로젝트 소속 유저인지 검증
+		projectService.validateUserAndProject(loginUserId, projectId);
 
 		// JiraProjectEntity 있는지 확인
 		JiraProjectEntity jiraProjectEntity = jiraProjectRepository.findById(projectId)
@@ -91,6 +93,10 @@ public class JiraProjectService {
 		// Jira API를 통해 이슈 생성
 		authService.createJiraIssues(loginUserId, jiraProjectEntity, functionalSpecResponses,
 			userIdToJiraAccountId, storyPointFieldId);
+
+		return new JiraLinkResponse(
+			"https://ssafy.atlassian.net/jira/software/c/projects/" + jiraProjectEntity.getJiraProjectKey()
+				+ "/boards/" + jiraProjectEntity.getJiraBoardId());
 	}
 
 	/**
