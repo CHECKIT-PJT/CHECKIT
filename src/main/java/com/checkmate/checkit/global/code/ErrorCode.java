@@ -46,7 +46,7 @@ public enum ErrorCode {
 	INVALID_INVITE_CODE(400, BAD_REQUEST, "유효하지 않은 초대 코드입니다."),
 	INVALID_INVITE_MEMBER(400, BAD_REQUEST, "초대된 멤버가 아닙니다."),
 
-	// 코드 생성 관련 에러
+	// 코드 생성 관련 에러 추가
 	SPRING_SETTINGS_NOT_FOUND(400, BAD_REQUEST, "Spring 설정이 존재하지 않거나 잘못되었습니다."),
 	ERD_NOT_FOUND(404, NOT_FOUND, "ERD 데이터가 존재하지 않습니다."),
 	API_SPEC_NOT_FOUND(400, BAD_REQUEST, "API 명세서가 존재하지 않습니다."),

@@ -41,7 +41,7 @@ public class CodeGenerateController {
 	private final ApiSpecRepository apiSpecRepository;
 
 	/**
-	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository + Controller)
+	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository + Controller) 및 에러 코드 발생
 	 */
 	@PostMapping("/build/{projectId}")
 	public ResponseEntity<?> generateEntityCode(@PathVariable int projectId) {
