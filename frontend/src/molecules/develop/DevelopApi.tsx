@@ -341,9 +341,9 @@ const DevelopApi = () => {
   }
 
   return (
-    <div className="mt-2 min-h-screen w-full flex flex-col bg-gray-50">
+    <div className="mt-2 w-full flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col justify-center items-center w-full">
-        <div className="w-full flex justify-between items-center mb-4">
+        <div className="w-full flex justify-between items-center my-4">
           <div className="flex-1 max-w-md">
             <input
               type="text"

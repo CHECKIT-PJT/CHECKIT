@@ -50,7 +50,7 @@ const LeaveButton = ({ onClick, role }: LeaveButtonProps) => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors`}
+        className={`shadow px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors`}
       >
         {role === 'OWNER' ? '프로젝트 삭제' : '떠나기'}
       </button>

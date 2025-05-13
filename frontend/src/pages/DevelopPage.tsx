@@ -8,8 +8,6 @@ function DevelopPage() {
   const projectId = params.projectId || '1';
   const { currentProject } = useProjectStore();
 
-  // 프로젝트 이름을 store에서 가져오기
-  console.log(currentProject);
   const projectName = currentProject?.projectName || '';
   const location = useLocation();
   const currentPath = location.pathname;
@@ -34,8 +32,8 @@ function DevelopPage() {
   };
 
   return (
-    <div className="px-4 py-2">
-      <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col px-4 py-2">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-4 ">
           <button
             onClick={onClickBack}
@@ -58,8 +56,8 @@ function DevelopPage() {
                 onClick={() => handleTabClick(tab.path)}
                 className={` flex items-center px-8 py-2 cursor-pointer border-x border-t rounded-t-md ${
                   isActive
-                    ? 'bg-gray-50 text-blue-600 border-gray-200'
-                    : 'bg-gray-200 text-gray-600 border-gray-200 border-b'
+                    ? 'bg-gray-50 text-blue-600 border-gray-700'
+                    : 'bg-gray-200 text-gray-600 border-gray-200 border-b border-b-gray-700'
                 }`}
               >
                 {isActive ? (
@@ -74,7 +72,7 @@ function DevelopPage() {
         </div>
       </div>
 
-      <div>
+      <div className="flex-1 h-screen overflow-hidden">
         <Outlet />
       </div>
     </div>

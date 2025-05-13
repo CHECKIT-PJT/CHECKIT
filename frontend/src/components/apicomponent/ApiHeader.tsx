@@ -68,8 +68,11 @@ const ApiHeader = ({
         <input
           className="w-full border-b-2 border-blue-200 text-xl font-semibold mb-3 px-2 py-2 focus:outline-none focus:border-blue-500 transition-colors"
           value={form.apiName}
-          onChange={e => setForm({ ...form, apiName: e.target.value })}
-          placeholder="API Name"
+          onChange={e => {
+            const value = e.target.value.replace(/[^a-zA-Z]/g, '');
+            setForm({ ...form, apiName: value });
+          }}
+          placeholder="API Name (English only)"
         />
         <input
           className="w-full border-b-2 border-blue-100 text-base px-2 py-2 text-gray-700 focus:outline-none focus:border-blue-300 transition-colors"

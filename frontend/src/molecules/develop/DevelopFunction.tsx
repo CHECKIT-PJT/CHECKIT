@@ -13,6 +13,7 @@ import {
 import useFunctionalSpecStore from '../../stores/functionStore';
 import type { FunctionalSpec } from '../../stores/functionStore';
 import JiraAddButton from '../../components/funccomponent/JiraAddButton';
+<<<<<<< HEAD
 import ActiveUsers from '../../components/apicomponent/ActiveUsers';
 import { PRESENCE_ACTIONS, RESOURCE_TYPES } from '../../constants/websocket';
 import SockJS from 'sockjs-client';
@@ -24,6 +25,10 @@ interface User {
   name: string;
   color: string;
 }
+=======
+import { createJiraIssue } from '../../api/jiraAPI';
+import SuccessModal from '../../components/icon/SuccessModal';
+>>>>>>> 5ec68854fdd7b0c6829464a44d1a912b29e25d85
 
 const priorityToNumber = (priority: string): number => {
   switch (priority) {
@@ -59,7 +64,6 @@ const numberToPriority = (priority: number): string => {
   }
 };
 
-// Utility functions for type conversion
 const convertToFuncListItem = (spec: FunctionalSpec): FuncListItem => ({
   funcId: spec.id || 0,
   funcName: spec.functionName,
@@ -73,7 +77,7 @@ const convertToFuncListItem = (spec: FunctionalSpec): FuncListItem => ({
 const convertToFuncDetail = (spec: FunctionalSpec): FuncDetail => ({
   funcName: spec.functionName,
   category: spec.category,
-  assignee: spec.userName || '',
+  assignee: spec.userId?.toString() || '',
   storyPoints: spec.storyPoint,
   priority: numberToPriority(spec.priority),
   description: spec.functionDescription,
@@ -93,6 +97,7 @@ const convertFromFuncDetail = (
   successCase: detail.successCase,
   failCase: detail.failCase,
   storyPoint: detail.storyPoints,
+  userId: Number(detail.assignee),
 });
 
 const DevelopFunc = () => {
@@ -102,11 +107,16 @@ const DevelopFunc = () => {
   const [selectedFunc, setSelectedFunc] = useState<FunctionalSpec | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+<<<<<<< HEAD
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [activeUsersByFunc, setActiveUsersByFunc] = useState<{ [key: string]: User[] }>({});
+=======
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [jiraLink, setJiraLink] = useState<string | null>(null);
+>>>>>>> 5ec68854fdd7b0c6829464a44d1a912b29e25d85
 
   const { specs } = useFunctionalSpecStore();
   const { refetch } = useGetFunctionalSpecs(Number(projectId));
@@ -311,6 +321,17 @@ const DevelopFunc = () => {
     setModalOpen(true);
   };
 
+  const handleJiraAdd = async () => {
+    if (!projectId) return;
+    try {
+      const jiraLink = await createJiraIssue(Number(projectId));
+      setShowSuccessModal(true);
+      setJiraLink(jiraLink);
+    } catch (error) {
+      console.error('Jira 이슈 등록 실패:', error);
+    }
+  };
+
   const handleRowClick = (func: FuncListItem) => {
     // 이전 기능에서 퇴장
     if (selectedFunc?.id) {
@@ -370,9 +391,9 @@ const DevelopFunc = () => {
   if (!projectId) return null;
 
   return (
-    <div className="mt-2 min-h-screen w-full flex flex-col bg-gray-50">
+    <div className="mt-2 w-full flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col justify-center items-center w-full">
-        <div className="w-full flex justify-between items-center mb-4">
+        <div className="w-full flex justify-between items-center my-4">
           <div className="flex-1 max-w-md">
             <input
               type="text"
@@ -382,15 +403,21 @@ const DevelopFunc = () => {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
+<<<<<<< HEAD
           <div className="ml-4 flex items-center gap-4">
             <ActiveUsers users={activeUsers} size="medium" />
             <div className="flex gap-2">
               <FuncAddButton onClick={handleAdd} />
               <JiraAddButton onClick={handleAdd} />
             </div>
+=======
+          <div className="ml-4 flex gap-2">
+            <FuncAddButton onClick={handleAdd} />
+            <JiraAddButton onClick={handleJiraAdd} />
+>>>>>>> 5ec68854fdd7b0c6829464a44d1a912b29e25d85
           </div>
         </div>
-        <div className="w-full h-full flex-1 flex justify-center items-start">
+        <div className="w-full flex-1 flex justify-center items-start overflow-y-auto">
           <FuncTable
             data={filteredData}
             onRowClick={handleRowClick}
@@ -408,6 +435,16 @@ const DevelopFunc = () => {
           activeUsers={modalActiveUsers}
         />
       )}
+      <SuccessModal
+        visible={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setJiraLink(null);
+        }}
+        title="이슈 등록 완료"
+        description="프로젝트에 성공적으로 등록되었습니다."
+        link={jiraLink || undefined}
+      />
     </div>
   );
 };

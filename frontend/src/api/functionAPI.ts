@@ -20,7 +20,6 @@ export const useGetFunctionalSpecs = (projectId: number) => {
         );
         const data = res.data.result;
         setSpecs(data);
-        console.log('data', data);
         return data;
       } catch (err: any) {
         if (err.response?.status === 404) setHasError(true);
@@ -42,10 +41,8 @@ export const useCreateFunctionalSpec = () => {
   return useMutation({
     mutationFn: async (data: Omit<FunctionalSpec, 'id' | 'userName'>) => {
       setLoading(true);
-      console.log('data', data);
       try {
         const res = await axiosInstance.post('/api/functional-spec', data);
-        console.log('res', res);
         return res.data.result;
       } catch (err: any) {
         setError(err.response?.data?.message || '기능 명세서 생성 실패');

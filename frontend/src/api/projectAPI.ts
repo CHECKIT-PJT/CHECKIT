@@ -172,7 +172,6 @@ export const useAcceptInvite = () => {
       const response = await axiosInstance.post('/api/project/participation', {
         inviteCode,
       });
-      console.log('초대 성공', response.data);
       return response.data;
     },
   });

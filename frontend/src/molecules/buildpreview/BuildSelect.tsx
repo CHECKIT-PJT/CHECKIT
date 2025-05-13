@@ -21,22 +21,22 @@ const BuildSelect = ({
       <ChapterCardLong
         title="컨벤션 설정하기"
         subtitle="빌드 전 조건들을 지정하기"
-        icon={<FaPlay size={18} className="text-white-500" />}
-        bgColor="hover:from-yellow-700 hover:to-yellow-800 border-t"
+        icon={<FaPlay size={18} />}
+        bgColor="hover:bg-blue-600 hover:bg-opacity-40 border-t"
         onClick={() => navigate('build/option/branch')}
       />
       <ChapterCardLong
         title="Spring 설정"
         subtitle="초기 스프링 설정 선택하기"
-        icon={<SiSpring size={18} className="text-white-500" />}
-        bgColor="hover:from-green-800 hover:to-green-900 "
+        icon={<SiSpring size={18} />}
+        bgColor="hover:bg-blue-600 hover:bg-opacity-40"
         onClick={() => navigate('spring')}
       />
       <ChapterCardLong
         title="빌드 미리보기"
         subtitle="초기 코드 자동 생성"
         icon={<FaDesktop size={18} className="text-white-500" />}
-        bgColor="hover:from-stone-600 hover:to-stone-700 "
+        bgColor="hover:bg-blue-600 hover:bg-opacity-40"
         onClick={() => navigate('buildpreview')}
       />
     </div>
