@@ -8,8 +8,6 @@ function DevelopPage() {
   const projectId = params.projectId || '1';
   const { currentProject } = useProjectStore();
 
-  // 프로젝트 이름을 store에서 가져오기
-  console.log(currentProject);
   const projectName = currentProject?.projectName || '';
   const location = useLocation();
   const currentPath = location.pathname;

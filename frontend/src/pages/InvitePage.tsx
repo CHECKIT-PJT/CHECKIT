@@ -7,7 +7,11 @@ const InvitePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const inviteCode = searchParams.get('inviteCode');
-  const { mutate: acceptInvite, isError, error } = useAcceptInvite();
+  const { mutate: acceptInvite, isError, error, isSuccess } = useAcceptInvite();
+
+  // '이미 참여함'인 경우도 성공으로 간주
+  const isAlreadyParticipated =
+    isError && (error as AxiosError)?.response?.status === 400;
 
   useEffect(() => {
     if (inviteCode) {
@@ -15,53 +19,58 @@ const InvitePage = () => {
         onSuccess: () => {
           console.log('초대 수락 성공');
         },
-        onError: () => {
-          console.error('초대 수락 실패');
+        onError: (error: Error) => {
+          const err = error as AxiosError;
+          if (err.response?.status === 400) {
+            console.log('이미 참여한 사용자로 간주');
+          } else {
+            console.error('초대 수락 실패');
+          }
         },
       });
     }
   }, [inviteCode, acceptInvite, navigate]);
 
-  const getErrorMessage = () => {
-    if ((error as AxiosError)?.response?.status === 400) {
-      return '이미 프로젝트에 참여 요청을 했거나 가입한 상태입니다.';
-    }
-    return '초대 수락에 실패했습니다. 로그인이 필요합니다.';
-  };
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <div className="text-center">
-        {isError ? (
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-red-500">{getErrorMessage()}</div>
-            <button
-              onClick={() =>
-                navigate(
-                  (error as AxiosError)?.response?.status === 400
-                    ? '/project'
-                    : '/'
-                )
-              }
-              className="px-4 py-2 text-sm bg-blue-700 text-white rounded hover:bg-blue-600 transition-colors"
-            >
-              {(error as AxiosError)?.response?.status === 400
-                ? '프로젝트로 이동'
-                : '로그인하기'}
-            </button>
-          </div>
-        ) : (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+      <div className="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full text-center space-y-6">
+        {isSuccess || isAlreadyParticipated ? (
           <>
-            참여 요청을 보냈습니다. <br />
-            팀장이 승인하면 프로젝트 목록에서 확인할 수 있습니다.
-            <br />
+            <h2 className="text-xl font-semibold text-green-600">
+              참여 요청 완료
+            </h2>
+            <p className="text-sm text-gray-700">
+              팀장이 승인하면 <br />
+              프로젝트 목록에서 확인할 수 있습니다.
+            </p>
             <button
               onClick={() => navigate('/project')}
-              className="px-4 py-2 text-sm bg-blue-700 text-white rounded hover:bg-blue-600 transition-colors"
+              className="w-full px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition duration-200 shadow"
             >
               main으로 이동
             </button>
           </>
+        ) : isError ? (
+          <>
+            <h2 className="text-xl font-semibold text-red-500">
+              초대 수락 실패
+            </h2>
+            <p className="text-sm text-gray-700">
+              초대 수락에 실패했습니다. 로그인이 필요합니다.
+            </p>
+            <button
+              onClick={() =>
+                navigate('/', {
+                  state: { from: '/invite?inviteCode=' + inviteCode },
+                })
+              }
+              className="w-full px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition duration-200 shadow"
+            >
+              로그인하기
+            </button>
+          </>
+        ) : (
+          <p className="text-gray-600 text-sm">처리 중...</p>
         )}
       </div>
     </div>
