@@ -108,6 +108,7 @@ const SpringSettingsPage: React.FC = () => {
     setProjectName('');
     setPackageName('');
 
+    // 이전에 deps 세팅은 loadData에서 했으므로, 선택만 false로 바꿈
     setDependencies((prev) => prev.map((d) => ({ ...d, selected: false })));
     setSettingsExist(false);
   };
@@ -127,19 +128,28 @@ const SpringSettingsPage: React.FC = () => {
       }
 
       try {
-        // 병렬 요청
-        const [depsResponse, settingsResponse] = await Promise.all([
-          getAvailableDependencies(),
-          getSpringSettings(Number(projectId), accessToken),
-        ]);
-
+        const depsResponse = await getAvailableDependencies();
         const availableDeps: string[] =
           depsResponse?.data?.result?.dependencies || [];
+
+        let settingsResponse = null;
+        try {
+          settingsResponse = await getSpringSettings(
+            Number(projectId),
+            accessToken,
+          );
+        } catch (error) {
+          if (
+            !(error instanceof AxiosError && error.response?.status === 404)
+          ) {
+            throw error; // 예상치 못한 에러는 다시 throw
+          }
+        }
 
         const selectedDeps: string[] =
           settingsResponse?.result?.dependencies || [];
 
-        // dependencies 상태 구성
+        // dependencies 상태 먼저 세팅
         const deps: Dependency[] = availableDeps.map((name: string) => ({
           id: name,
           name,
@@ -148,14 +158,14 @@ const SpringSettingsPage: React.FC = () => {
         }));
         setDependencies(deps);
 
-        // 나머지 설정 반영
-        setSettingsExist(true);
-        mapResponseToState(settingsResponse.result);
-      } catch (error) {
-        if (error instanceof AxiosError && error.response?.status === 404) {
-          resetSettings();
+        if (settingsResponse) {
+          setSettingsExist(true);
+          mapResponseToState(settingsResponse.result);
+        } else {
+          resetSettings(); // 선택만 false로
         }
-        setSettingsExist(false);
+      } catch (error) {
+        console.error('설정 또는 의존성 불러오기 실패:', error);
       } finally {
         setLoading(false);
       }
