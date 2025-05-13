@@ -16,12 +16,20 @@ import {
   convertToApiSpecRequest,
   validateApiSpecRequest,
 } from '../../utils/apiUtils';
+import ActiveUsers from './ActiveUsers';
+
+interface User {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface ApiDetailModalProps {
   api: ApiDetail | null;
   onClose: () => void;
   onSave: (apiSpecRequest: any) => void;
   onDelete?: () => void;
+  activeUsers: User[];
 }
 
 // 빈 API 상세 정보
@@ -61,6 +69,7 @@ const ApiDetailModal = ({
   onClose,
   onSave,
   onDelete,
+  activeUsers,
 }: ApiDetailModalProps) => {
   const [tab, setTab] = useState<'RESOURCE' | 'HEADER' | 'QUERY'>('RESOURCE');
   const [form, setForm] = useState<ApiDetail>(api ?? blankApiDetail);
@@ -253,9 +262,12 @@ const ApiDetailModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-[90%] max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-blue-700">
-            {api && api.id ? 'API 수정 하기' : 'API 추가 하기'}
-          </h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-blue-700">
+              {api && api.id ? 'API 수정 하기' : 'API 추가 하기'}
+            </h2>
+            <ActiveUsers users={activeUsers} size="small" />
+          </div>
           <div className="flex gap-3">
             <button
               className="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition"
