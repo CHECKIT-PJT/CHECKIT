@@ -24,6 +24,7 @@ import InvitePage from '../pages/InvitePage';
 import SequenceDiagramPage from '../pages/SequenceDiagramPage';
 import MarkdownEditorPage from '../pages/MarkdownEditorPage';
 import JiraAuthCallback from '../pages/JiraAuthCallBack';
+import NotFoundPage from '../pages/NotFoundPage';
 
 const Router = () => {
   // 로그인 체크
@@ -80,6 +81,7 @@ const Router = () => {
         </Route>
       </Route>
       <Route path="/invite" element={<InvitePage />} />
+      <Route path="/notfound" element={<NotFoundPage />} />
     </Routes>
   );
 };

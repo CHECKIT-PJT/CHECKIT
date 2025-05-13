@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDeleteProject } from '../../api/projectAPI';
-import { getJiraProjectList, linkJiraProject } from '../../api/jiraAPI';
+import {
+  getJiraProjectList,
+  linkJiraProject,
+  getJiraProjectInfo,
+} from '../../api/jiraAPI';
 import { toast } from 'react-toastify';
+import jiraLogo from '../../assets/jira-1.svg';
 
 interface JiraButtonProps {
   onClick?: () => void;
@@ -15,13 +20,37 @@ interface JiraProject {
   projectTypeKey: string;
 }
 
+interface JiraProjectInfo {
+  jiraProjectId: number;
+  jiraProjectKey: string;
+  jiraProjectName: string;
+  projectTypeKey: string;
+  jiraBoardId: number;
+}
+
 const JiraButton = ({ onClick }: JiraButtonProps) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
+  const [jiraProjectInfo, setJiraProjectInfo] =
+    useState<JiraProjectInfo | null>(null);
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { mutate: deleteProject } = useDeleteProject();
+
+  useEffect(() => {
+    const fetchJiraProjectInfo = async () => {
+      if (projectId) {
+        try {
+          const info = await getJiraProjectInfo(Number(projectId));
+          setJiraProjectInfo(info);
+        } catch (error) {
+          console.error('Jira 프로젝트 정보를 가져오는데 실패했습니다:', error);
+        }
+      }
+    };
+    fetchJiraProjectInfo();
+  }, [projectId]);
 
   const fetchJiraProjects = async () => {
     try {
@@ -68,18 +97,21 @@ const JiraButton = ({ onClick }: JiraButtonProps) => {
     <>
       <button
         onClick={handleOpenModal}
-        className={`px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-gradient-to-r hover:from-blue-400 hover:to-blue-600 hover:text-white transition-colors`}
+        className={`shadow flex items-center gap-2 px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white transition-colors`}
       >
-        Jira 프로젝트 선택
+        <img src={jiraLogo} className="w-4 h-4" />
+        연동하기
       </button>
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white px-14 py-6 rounded-lg shadow-lg text-center w-[40%]">
-            <p className="mb-2 mt-4 text-lg font-bold">
+            <p className="mb-6 mt-4 text-xl font-bold">
               연동할 Jira 프로젝트를 선택해주세요
             </p>
-            <p className="mb-8 text-sm text-gray-500">
-              팀의 Jira 프로젝트가 있어야 연동이 가능합니다.
+            <p className="mb-8  text-gray-500">
+              {jiraProjectInfo
+                ? `현재 연동된 Jira 프로젝트: ${jiraProjectInfo.jiraProjectName}`
+                : '팀의 Jira 프로젝트가 있어야 연동이 가능합니다.'}
             </p>
             <select
               value={selectedProject}
@@ -101,7 +133,7 @@ const JiraButton = ({ onClick }: JiraButtonProps) => {
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-colors"
               >
-                취소
+                뒤로가기
               </button>
               <button
                 onClick={handleSubmit}

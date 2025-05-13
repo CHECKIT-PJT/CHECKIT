@@ -13,6 +13,9 @@ import {
 import useFunctionalSpecStore from '../../stores/functionStore';
 import type { FunctionalSpec } from '../../stores/functionStore';
 import JiraAddButton from '../../components/funccomponent/JiraAddButton';
+import { createJiraIssue } from '../../api/jiraAPI';
+import SuccessModal from '../../components/icon/SuccessModal';
+
 const priorityToNumber = (priority: string): number => {
   switch (priority) {
     case 'HIGHEST':
@@ -47,7 +50,6 @@ const numberToPriority = (priority: number): string => {
   }
 };
 
-// Utility functions for type conversion
 const convertToFuncListItem = (spec: FunctionalSpec): FuncListItem => ({
   funcId: spec.id || 0,
   funcName: spec.functionName,
@@ -61,7 +63,7 @@ const convertToFuncListItem = (spec: FunctionalSpec): FuncListItem => ({
 const convertToFuncDetail = (spec: FunctionalSpec): FuncDetail => ({
   funcName: spec.functionName,
   category: spec.category,
-  assignee: spec.userName || '',
+  assignee: spec.userId?.toString() || '',
   storyPoints: spec.storyPoint,
   priority: numberToPriority(spec.priority),
   description: spec.functionDescription,
@@ -81,6 +83,7 @@ const convertFromFuncDetail = (
   successCase: detail.successCase,
   failCase: detail.failCase,
   storyPoint: detail.storyPoints,
+  userId: Number(detail.assignee),
 });
 
 const DevelopFunc = () => {
@@ -89,6 +92,8 @@ const DevelopFunc = () => {
   const [selectedFunc, setSelectedFunc] = useState<FunctionalSpec | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [jiraLink, setJiraLink] = useState<string | null>(null);
 
   const { specs } = useFunctionalSpecStore();
   const { refetch } = useGetFunctionalSpecs(Number(projectId));
@@ -116,6 +121,17 @@ const DevelopFunc = () => {
   const handleAdd = () => {
     setSelectedFunc(null);
     setModalOpen(true);
+  };
+
+  const handleJiraAdd = async () => {
+    if (!projectId) return;
+    try {
+      const jiraLink = await createJiraIssue(Number(projectId));
+      setShowSuccessModal(true);
+      setJiraLink(jiraLink);
+    } catch (error) {
+      console.error('Jira 이슈 등록 실패:', error);
+    }
   };
 
   const handleRowClick = (func: FuncListItem) => {
@@ -158,9 +174,9 @@ const DevelopFunc = () => {
   if (!projectId) return null;
 
   return (
-    <div className="mt-2 min-h-screen w-full flex flex-col bg-gray-50">
+    <div className="mt-2 w-full flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col justify-center items-center w-full">
-        <div className="w-full flex justify-between items-center mb-4">
+        <div className="w-full flex justify-between items-center my-4">
           <div className="flex-1 max-w-md">
             <input
               type="text"
@@ -172,10 +188,10 @@ const DevelopFunc = () => {
           </div>
           <div className="ml-4 flex gap-2">
             <FuncAddButton onClick={handleAdd} />
-            <JiraAddButton onClick={handleAdd} />
+            <JiraAddButton onClick={handleJiraAdd} />
           </div>
         </div>
-        <div className="w-full h-full flex-1 flex justify-center items-start">
+        <div className="w-full flex-1 flex justify-center items-start overflow-y-auto">
           <FuncTable
             data={filteredData}
             onRowClick={handleRowClick}
@@ -191,6 +207,16 @@ const DevelopFunc = () => {
           onDelete={handleDelete}
         />
       )}
+      <SuccessModal
+        visible={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setJiraLink(null);
+        }}
+        title="이슈 등록 완료"
+        description="프로젝트에 성공적으로 등록되었습니다."
+        link={jiraLink || undefined}
+      />
     </div>
   );
 };
