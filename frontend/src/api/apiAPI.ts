@@ -26,7 +26,6 @@ export const useGetApiSpecs = (projectId: number) => {
             apiSpecId: api.id,
           }));
           setApiList(apiList);
-          console.log('response.data.result', apiList);
           return apiList;
         }
 
@@ -102,12 +101,6 @@ export const useCreateApiSpec = () => {
     }) => {
       setLoading(true);
       try {
-        console.log('Creating/Updating API spec with:', {
-          projectId,
-          apiSpec,
-          url: `/api/api-spec/${projectId}`,
-        });
-
         const response = await axiosInstance.post(
           `/api/api-spec/${projectId}`,
           apiSpec
