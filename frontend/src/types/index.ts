@@ -7,16 +7,11 @@ export interface FileData {
 }
 
 export interface ProjectData {
-  entity: FileData;
-  dto: FileData;
-  controller: FileData;
-  service: FileData;
-  repository: FileData;
   [key: string]: FileData;
 }
 
 export interface ApiResponse {
-  status: number;
+  status: string;
   message: string;
   data: ProjectData;
 }
@@ -31,5 +26,5 @@ export interface ExpandedFolders {
   [folder: string]: boolean;
 }
 
-export type ButtonVariant = "primary" | "secondary";
-export type IconColor = "blue" | "yellow";
+export type ButtonVariant = 'primary' | 'secondary';
+export type IconColor = 'blue' | 'yellow';

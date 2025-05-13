@@ -1,11 +1,11 @@
-import { FaChevronDown, FaChevronRight } from "react-icons/fa6";
-import FolderIcon from "../../components/buildpreview/FolderIcon";
-import FileTreeItem from "./FileTreeItem";
-import { FileData, SelectedFile } from "../../types";
+import { FaChevronDown, FaChevronRight } from 'react-icons/fa6';
+import FolderIcon from '../../components/buildpreview/FolderIcon';
+import FileTreeItem from './FileTreeItem';
+import { FileData, SelectedFile } from '../../types';
 
 interface FolderTreeItemProps {
   folderName: string;
-  files: FileData;
+  files: FileData | null;
   isExpanded: boolean;
   onToggle: (folder: string) => void;
   selectedFile: SelectedFile | null;
@@ -38,7 +38,7 @@ const FolderTreeItem: React.FC<FolderTreeItemProps> = ({
         <span className="text-sm">{folderName}</span>
       </div>
 
-      {isExpanded && (
+      {isExpanded && files && (
         <div className="pl-8 py-1">
           {Object.keys(files).map((fileName) => (
             <FileTreeItem

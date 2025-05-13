@@ -1,22 +1,21 @@
-import { useState, useEffect } from "react";
-import ProjectHeader from "../molecules/buildpreview/ProjectHeader";
-import FileExplorer from "../molecules/buildpreview/FileExplorer";
-import CodeViewer from "../molecules/buildpreview/CodeViewer";
-import ProjectStats from "../molecules/buildpreview/ProjectStats";
-import ActionBar from "../molecules/buildpreview/ActionBar";
-import useThemeDetection from "../hooks/useThemeDetection";
-import {
-  sampleApiResponse,
-  downloadProject,
-  createNewProject,
-} from "../api/buildpreview";
-import { countFiles, createFilePath } from "../utils/fileUtils";
-import { ExpandedFolders, SelectedFile } from "../types";
+import { useState, useEffect } from 'react';
+import ProjectHeader from '../molecules/buildpreview/ProjectHeader';
+import FileExplorer from '../molecules/buildpreview/FileExplorer';
+import CodeViewer from '../molecules/buildpreview/CodeViewer';
+import ProjectStats from '../molecules/buildpreview/ProjectStats';
+import ActionBar from '../molecules/buildpreview/ActionBar';
+import useThemeDetection from '../hooks/useThemeDetection';
+import { downloadProject } from '../api/buildpreview';
+import { generateCode } from '../api/codegenerateAPI';
+import { countFiles, createFilePath } from '../utils/fileUtils';
+import { ExpandedFolders, SelectedFile, ApiResponse } from '../types';
+import { useParams } from 'react-router-dom';
 
 /**
  * 프로젝트 미리보기 페이지 컴포넌트
  */
 const BuildPreviewPage: React.FC = () => {
+  const { projectId } = useParams<{ projectId: string }>();
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<ExpandedFolders>({
     entity: true,
@@ -26,6 +25,9 @@ const BuildPreviewPage: React.FC = () => {
     repository: true,
   });
   const [codeDarkMode, setCodeDarkMode] = useState<boolean>(false);
+  const [projectData, setProjectData] = useState<ApiResponse | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 시스템 테마 감지하여 초기 코드 뷰어 테마 설정
   const systemDarkMode = useThemeDetection();
@@ -33,6 +35,26 @@ const BuildPreviewPage: React.FC = () => {
   useEffect(() => {
     setCodeDarkMode(systemDarkMode);
   }, [systemDarkMode]);
+
+  useEffect(() => {
+    const fetchProjectData = async () => {
+      if (!projectId) return;
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await generateCode(projectId);
+        setProjectData(response);
+      } catch (err) {
+        setError('프로젝트 데이터를 불러오는 중 오류가 발생했습니다.');
+        console.error('프로젝트 데이터 로딩 오류:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjectData();
+  }, [projectId]);
 
   /**
    * 폴더 확장/축소 토글 함수
@@ -48,9 +70,11 @@ const BuildPreviewPage: React.FC = () => {
    * 파일 선택 함수
    */
   const selectFile = (folder: string, fileName: string): void => {
+    if (!projectData) return;
+
     setSelectedFile({
       name: fileName,
-      content: sampleApiResponse.data[folder][fileName],
+      content: projectData.data[folder][fileName],
       path: createFilePath(folder, fileName),
     });
   };
@@ -61,10 +85,10 @@ const BuildPreviewPage: React.FC = () => {
   const handleDownload = async (): Promise<void> => {
     try {
       await downloadProject();
-      alert("프로젝트 다운로드가 완료되었습니다.");
+      alert('프로젝트 다운로드가 완료되었습니다.');
     } catch (error) {
-      console.error("다운로드 중 오류 발생:", error);
-      alert("다운로드 중 오류가 발생했습니다.");
+      console.error('다운로드 중 오류 발생:', error);
+      alert('다운로드 중 오류가 발생했습니다.');
     }
   };
 
@@ -82,7 +106,31 @@ const BuildPreviewPage: React.FC = () => {
   // };
 
   // 파일 개수 계산
-  const fileCount = countFiles(sampleApiResponse.data);
+  const fileCount = projectData ? countFiles(projectData.data) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl">로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!projectData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl">프로젝트 데이터가 없습니다.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 text-gray-900">
@@ -91,7 +139,7 @@ const BuildPreviewPage: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         <div className="w-1/3 bg-gray-50 border-gray-200 border-r overflow-y-auto p-2">
           <FileExplorer
-            data={sampleApiResponse.data}
+            data={projectData.data}
             expandedFolders={expandedFolders}
             toggleFolder={toggleFolder}
             selectedFile={selectedFile}
@@ -99,8 +147,8 @@ const BuildPreviewPage: React.FC = () => {
           />
 
           <ProjectStats
-            status={sampleApiResponse.status}
-            message={sampleApiResponse.message}
+            status={String(projectData.status)}
+            message={projectData.message}
             fileCount={fileCount}
           />
         </div>

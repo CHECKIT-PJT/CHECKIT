@@ -1,9 +1,9 @@
-import FolderIcon from "../../components/buildpreview/FolderIcon";
-import FolderTreeItem from "./FolderTreeItem";
-import { ProjectData, SelectedFile, ExpandedFolders } from "../../types";
+import FolderIcon from '../../components/buildpreview/FolderIcon';
+import FolderTreeItem from './FolderTreeItem';
+import { ProjectData, SelectedFile, ExpandedFolders } from '../../types';
 
 interface FileExplorerProps {
-  data: ProjectData;
+  data: ProjectData | null;
   expandedFolders: ExpandedFolders;
   toggleFolder: (folder: string) => void;
   selectedFile: SelectedFile | null;
@@ -20,6 +20,19 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   selectedFile,
   selectFile,
 }) => {
+  if (!data) {
+    return (
+      <div className="mb-4">
+        <div className="text-sm font-medium text-gray-500 mb-2 px-2">
+          프로젝트 구조
+        </div>
+        <div className="border rounded bg-white border-gray-200 shadow-sm p-4 text-center text-gray-500">
+          데이터가 없습니다.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-4">
       <div className="text-sm font-medium text-gray-500 mb-2 px-2">
