@@ -1,0 +1,3 @@
+project:
+  invite:
+    url: ${PROJECT_INVITE_URL}
