@@ -1,75 +1,117 @@
-import { useState } from 'react';
-import DomainButton from '../../components/button/DomainButton';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import FuncTable from '../../components/funccomponent/FuncTable';
 import FuncDetailModal from '../../components/funccomponent/FuncDetailModal';
-import type { FuncListItem, FuncDetail } from '../../types/FuncDoc';
+import type { FuncDetail, FuncListItem } from '../../types/FuncDoc';
 import FuncAddButton from '../../components/funccomponent/FuncAddButton';
-
-// 예시 데이터 직접 선언
-const exampleFuncList: FuncListItem[] = [
-  {
-    funcId: 1,
-    funcName: '회원가입 기능',
-    category: 'MEMBER',
-    assignee: '홍길동',
-    storyPoints: 5,
-    priority: 'HIGH',
-  },
-  {
-    funcId: 2,
-    funcName: '로그인 기능',
-    category: 'MEMBER',
-    assignee: '김철수',
-    storyPoints: 3,
-    priority: 'HIGH',
-  },
-  {
-    funcId: 3,
-    funcName: 'API 문서 조회',
-    category: 'APIDOCS',
-    assignee: '이영희',
-    storyPoints: 8,
-    priority: 'MEDIUM',
-  },
-  {
-    funcId: 4,
-    funcName: '기능 목록 관리',
-    category: 'INITIALIZER',
-    assignee: '박지성',
-    storyPoints: 5,
-    priority: 'LOW',
-  },
-];
-
-const exampleFuncDetail: FuncDetail = {
-  funcName: '회원가입 기능',
-  category: 'MEMBER',
-  assignee: '홍길동',
-  storyPoints: 5,
-  priority: 'HIGH',
-  description:
-    '새로운 사용자가 시스템에 회원가입할 수 있는 기능. 이메일, 비밀번호, 이름 등의 정보를 입력받아 회원으로 등록한다.',
-  successCase: '유효한 이메일과 비밀번호로 회원가입 시 성공',
-  failCase: '이미 사용 중인 이메일 주소로 가입 시도 시 실패',
+import {
+  useGetFunctionalSpecs,
+  useCreateFunctionalSpec,
+  useUpdateFunctionalSpec,
+  useDeleteFunctionalSpec,
+} from '../../api/functionAPI';
+import useFunctionalSpecStore from '../../stores/functionStore';
+import type { FunctionalSpec } from '../../stores/functionStore';
+import JiraAddButton from '../../components/funccomponent/JiraAddButton';
+const priorityToNumber = (priority: string): number => {
+  switch (priority) {
+    case 'HIGHEST':
+      return 1;
+    case 'HIGH':
+      return 2;
+    case 'MEDIUM':
+      return 3;
+    case 'LOW':
+      return 4;
+    case 'LOWEST':
+      return 5;
+    default:
+      return 3;
+  }
 };
 
-const categoryList = ['APIDOCS', 'MEMBER', 'INITIALIZER'];
+const numberToPriority = (priority: number): string => {
+  switch (priority) {
+    case 1:
+      return 'HIGHEST';
+    case 2:
+      return 'HIGH';
+    case 3:
+      return 'MEDIUM';
+    case 4:
+      return 'LOW';
+    case 5:
+      return 'LOWEST';
+    default:
+      return 'MEDIUM';
+  }
+};
+
+// Utility functions for type conversion
+const convertToFuncListItem = (spec: FunctionalSpec): FuncListItem => ({
+  funcId: spec.id || 0,
+  funcName: spec.functionName,
+  category: spec.category,
+  assignee: spec.userName || '',
+  storyPoints: spec.storyPoint,
+  priority: numberToPriority(spec.priority),
+  userId: spec.userId,
+});
+
+const convertToFuncDetail = (spec: FunctionalSpec): FuncDetail => ({
+  funcName: spec.functionName,
+  category: spec.category,
+  assignee: spec.userName || '',
+  storyPoints: spec.storyPoint,
+  priority: numberToPriority(spec.priority),
+  description: spec.functionDescription,
+  successCase: spec.successCase,
+  failCase: spec.failCase,
+});
+
+const convertFromFuncDetail = (
+  detail: FuncDetail,
+  spec: FunctionalSpec
+): FunctionalSpec => ({
+  ...spec,
+  functionName: detail.funcName,
+  category: detail.category,
+  functionDescription: detail.description,
+  priority: priorityToNumber(detail.priority),
+  successCase: detail.successCase,
+  failCase: detail.failCase,
+  storyPoint: detail.storyPoints,
+});
 
 const DevelopFunc = () => {
+  const { projectId } = useParams<{ projectId: string }>();
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedFunc, setSelectedFunc] = useState<FuncDetail | null>(null);
-  const [data, setData] = useState<FuncListItem[]>(exampleFuncList);
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedFunc, setSelectedFunc] = useState<FunctionalSpec | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
 
-  const filteredData = data.filter(func => {
-    const matchesCategory =
-      selectedCategory === 'ALL' || func.category === selectedCategory;
-    const matchesSearch = func.category
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const { specs } = useFunctionalSpecStore();
+  const { refetch } = useGetFunctionalSpecs(Number(projectId));
+  const createMutation = useCreateFunctionalSpec();
+  const updateMutation = useUpdateFunctionalSpec();
+  const deleteMutation = useDeleteFunctionalSpec();
+
+  useEffect(() => {
+    if (projectId) {
+      refetch();
+    }
+  }, [projectId]);
+
+  const filteredData = specs
+    .filter(spec => {
+      const matchesCategory =
+        selectedCategory === 'ALL' || spec.category === selectedCategory;
+      const matchesSearch = spec.category
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .map(convertToFuncListItem);
 
   const handleAdd = () => {
     setSelectedFunc(null);
@@ -77,65 +119,43 @@ const DevelopFunc = () => {
   };
 
   const handleRowClick = (func: FuncListItem) => {
-    setSelectedFunc({
-      funcName: func.funcName,
-      category: func.category,
-      assignee: func.assignee,
-      storyPoints: func.storyPoints,
-      priority: func.priority,
-      description: '',
-      successCase: '',
-      failCase: '',
-    });
-    setModalOpen(true);
+    const spec = specs.find(s => s.id === func.funcId);
+    if (spec) {
+      setSelectedFunc(spec);
+      setModalOpen(true);
+    }
   };
 
-  // 저장(등록/수정)
   const handleSave = (form: FuncDetail) => {
+    if (!projectId) return;
+
     if (selectedFunc) {
-      // 수정 - 같은 이름을 가진 기능을 찾아 업데이트
-      setData(prev =>
-        prev.map(item =>
-          item.funcName === selectedFunc.funcName
-            ? {
-                ...item,
-                funcName: form.funcName,
-                category: form.category,
-                assignee: form.assignee,
-                storyPoints: form.storyPoints,
-                priority: form.priority,
-              }
-            : item
-        )
-      );
+      updateMutation.mutate(convertFromFuncDetail(form, selectedFunc));
     } else {
-      // 추가
-      setData(prev => [
-        ...prev,
-        {
-          funcId: prev.length + 1,
-          funcName: form.funcName,
-          category: form.category,
-          assignee: form.assignee,
-          storyPoints: form.storyPoints,
-          priority: form.priority,
-        },
-      ]);
+      createMutation.mutate({
+        projectId: Number(projectId),
+        userId: Number(form.assignee),
+        functionName: form.funcName,
+        functionDescription: form.description,
+        category: form.category,
+        priority: priorityToNumber(form.priority),
+        successCase: form.successCase,
+        failCase: form.failCase,
+        storyPoint: form.storyPoints,
+      });
     }
     setModalOpen(false);
   };
 
   const handleDelete = () => {
-    if (!selectedFunc) return;
-
-    // 삭제 확인
+    if (!selectedFunc?.id) return;
     if (window.confirm('정말로 이 기능을 삭제하시겠습니까?')) {
-      setData(prev =>
-        prev.filter(item => item.funcName !== selectedFunc.funcName)
-      );
+      deleteMutation.mutate(selectedFunc.id);
       setModalOpen(false);
     }
   };
+
+  if (!projectId) return null;
 
   return (
     <div className="mt-2 min-h-screen w-full flex flex-col bg-gray-50">
@@ -150,8 +170,9 @@ const DevelopFunc = () => {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="ml-4">
+          <div className="ml-4 flex gap-2">
             <FuncAddButton onClick={handleAdd} />
+            <JiraAddButton onClick={handleAdd} />
           </div>
         </div>
         <div className="w-full h-full flex-1 flex justify-center items-start">
@@ -164,7 +185,7 @@ const DevelopFunc = () => {
       </div>
       {modalOpen && (
         <FuncDetailModal
-          func={selectedFunc}
+          func={selectedFunc ? convertToFuncDetail(selectedFunc) : null}
           onClose={() => setModalOpen(false)}
           onSave={handleSave}
           onDelete={handleDelete}

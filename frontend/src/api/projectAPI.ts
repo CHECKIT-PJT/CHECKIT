@@ -1,6 +1,6 @@
-import axiosInstance from "./axiosInstance";
-import useProjectStore from "../stores/projectStore";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from './axiosInstance';
+import useProjectStore from '../stores/projectStore';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Project {
   projectId: number;
@@ -28,12 +28,12 @@ interface ProjectDetail extends Project {
 export const useGetProjects = () => {
   const { setProjects } = useProjectStore();
   return useQuery({
-    queryKey: ["projects"],
+    queryKey: ['projects'],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/project");
+      const response = await axiosInstance.get('/api/project');
 
       if (!response.data || !response.data.result) {
-        throw new Error("No projects found");
+        throw new Error('No projects found');
       }
       setProjects(response.data.result);
       return response.data.result;
@@ -47,7 +47,7 @@ export const useGetProjects = () => {
 export const useGetProjectById = (projectId: number) => {
   const { setCurrentProject } = useProjectStore();
   return useQuery({
-    queryKey: ["project", projectId],
+    queryKey: ['project', projectId],
     queryFn: async () => {
       const response = await axiosInstance.get(`/api/project/${projectId}`);
       if (response.data) {
@@ -63,13 +63,13 @@ export const useCreateProject = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (project: { projectName: string }) => {
-      const response = await axiosInstance.post("/api/project", {
+      const response = await axiosInstance.post('/api/project', {
         projectName: project.projectName,
       });
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 };
@@ -92,8 +92,8 @@ export const useUpdateProject = () => {
       return response.data;
     },
     onSuccess: (_, { projectId }) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     },
   });
 };
@@ -107,7 +107,7 @@ export const useDeleteProject = () => {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
     onError: (error: any) => {
       throw error;
@@ -126,7 +126,7 @@ export const useLeaveProject = () => {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 };
@@ -161,7 +161,7 @@ export const useCreateInvitationLink = () => {
       return response.data;
     },
     onSuccess: (_, projectId) => {
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     },
   });
 };
@@ -169,10 +169,10 @@ export const useCreateInvitationLink = () => {
 export const useAcceptInvite = () => {
   return useMutation({
     mutationFn: async (inviteCode: string) => {
-      const response = await axiosInstance.post("/api/project/participation", {
+      const response = await axiosInstance.post('/api/project/participation', {
         inviteCode,
       });
-      console.log("초대 성공", response.data);
+      console.log('초대 성공', response.data);
       return response.data;
     },
   });
@@ -189,7 +189,7 @@ export const useApproveMember = () => {
       projectId: number;
       memberId: number;
     }) => {
-      console.log("승인 성공", projectId, memberId);
+      console.log('승인 성공', projectId, memberId);
       const response = await axiosInstance.post(
         `/api/project/${projectId}/invitations/accept`,
         {
@@ -199,14 +199,14 @@ export const useApproveMember = () => {
       return response.data;
     },
     onSuccess: (_, { projectId }) => {
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     },
   });
 };
 
 export const useGetProjectMembers = (projectId: number) => {
   return useQuery({
-    queryKey: ["projectMembers", projectId],
+    queryKey: ['projectMembers', projectId],
     queryFn: async () => {
       const response = await axiosInstance.get(
         `/api/project/${projectId}/members`

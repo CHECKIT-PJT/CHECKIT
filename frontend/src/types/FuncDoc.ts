@@ -1,4 +1,5 @@
 export interface FuncListItem {
+  userId: number;
   funcId: number;
   funcName: string;
   category: string;
