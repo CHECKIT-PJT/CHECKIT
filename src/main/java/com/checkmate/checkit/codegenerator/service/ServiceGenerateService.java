@@ -20,6 +20,7 @@ import com.checkmate.checkit.api.repository.ApiQueryStringRepository;
 import com.checkmate.checkit.api.repository.ApiSpecRepository;
 import com.checkmate.checkit.api.repository.DtoItemRepository;
 import com.checkmate.checkit.api.repository.DtoRepository;
+import com.checkmate.checkit.codegenerator.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -51,19 +52,20 @@ public class ServiceGenerateService {
 		for (Map.Entry<String, List<ApiSpecEntity>> entry : categoryGrouped.entrySet()) {
 			String category = entry.getKey();
 			List<ApiSpecEntity> specs = entry.getValue();
-			String classCode = generateServiceClassCode(category, specs, basePackage);
-			String filePath = category.toLowerCase() + "/service/" + capitalize(category) + "Service.java";
+			String className = StringUtils.toPascalCase(category) + "Service"; // 변경
+			String classCode = generateServiceClassCode(className, category, specs, basePackage);
+			String filePath = category.toLowerCase() + "/service/" + className + ".java";
 			serviceClassCodes.put(filePath, classCode);
 		}
 		return serviceClassCodes;
 	}
 
-	private String generateServiceClassCode(String category, List<ApiSpecEntity> specs, String basePackage) {
+	private String generateServiceClassCode(String className, String category, List<ApiSpecEntity> specs,
+		String basePackage) {
 		importSet.clear();
 		imports.setLength(0);
 
 		StringBuilder sb = new StringBuilder();
-		String className = capitalize(category) + "Service";
 
 		sb.append("package ").append(basePackage).append(".").append(category.toLowerCase()).append(".service;\n\n");
 
@@ -76,6 +78,7 @@ public class ServiceGenerateService {
 			for (DtoEntity dto : dtos) {
 				if (dto.getDtoType() != DtoEntity.DtoType.RESPONSE)
 					continue;
+
 				List<DtoItemEntity> items = dtoItemRepository.findByDto(dto);
 				for (DtoItemEntity item : items) {
 					String type = item.getDataType();
@@ -104,13 +107,13 @@ public class ServiceGenerateService {
 
 	private String generateMethodFromSpec(ApiSpecEntity spec) {
 		StringBuilder sb = new StringBuilder();
-		String methodName = spec.getApiName();
+		String methodName = StringUtils.toCamelCase(spec.getApiName()); // 변경
 		String returnType = "void";
 
 		List<DtoEntity> dtos = dtoRepository.findByApiSpecId(spec.getId());
 		for (DtoEntity dto : dtos) {
 			if (dto.getDtoType() == DtoEntity.DtoType.RESPONSE) {
-				returnType = dto.getDtoName();
+				returnType = StringUtils.toPascalCase(dto.getDtoName()); // 변경
 				break;
 			}
 		}
@@ -129,7 +132,8 @@ public class ServiceGenerateService {
 
 		for (DtoEntity dto : dtos) {
 			if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
-				paramList.add(dto.getDtoName() + " request");
+				String dtoName = StringUtils.toPascalCase(dto.getDtoName());
+				paramList.add(dtoName + " request");
 				break;
 			}
 		}
