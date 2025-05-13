@@ -96,7 +96,7 @@ public class JiraProjectService {
 
 		return new JiraLinkResponse(
 			"https://ssafy.atlassian.net/jira/software/c/projects/" + jiraProjectEntity.getJiraProjectKey()
-				+ "/boards/" + jiraProjectEntity.getJiraBoardId());
+				+ "/boards/" + jiraProjectEntity.getJiraBoardId() + "/backlog");
 	}
 
 	/**
