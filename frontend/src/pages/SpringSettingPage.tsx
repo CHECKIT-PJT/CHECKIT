@@ -1,4 +1,4 @@
-// 생략된 import 유지
+// 수정된 SpringSettingsPage 컴포넌트
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
@@ -11,6 +11,7 @@ import DependencySearch from '../molecules/springsetting/DependencySearch';
 import DependencyList from '../molecules/springsetting/DependencyList';
 import DependencyRecommendations from '../molecules/springsetting/DependencyRecommendations';
 import ActionButtons from '../molecules/springsetting/ActionButtons';
+import Dialog from '../molecules/buildpreview/Dialog';
 
 import {
   getSpringSettings,
@@ -18,6 +19,7 @@ import {
   updateSpringSettings,
   getAvailableDependencies,
 } from '../api/springsettingAPI';
+import { generateCode } from '../api/codegenerateAPI';
 
 interface Dependency {
   id: string;
@@ -38,6 +40,10 @@ const SpringSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [settingsExist, setSettingsExist] = useState(false);
+
+  // Dialog 상태 관리
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
 
   const [springBootVersion, setSpringBootVersion] = useState('3.0.6');
   const [projectType, setProjectType] = useState('Maven Project');
@@ -209,6 +215,17 @@ const SpringSettingsPage: React.FC = () => {
 
   const selectedCount = dependencies.filter((dep) => dep.selected).length;
 
+  // Dialog 확인 버튼 핸들러
+  const handleDialogConfirm = () => {
+    setIsDialogOpen(false);
+    navigate(`/project/${projectId}/buildpreview`);
+  };
+
+  // Dialog 취소 버튼 핸들러
+  const handleDialogCancel = () => {
+    setIsDialogOpen(false);
+  };
+
   const handleSave = async () => {
     if (!projectId) return;
 
@@ -245,7 +262,19 @@ const SpringSettingsPage: React.FC = () => {
         await createSpringSettings(Number(projectId), requestData, accessToken);
       }
       setSettingsExist(true);
-      alert('설정이 성공적으로 저장되었습니다.');
+
+      // 코드 생성 API 호출
+      try {
+        await generateCode(projectId);
+        // 다이얼로그 표시
+        setDialogMessage(
+          '코드 생성이 완료되었습니다. 코드 미리보기로 이동하시겠습니까?',
+        );
+        setIsDialogOpen(true);
+      } catch (error) {
+        console.error('코드 생성 실패:', error);
+        alert('설정은 저장되었으나 코드 생성 중 오류가 발생했습니다.');
+      }
     } catch (error) {
       console.error('저장 실패:', error);
       alert('설정 저장 중 오류가 발생했습니다.');
@@ -349,6 +378,17 @@ const SpringSettingsPage: React.FC = () => {
           />
         </div>
       </main>
+
+      {/* Dialog 컴포넌트 */}
+      <Dialog
+        isOpen={isDialogOpen}
+        title="코드 생성 완료"
+        message={dialogMessage}
+        confirmText="미리보기로 이동"
+        cancelText="닫기"
+        onConfirm={handleDialogConfirm}
+        onCancel={handleDialogCancel}
+      />
     </div>
   );
 };
