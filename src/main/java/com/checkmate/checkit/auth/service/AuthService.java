@@ -23,11 +23,14 @@ import com.checkmate.checkit.auth.dto.response.AuthResponse;
 import com.checkmate.checkit.auth.dto.response.JiraProjectListResponse;
 import com.checkmate.checkit.auth.entity.OAuthToken;
 import com.checkmate.checkit.auth.repository.OAuthTokenRepository;
+import com.checkmate.checkit.functional.dto.response.FunctionalSpecResponse;
 import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.common.enums.AuthProvider;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.config.properties.OAuthProperties;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.dto.response.ProjectMemberWithEmailResponse;
+import com.checkmate.checkit.project.entity.JiraProjectEntity;
 import com.checkmate.checkit.user.dto.response.LoginResponse;
 import com.checkmate.checkit.user.entity.User;
 import com.checkmate.checkit.user.repository.UserRepository;
@@ -543,12 +546,9 @@ public class AuthService {
 		List<Map<String, Object>> projects = (List<Map<String, Object>>)response.get("values");
 
 		return projects.stream()
-			.map(project -> new JiraProjectListResponse(
-				String.valueOf(project.get("id")),
-				String.valueOf(project.get("key")),
-				String.valueOf(project.get("name")),
-				String.valueOf(project.get("projectTypeKey"))
-			))
+			.map(project -> new JiraProjectListResponse(String.valueOf(project.get("id")),
+				String.valueOf(project.get("key")), String.valueOf(project.get("name")),
+				String.valueOf(project.get("projectTypeKey"))))
 			.collect(Collectors.toList());
 	}
 
@@ -628,5 +628,179 @@ public class AuthService {
 
 		// Jira OAuthToken 조회
 		return oAuthTokenRepository.existsByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA);
+	}
+
+	/**
+	 * Jira 사용자 조회
+	 * @param loginUserId : 로그인한 사용자 ID
+	 * @param projectMembersWithEmail : 프로젝트 멤버 리스트
+	 * @return HashMap<Integer, String> : 회원 ID와 Jira 계정 ID 매핑
+	 */
+	public HashMap<Integer, String> getJiraUsers(Integer loginUserId,
+		List<ProjectMemberWithEmailResponse> projectMembersWithEmail) {
+		// Jira OAuthToken 조회
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA)
+			.orElseThrow(() -> new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter));
+
+		HashMap<Integer, String> emailToJiraAccountId = new HashMap<>();
+
+		for (ProjectMemberWithEmailResponse projectMember : projectMembersWithEmail) {
+			String email = projectMember.getEmail();
+
+			List<Map<String, Object>> uesr = fetchJiraAccountId(oAuthToken, email);
+
+			String jiraAccountId = null;
+
+			if (uesr == null || uesr.isEmpty()) {
+				log.error("Jira 사용자 정보를 찾을 수 없습니다.");
+			} else {
+				jiraAccountId = (String)uesr.get(0).get("accountId").toString();
+			}
+
+			emailToJiraAccountId.put(projectMember.getUserId(), jiraAccountId);
+		}
+
+		return emailToJiraAccountId;
+	}
+
+	private List<Map<String, Object>> fetchJiraAccountId(OAuthToken oAuthToken, String email) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		return webClient.get()
+			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/user/search?query={email}", oAuthToken.getCloudId(),
+				email)
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
+			})
+			.block(); // 동기 호출 (결과 기다림)
+	}
+
+	/**
+	 * Jira Story Point 필드 조회
+	 * @param loginUserId : 로그인한 사용자 ID
+	 * @return String : Jira Story Point 필드
+	 */
+	public String getStoryPointFieldId(Integer loginUserId) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		// Jira OAuthToken 조회
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA)
+			.orElseThrow(() -> new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter));
+
+		// Jira API 호출
+		List<Map<String, Object>> response = webClient.get()
+			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/field", oAuthToken.getCloudId())
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
+			})
+			.block(); // 동기 호출 (결과 기다림)
+
+		if (response == null || response.isEmpty()) {
+			log.error("Jira Story Point 필드를 찾을 수 없습니다.");
+		}
+
+		for (Map<String, Object> field : response) {
+			String name = field.get("name").toString().toLowerCase();
+			if (name.contains("story point")) {
+				return field.get("id").toString();
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Jira 이슈 생성
+	 * @param loginUserId : 로그인한 사용자 ID
+	 * @param jiraProjectEntity : Jira 프로젝트 엔티티
+	 * @param functionalSpecResponses : 기능 명세서 리스트
+	 * @param userIdToJiraAccountId : 회원 ID와 Jira 계정 ID 매핑
+	 * @param storyPointField : Jira Story Point 필드
+	 */
+	public void createJiraIssues(Integer loginUserId, JiraProjectEntity jiraProjectEntity,
+		List<FunctionalSpecResponse> functionalSpecResponses, HashMap<Integer, String> userIdToJiraAccountId,
+		String storyPointField) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		// Jira OAuthToken 조회
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA)
+			.orElseThrow(() -> new CommonException(ErrorCode.OAuth2AuthenticationProcessingFilter));
+
+		for (FunctionalSpecResponse spec : functionalSpecResponses) {
+			Integer assigneeId = spec.getUserId();
+			String accountId = userIdToJiraAccountId.get(assigneeId);
+
+			if (accountId == null) {
+				log.warn("Jira 사용자 accountId를 찾을 수 없음: {}", accountId);
+			}
+
+			Map<String, Object> description = formatADFDescription(spec);
+			String priorityName = mapPriority(spec.getPriority());
+
+			Map<String, Object> fields = new HashMap<>();
+			fields.put("project", Map.of("key", jiraProjectEntity.getJiraProjectKey()));
+			fields.put("summary", spec.getFunctionName());
+			fields.put("description", description);
+			fields.put("issuetype", Map.of("name", "Story"));
+			fields.put("priority", Map.of("name", priorityName));
+			fields.put("assignee", Map.of("accountId", accountId));
+
+			if (storyPointField != null) {
+				fields.put(storyPointField, spec.getStoryPoint());
+			}
+
+			webClient.post()
+				.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/issue", oAuthToken.getCloudId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+				.bodyValue(Map.of("fields", fields))
+				.retrieve()
+				.bodyToMono(Map.class)
+				.doOnNext(
+					response -> log.info("Jira 이슈 생성 성공: {}, 제목: {}", response.get("key"), spec.getFunctionName()))
+				.doOnError(error -> log.error("Jira 이슈 생성 실패 - {}: {}", spec.getFunctionName(), error.getMessage()))
+				.subscribe(); // 비동기 실행
+		}
+	}
+
+	private Map<String, Object> formatADFDescription(FunctionalSpecResponse spec) {
+		return Map.of(
+			"type", "doc",
+			"version", 1,
+			"content", List.of(
+				Map.of("type", "paragraph", "content", List.of(boldText("기능 설명"))),
+				Map.of("type", "paragraph", "content", List.of(text(spec.getFunctionDescription()))),
+				Map.of("type", "paragraph", "content", List.of(boldText("성공 케이스"))),
+				Map.of("type", "paragraph", "content", List.of(text(spec.getSuccessCase()))),
+				Map.of("type", "paragraph", "content", List.of(boldText("실패 케이스"))),
+				Map.of("type", "paragraph", "content", List.of(text(spec.getFailCase())))
+			)
+		);
+	}
+
+	private Map<String, Object> text(String text) {
+		return Map.of("type", "text", "text", text);
+	}
+
+	private Map<String, Object> boldText(String text) {
+		return Map.of(
+			"type", "text",
+			"text", text,
+			"marks", List.of(Map.of("type", "strong"))
+		);
+	}
+
+	private String mapPriority(int priority) {
+		return switch (priority) {
+			case 1 -> "Highest";
+			case 2 -> "High";
+			case 4 -> "Low";
+			case 5 -> "Lowest";
+			default -> "Medium";
+		};
 	}
 }

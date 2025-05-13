@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.checkmate.checkit.project.dto.response.ProjectMemberWithEmailResponse;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberId;
 import com.checkmate.checkit.project.entity.ProjectMemberRole;
@@ -38,4 +41,15 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMemberEnti
 	// 프로젝트 Id와 회원 Id를 통해 프로젝트 멤버 조회 (탈퇴하지 않은 것만)
 	Optional<ProjectMemberEntity> findById_UserIdAndId_ProjectIdAndIsApprovedFalseAndIsDeletedFalse(Integer userId,
 		Integer projectId);
+
+	// 프로젝트 ID를 통해 프로젝트 멤버와 해당 회원의 이메일을 조회
+	@Query(
+		"SELECT new com.checkmate.checkit.project.dto.response.ProjectMemberWithEmailResponse(pm.id.userId, u.userEmail) "
+			+ "FROM ProjectMemberEntity pm "
+			+ "JOIN User u ON pm.id.userId = u.id "
+			+ "WHERE pm.id.projectId = :projectId AND "
+			+ "pm.isDeleted = false AND "
+			+ "pm.isApproved = true"
+	)
+	List<ProjectMemberWithEmailResponse> findMembersWithEmailByProjectId(@Param("projectId") Integer projectId);
 }

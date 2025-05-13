@@ -358,4 +358,18 @@ public class ProjectController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
+
+	// Jira에 Issue 등록
+	@PostMapping("/{projectId}/jira/issues")
+	public ResponseEntity<JSONResponse<Void>> createJiraIssue(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId
+	) {
+
+		String token = authorization.substring(7);
+
+		jiraProjectService.createJiraIssues(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }
