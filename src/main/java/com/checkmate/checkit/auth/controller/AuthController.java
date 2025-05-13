@@ -152,4 +152,18 @@ public class AuthController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, response));
 	}
+
+	/**
+	 * Jira 연동 여부 조회
+	 */
+	@GetMapping("/jira/linked")
+	public ResponseEntity<JSONResponse<Boolean>> isJiraLinked(
+		@RequestHeader("Authorization") String authorization) {
+
+		String token = authorization.substring(7);
+
+		Boolean response = authService.isJiraLinked(token);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, response));
+	}
 }

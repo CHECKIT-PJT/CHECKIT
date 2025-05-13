@@ -25,6 +25,7 @@ import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
+import com.checkmate.checkit.project.dto.response.ProjectMemberWithEmailResponse;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberId;
@@ -499,5 +500,15 @@ public class ProjectService {
 		// 프로젝트 ID로 ProjectEntity 반환
 		return projectRepository.findByIdAndIsDeletedFalse(projectId)
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+	}
+
+	/**
+	 * 프로젝트 멤버 이메일 조회
+	 * @param projectId : 프로젝트 ID
+	 * @return List<ProjectMemberWithEmailResponse> : 프로젝트 멤버 이메일 응답 DTO 리스트
+	 */
+	public List<ProjectMemberWithEmailResponse> getProjectMembersWithEmail(
+		Integer projectId) {
+		return projectMemberRepository.findMembersWithEmailByProjectId(projectId);
 	}
 }
