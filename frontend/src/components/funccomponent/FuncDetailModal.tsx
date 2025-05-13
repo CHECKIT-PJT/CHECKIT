@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import type { FuncDetail } from '../../types/FuncDoc';
 import { FaRegSave, FaRegTrashAlt } from 'react-icons/fa';
+import useProjectStore from '../../stores/projectStore';
+import {
+  FaAnglesUp,
+  FaAngleUp,
+  FaEquals,
+  FaAngleDown,
+  FaAnglesDown,
+} from 'react-icons/fa6';
+import { FaEquals as FaEqualsOld } from 'react-icons/fa';
 
 interface FuncDetailModalProps {
   func: FuncDetail | null;
@@ -20,12 +29,22 @@ const blankFuncDetail: FuncDetail = {
   failCase: '',
 };
 
+const priorityIcons = {
+  HIGHEST: <FaAnglesUp className="inline mr-2 text-red-500" />,
+  HIGH: <FaAngleUp className="inline mr-2 text-rose-500" />,
+  MEDIUM: <FaEquals className="inline mr-2 text-amber-500" />,
+  LOW: <FaAngleDown className="inline mr-2 text-emerald-500" />,
+  LOWEST: <FaAnglesDown className="inline mr-2 text-teal-500" />,
+};
+
 const FuncDetailModal = ({
   func,
   onClose,
   onSave,
   onDelete,
 }: FuncDetailModalProps) => {
+  const { currentProject } = useProjectStore();
+  const members = currentProject?.projectMembers || [];
   const [form, setForm] = useState<FuncDetail>(func ?? blankFuncDetail);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
 
@@ -39,16 +58,7 @@ const FuncDetailModal = ({
 
   if (!form) return null;
 
-  const priorityColors = {
-    HIGH: 'bg-rose-500',
-    MEDIUM: 'bg-amber-500',
-    LOW: 'bg-emerald-500',
-  };
-
-  const priorityOptions = ['HIGH', 'MEDIUM', 'LOW'];
-  const priorityColor =
-    priorityColors[form.priority as keyof typeof priorityColors] ||
-    'bg-slate-500';
+  const priorityOptions = ['HIGHEST', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
 
   const handleSave = () => {
     onSave(form);
@@ -56,7 +66,7 @@ const FuncDetailModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold text-blue-700">
             {func ? '기능 명세서 정보 수정' : '새 기능 추가'}
@@ -69,13 +79,15 @@ const FuncDetailModal = ({
               Cancel
             </button>
 
-            <button
-              className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium shadow hover:bg-red-700 transition flex items-center gap-2"
-              onClick={onDelete}
-            >
-              <FaRegTrashAlt className="w-4 h-4" />
-              Delete
-            </button>
+            {func && (
+              <button
+                className="px-5 py-2 bg-red-600 text-white rounded-lg font-medium shadow hover:bg-red-700 transition flex items-center gap-2"
+                onClick={onDelete}
+              >
+                <FaRegTrashAlt className="w-4 h-4" />
+                Delete
+              </button>
+            )}
 
             <button
               className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition flex items-center gap-2"
@@ -119,12 +131,18 @@ const FuncDetailModal = ({
               <span className="font-semibold text-gray-700 mr-2">
                 담당자 :{' '}
               </span>
-              <input
-                className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300"
+              <select
+                className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 text-sm"
                 value={form.assignee}
                 onChange={e => setForm({ ...form, assignee: e.target.value })}
-                placeholder="담당자"
-              />
+              >
+                <option value="">담당자 선택</option>
+                {members.map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.nickname} (@ {member.userName})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex items-center">
@@ -149,26 +167,26 @@ const FuncDetailModal = ({
               </span>
               <div className="dropdown relative">
                 <span
-                  className={`px-4 py-2 rounded-lg text-white font-bold ${priorityColor} cursor-pointer`}
+                  className={`px-4 py-2 rounded-lg text-gray-700 font-bold bg-white cursor-pointer flex items-center justify-between min-w-[120px]`}
                   onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
                 >
-                  {form.priority}
+                  <span className="flex items-center">
+                    {priorityIcons[form.priority as keyof typeof priorityIcons]}
+                    {form.priority}
+                  </span>
                 </span>
                 {showPriorityDropdown && (
                   <div className="absolute mt-1 bg-white shadow-lg rounded-lg z-10 border border-gray-200 py-1 min-w-[100px]">
                     {priorityOptions.map(priority => (
                       <div
                         key={priority}
-                        className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
-                          priority === form.priority
-                            ? 'font-bold bg-gray-50'
-                            : ''
-                        }`}
+                        className={`px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center ${priority === form.priority ? 'font-bold bg-gray-50' : ''}`}
                         onClick={() => {
                           setForm({ ...form, priority });
                           setShowPriorityDropdown(false);
                         }}
                       >
+                        {priorityIcons[priority as keyof typeof priorityIcons]}
                         {priority}
                       </div>
                     ))}

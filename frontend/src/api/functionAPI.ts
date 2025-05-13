@@ -13,7 +13,6 @@ export const useGetFunctionalSpecs = (projectId: number) => {
     queryKey: ['functionalSpecs', projectId],
     queryFn: async () => {
       if (!projectId || hasError) return [];
-
       setLoading(true);
       try {
         const res = await axiosInstance.get(
@@ -21,6 +20,7 @@ export const useGetFunctionalSpecs = (projectId: number) => {
         );
         const data = res.data.result;
         setSpecs(data);
+        console.log('data', data);
         return data;
       } catch (err: any) {
         if (err.response?.status === 404) setHasError(true);
@@ -42,11 +42,13 @@ export const useCreateFunctionalSpec = () => {
   return useMutation({
     mutationFn: async (data: Omit<FunctionalSpec, 'id' | 'userName'>) => {
       setLoading(true);
+      console.log('data', data);
       try {
         const res = await axiosInstance.post('/api/functional-spec', data);
+        console.log('res', res);
         return res.data.result;
       } catch (err: any) {
-        setError(err.response?.data?.message || '생성 실패');
+        setError(err.response?.data?.message || '기능 명세서 생성 실패');
         throw err;
       } finally {
         setLoading(false);
@@ -73,7 +75,7 @@ export const useUpdateFunctionalSpec = () => {
         await axiosInstance.put('/api/functional-spec', data);
         return data;
       } catch (err: any) {
-        setError(err.response?.data?.message || '수정 실패');
+        setError(err.response?.data?.message || '기능 명세서 수정 실패');
         throw err;
       } finally {
         setLoading(false);
@@ -94,21 +96,21 @@ export const useDeleteFunctionalSpec = () => {
   const { deleteSpec, setLoading, setError } = useFunctionalSpecStore();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (specId: number) => {
       setLoading(true);
       try {
-        await axiosInstance.delete(`/api/functional-spec/${id}`);
-        return id;
+        await axiosInstance.delete(`/api/functional-spec/${specId}`);
+        return specId;
       } catch (err: any) {
-        setError(err.response?.data?.message || '삭제 실패');
+        setError(err.response?.data?.message || '기능 명세서 삭제 실패');
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    onSuccess: id => {
+    onSuccess: specId => {
       queryClient.invalidateQueries({ queryKey: ['functionalSpecs'] });
-      deleteSpec(id);
+      deleteSpec(specId);
     },
   });
 };

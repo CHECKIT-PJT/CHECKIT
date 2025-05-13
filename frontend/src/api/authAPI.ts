@@ -15,7 +15,8 @@ export const redirectToGitLabLogin = () => {
 export const redirectToJiraLogin = () => {
   const clientId = import.meta.env.VITE_JIRA_CLIENT_ID;
   const redirectUri = 'http://localhost:5173/jira/callback';
-  const scope = 'read:jira-work write:jira-work';
+  const scope =
+    'read:jira-work write:jira-work read:board-scope:jira-software read:project:jira';
   const authorizeUrl = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${encodeURIComponent(
     scope
   )}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&prompt=consent`;
