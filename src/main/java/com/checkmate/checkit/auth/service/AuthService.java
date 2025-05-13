@@ -616,4 +616,17 @@ public class AuthService {
 			})
 			.block(); // 동기 호출 (결과 기다림)
 	}
+
+	/**
+	 * Jira 연동 여부 확인
+	 * @param token : 액세스 토큰
+	 * @return Boolean : Jira 연동 여부
+	 */
+	@Transactional(readOnly = true)
+	public Boolean isJiraLinked(String token) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// Jira OAuthToken 조회
+		return oAuthTokenRepository.existsByUserIdAndServiceProvider(loginUserId, AuthProvider.JIRA);
+	}
 }

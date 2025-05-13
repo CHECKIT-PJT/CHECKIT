@@ -13,4 +13,6 @@ public interface OAuthTokenRepository extends JpaRepository<OAuthToken, Integer>
 	Optional<OAuthToken> findByUserIdAndServiceProvider(Integer userId, AuthProvider authProvider);
 
 	Optional<OAuthToken> findByUserId(Integer userId);
+
+	Boolean existsByUserIdAndServiceProvider(Integer loginUserId, AuthProvider authProvider);
 }
