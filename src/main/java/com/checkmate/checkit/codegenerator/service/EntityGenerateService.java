@@ -2,9 +2,11 @@ package com.checkmate.checkit.codegenerator.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -22,15 +24,17 @@ public class EntityGenerateService {
 
 	/**
 	 * ERD JSON 문자열을 받아 모든 Entity 코드를 생성합니다.
+	 * - 도메인 기준 패키지(com.checkmate.demo.user.entity)로 생성
+	 * - 결과는 Map<파일 경로, 코드 문자열> 형태로 반환
 	 */
-	public String generateEntitiesFromErdJson(String erdJson, String basePackage) throws IOException {
+	public Map<String, String> generateEntitiesFromErdJson(String erdJson, String basePackage) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode root = mapper.readTree(erdJson);
 
 		JsonNode tableEntities = root.path("collections").path("tableEntities");
 		JsonNode columnEntities = root.path("collections").path("tableColumnEntities");
 
-		StringBuilder result = new StringBuilder();
+		Map<String, String> entityFiles = new HashMap<>();
 
 		for (Iterator<String> it = tableEntities.fieldNames(); it.hasNext(); ) {
 			String tableId = it.next();
@@ -49,16 +53,17 @@ public class EntityGenerateService {
 			}
 
 			MinimalTable table = new MinimalTable(tableName, columns);
-			result.append(generateEntityCode(table, basePackage)).append("\n");
+			String domain = table.name().toLowerCase();
+			String fullPackage = basePackage + "." + domain + ".entity";
+			String classCode = generateEntityCode(table, fullPackage);
+			String filePath = domain + "/entity/" + table.name() + ".java";
+			entityFiles.put(filePath, classCode);
 		}
 
-		return result.toString();
+		return entityFiles;
 	}
 
-	/**
-	 * 단일 테이블에 대한 Entity 코드 생성
-	 */
-	public String generateEntityCode(MinimalTable table, String basePackage) {
+	public String generateEntityCode(MinimalTable table, String fullPackage) {
 		imports.setLength(0);
 		importSet.clear();
 
@@ -66,12 +71,11 @@ public class EntityGenerateService {
 		String className = table.name();
 
 		// 1. package 선언
-		sb.append("package ").append(basePackage).append(".entity;\n\n");
+		sb.append("package ").append(fullPackage).append(";\n\n");
 
 		// 2. 기본 import
 		addImport("import jakarta.persistence.*;");
 		addImport("import lombok.*;");
-
 		sb.append(imports).append("\n");
 
 		// 3. 어노테이션 선언
@@ -92,17 +96,12 @@ public class EntityGenerateService {
 		return sb.toString();
 	}
 
-	/**
-	 * 컬럼 하나에 대한 필드 정의
-	 */
 	private String generateField(MinimalColumn column) {
 		StringBuilder sb = new StringBuilder();
-
 		if (column.isPrimaryKey()) {
 			sb.append("    @Id\n");
 			sb.append("    @GeneratedValue(strategy = GenerationType.IDENTITY)\n");
 		}
-
 		sb.append("    @Column(name = \"").append(column.name()).append("\"");
 		if (!column.isNullable()) {
 			sb.append(", nullable = false");
@@ -120,7 +119,6 @@ public class EntityGenerateService {
 				.append("\"");
 		}
 		sb.append(")\n");
-
 		sb.append("    private ")
 			.append(toJavaType(column.type()))
 			.append(" ")

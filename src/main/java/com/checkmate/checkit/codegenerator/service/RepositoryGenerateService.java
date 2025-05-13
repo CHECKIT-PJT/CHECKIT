@@ -2,9 +2,11 @@ package com.checkmate.checkit.codegenerator.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -17,26 +19,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class RepositoryGenerateService {
 
-	// import 문 중복 방지를 위한 Set
 	private final StringBuilder imports = new StringBuilder();
 	private final Set<String> importSet = new HashSet<>();
 
 	/**
-	 * ERD JSON을 기반으로 전체 Repository 코드 생성
-	 * @param erdJson 프론트에서 저장한 ERD JSON 문자열
-	 * @param basePackage 기본 패키지명
-	 * @return 생성된 전체 Repository 코드 문자열
+	 * ERD JSON을 기반으로 Repository Java 파일들을 생성합니다.
+	 * @param erdJson ERD JSON 문자열
+	 * @param basePackage 예: com.checkmate.demo
+	 * @return Map<파일경로, 코드 문자열>
 	 */
-	public String generateRepositoriesFromErdJson(String erdJson, String basePackage) throws IOException {
+	public Map<String, String> generateRepositoriesFromErdJson(String erdJson, String basePackage) throws IOException {
+		Map<String, String> result = new HashMap<>();
+
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode root = mapper.readTree(erdJson);
 
 		JsonNode tableEntities = root.path("collections").path("tableEntities");
 		JsonNode columnEntities = root.path("collections").path("tableColumnEntities");
 
-		StringBuilder result = new StringBuilder();
-
-		// 모든 테이블 엔티티 순회
 		for (Iterator<String> it = tableEntities.fieldNames(); it.hasNext(); ) {
 			String tableId = it.next();
 			JsonNode tableNode = tableEntities.get(tableId);
@@ -54,22 +54,30 @@ public class RepositoryGenerateService {
 			}
 
 			MinimalTable table = new MinimalTable(tableName, columns);
-			result.append(generateRepositoryCode(table, basePackage)).append("\n");
+
+			// 도메인 추출: 테이블 이름 기준으로 소문자 처리
+			String domain = table.name().toLowerCase();
+			String filePath = domain + "/repository/" + table.name() + "Repository.java";
+			String fullPackage = basePackage + "." + domain;
+
+			String repositoryCode = generateRepositoryCode(table, fullPackage);
+			result.put(filePath, repositoryCode);
 		}
 
-		return result.toString();
+		return result;
 	}
 
 	/**
 	 * 단일 테이블 정보를 바탕으로 Repository 코드 생성
 	 */
-	public String generateRepositoryCode(MinimalTable table, String basePackage) {
+	private String generateRepositoryCode(MinimalTable table, String fullPackage) {
 		imports.setLength(0);
 		importSet.clear();
 
 		StringBuilder sb = new StringBuilder();
 		String className = table.name();
-		String packageName = basePackage + ".repository";
+		String packageName = fullPackage + ".repository";
+		String entityPackage = fullPackage + ".entity." + className;
 
 		// PK 타입 추론
 		String pkType = table.columns().stream()
@@ -80,7 +88,7 @@ public class RepositoryGenerateService {
 
 		// package 선언 및 import
 		sb.append("package ").append(packageName).append(";\n\n");
-		sb.append("import ").append(basePackage).append(".entity.").append(className).append(";\n");
+		sb.append("import ").append(entityPackage).append(";\n");
 		sb.append("import org.springframework.data.jpa.repository.JpaRepository;\n");
 		sb.append("import org.springframework.stereotype.Repository;\n");
 		sb.append(imports).append("\n");
