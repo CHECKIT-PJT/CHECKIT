@@ -1,6 +1,7 @@
 package com.checkmate.checkit.codegenerator.controller;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.checkmate.checkit.api.entity.ApiSpecEntity;
+import com.checkmate.checkit.api.repository.ApiSpecRepository;
 import com.checkmate.checkit.codegenerator.service.ControllerGenerateService;
 import com.checkmate.checkit.codegenerator.service.DtoGenerateService;
 import com.checkmate.checkit.codegenerator.service.EntityGenerateService;
@@ -16,6 +19,9 @@ import com.checkmate.checkit.codegenerator.service.RepositoryGenerateService;
 import com.checkmate.checkit.codegenerator.service.ServiceGenerateService;
 import com.checkmate.checkit.erd.dto.response.ErdSnapshotResponse;
 import com.checkmate.checkit.erd.service.ErdService;
+import com.checkmate.checkit.functional.repository.FunctionalSpecRepository;
+import com.checkmate.checkit.global.code.ErrorCode;
+import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.springsettings.service.SpringSettingsService;
 import lombok.RequiredArgsConstructor;
 
@@ -31,49 +37,65 @@ public class CodeGenerateController {
 	private final ServiceGenerateService serviceGenerateService;
 	private final RepositoryGenerateService repositoryGenerateService;
 	private final ControllerGenerateService controllerGenerateService;
+	private final FunctionalSpecRepository functionalSpecRepository;
+	private final ApiSpecRepository apiSpecRepository;
 
 	/**
-	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository + Controller)
+	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository + Controller) 및 에러 코드 발생
 	 */
 	@PostMapping("/build/{projectId}")
-	public ResponseEntity<String> generateEntityCode(@PathVariable int projectId) throws IOException {
-		// 1. SpringSettings에서 basePackage 조회
-		String basePackage = Optional.ofNullable(
-			springSettingsService.getSpringSettings(projectId).getSpringPackageName()
-		).orElseThrow(() -> new IllegalStateException("springPackageName이 null입니다. Spring 설정을 확인하세요."));
+	public ResponseEntity<?> generateEntityCode(@PathVariable int projectId) {
+		try {
+			// 1. Spring 설정 확인
+			String basePackage = Optional.ofNullable(
+				springSettingsService.getSpringSettings(projectId).getSpringPackageName()
+			).orElseThrow(() -> new CommonException(ErrorCode.SPRING_SETTINGS_NOT_FOUND));
 
-		// 2. ERD JSON 가져오기
-		ErdSnapshotResponse erdData = erdService.getErdByProjectId(projectId);
-		String erdJson = erdData.getErdJson();
+			// 2. 기능 명세서 확인
+			if (functionalSpecRepository.findByProjectIdAndIsDeletedFalse(projectId).isEmpty()) {
+				throw new CommonException(ErrorCode.FUNCTIONAL_SPEC_NOT_FOUND);
+			}
 
-		// 전체 코드 결과
-		StringBuilder codeResult = new StringBuilder();
+			// 3. ERD 확인
+			ErdSnapshotResponse erdData = erdService.getErdByProjectId(projectId);
+			if (erdData == null || erdData.getErdJson() == null || erdData.getErdJson().isBlank()) {
+				throw new CommonException(ErrorCode.ERD_NOT_FOUND);
+			}
 
-		// 3. Entity 코드 생성
-		entityGenerateService.generateEntitiesFromErdJson(erdJson, basePackage)
-			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+			String erdJson = erdData.getErdJson();
 
-		// 4. DTO 코드 생성
-		dtoGenerateService.generateDtos(projectId, basePackage)
-			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+			// 4. API 명세 확인
+			List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
+			if (apiSpecs.isEmpty()) {
+				throw new CommonException(ErrorCode.API_SPEC_NOT_FOUND);
+			}
 
-		// 5. Query DTO 코드 생성
-		dtoGenerateService.generateQueryDtos(projectId)
-			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+			// 5. 코드 생성
+			StringBuilder codeResult = new StringBuilder();
 
-		// 6. Service 코드 생성
-		serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage)
-			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+			entityGenerateService.generateEntitiesFromErdJson(erdJson, basePackage)
+				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
-		// 7. Repository 코드 생성 (변경됨)
-		repositoryGenerateService.generateRepositoriesFromErdJson(erdJson, basePackage)
-			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+			dtoGenerateService.generateDtos(projectId, basePackage)
+				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
-		// 8. Controller 코드 생성
-		controllerGenerateService.generateControllersByCategory(projectId, basePackage)
-			.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+			dtoGenerateService.generateQueryDtos(projectId)
+				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
-		// 최종 코드 반환
-		return ResponseEntity.ok(codeResult.toString());
+			serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage)
+				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+
+			repositoryGenerateService.generateRepositoriesFromErdJson(erdJson, basePackage)
+				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+
+			controllerGenerateService.generateControllersByCategory(projectId, basePackage)
+				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+
+			return ResponseEntity.ok(codeResult.toString());
+
+		} catch (IOException e) {
+			throw new CommonException(ErrorCode.ERD_PARSING_FAILED);
+		}
 	}
+
 }
