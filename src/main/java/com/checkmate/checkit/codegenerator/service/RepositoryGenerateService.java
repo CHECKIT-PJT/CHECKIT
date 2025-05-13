@@ -9,8 +9,8 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
-import com.checkmate.checkit.codegenerator.model.MinimalColumn;
-import com.checkmate.checkit.codegenerator.model.MinimalTable;
+import com.checkmate.checkit.codegenerator.dto.MinimalColumn;
+import com.checkmate.checkit.codegenerator.dto.MinimalTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

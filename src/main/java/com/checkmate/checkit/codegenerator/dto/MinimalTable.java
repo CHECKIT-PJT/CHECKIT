@@ -1,4 +1,4 @@
-package com.checkmate.checkit.codegenerator.model;
+package com.checkmate.checkit.codegenerator.dto;
 
 import java.util.List;
 
