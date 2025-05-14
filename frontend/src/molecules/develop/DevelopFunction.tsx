@@ -391,7 +391,6 @@ const DevelopFunc = () => {
   };
 
   const handleModalClose = () => {
-    // 모달 닫을 때 현재 기능에서 퇴장
     if (selectedFunc?.id) {
       const resourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
       sendPresenceMessage(resourceId, PRESENCE_ACTIONS.LEAVE);
@@ -419,21 +418,17 @@ const DevelopFunc = () => {
             <ActiveUsers users={activeUsers} size="medium" />
             <div className="flex gap-2">
               <FuncAddButton onClick={handleAdd} />
-              <JiraAddButton onClick={handleAdd} />
-            </div>
-            <div className="ml-4 flex gap-2">
-              <FuncAddButton onClick={handleAdd} />
               <JiraAddButton onClick={handleJiraAdd} />
             </div>
           </div>
-          <div className="w-full flex-1 flex justify-center items-start overflow-y-auto">
-            <FuncTable
-              data={filteredData}
-              onRowClick={handleRowClick}
-              selectedCategory={selectedCategory}
-              activeUsersByFunc={activeUsersByFunc}
-            />
-          </div>
+        </div>
+        <div className="w-full flex-1">
+          <FuncTable
+            data={filteredData}
+            onRowClick={handleRowClick}
+            selectedCategory={selectedCategory}
+            activeUsersByFunc={activeUsersByFunc}
+          />
         </div>
         {modalOpen && (
           <FuncDetailModal

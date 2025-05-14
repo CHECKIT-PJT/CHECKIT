@@ -62,9 +62,9 @@ const ProjectDetail = () => {
           </h3>
         </div>
         <div className="flex gap-2">
-          <LeaveButton role={userRole} onClick={handleClick} />
           <JiraButton />
           <MoveGitlabButton />
+          <LeaveButton role={userRole} onClick={handleClick} />
         </div>
       </div>
 

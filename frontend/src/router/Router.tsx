@@ -28,7 +28,7 @@ const Router = () => {
   // 로그인 체크
   const ProtectedRoute = () => {
     const token = sessionStorage.getItem('accessToken');
-    console.log('token', token);
+    console.log('accessToken', token);
     return token ? <Outlet /> : <Navigate to="/" replace />;
   };
 
