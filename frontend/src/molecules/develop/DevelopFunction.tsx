@@ -391,7 +391,6 @@ const DevelopFunc = () => {
   };
 
   const handleModalClose = () => {
-    // 모달 닫을 때 현재 기능에서 퇴장
     if (selectedFunc?.id) {
       const resourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
       sendPresenceMessage(resourceId, PRESENCE_ACTIONS.LEAVE);
