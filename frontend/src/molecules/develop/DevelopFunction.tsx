@@ -421,15 +421,19 @@ const DevelopFunc = () => {
               <FuncAddButton onClick={handleAdd} />
               <JiraAddButton onClick={handleAdd} />
             </div>
+            <div className="ml-4 flex gap-2">
+              <FuncAddButton onClick={handleAdd} />
+              <JiraAddButton onClick={handleJiraAdd} />
+            </div>
           </div>
-        </div>
-        <div className="w-full flex-1">
-          <FuncTable
-            data={filteredData}
-            onRowClick={handleRowClick}
-            selectedCategory={selectedCategory}
-            activeUsersByFunc={activeUsersByFunc}
-          />
+          <div className="w-full flex-1 flex justify-center items-start overflow-y-auto">
+            <FuncTable
+              data={filteredData}
+              onRowClick={handleRowClick}
+              selectedCategory={selectedCategory}
+              activeUsersByFunc={activeUsersByFunc}
+            />
+          </div>
         </div>
         {modalOpen && (
           <FuncDetailModal
