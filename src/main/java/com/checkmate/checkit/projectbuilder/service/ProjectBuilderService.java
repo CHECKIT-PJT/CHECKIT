@@ -69,7 +69,7 @@ public class ProjectBuilderService {
 		// 5. 코드 자동 생성
 		Map<String, String> entityFiles = entityGenerateService.generateEntitiesFromErdJson(erdJson, basePackage);
 		Map<String, String> dtoFiles = dtoGenerateService.generateDtos(projectId, basePackage);
-		Map<String, String> queryDtoFiles = dtoGenerateService.generateQueryDtos(projectId);
+		Map<String, String> queryDtoFiles = dtoGenerateService.generateQueryDtos(projectId, basePackage);
 		Map<String, String> repositoryFiles = repositoryGenerateService.generateRepositoriesFromErdJson(erdJson,
 			basePackage);
 		Map<String, String> serviceFiles = serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage);
