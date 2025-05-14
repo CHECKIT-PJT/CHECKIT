@@ -1,7 +1,5 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from '../pages/Layout';
-import Testpage from '../pages/Testpage';
-// import DevelopSelect from "../molecules/chapter/DevelopSelect";
 import DevelopErd from '../molecules/develop/DevelopErd';
 import DevelopApi from '../molecules/develop/DevelopApi';
 import DevelopFunction from '../molecules/develop/DevelopFunction';
@@ -28,17 +26,21 @@ import NotFoundPage from '../pages/NotFoundPage';
 
 const Router = () => {
   // 로그인 체크
-  //   const ProtectedRoute = ({ element }) => {
-  //     const token = sessionStorage.getItem("token");
-  //     return token ? element : <Navigate to="/" replace />;
-  //   };
+  const ProtectedRoute = ({ element }: { element: React.ReactNode }) => {
+    const token = sessionStorage.getItem('token');
+    return token ? element : <Navigate to="/" replace />;
+  };
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/gitlab/callback" element={<OAuthCallback />} />
       <Route path="/jira/callback" element={<JiraAuthCallback />} />
-      <Route element={<Layout />}>
-        <Route path="/test" element={<Testpage />} />
+      <Route path="/invite" element={<InvitePage />} />
+      <Route path="*" element={<NotFoundPage />} />
+
+      {/* 로그인 페이지 */}
+      <Route element={<ProtectedRoute element={<Layout />} />}>
         <Route path="/project" element={<ProjectPage />}>
           <Route index element={<ProjectList />} />
           <Route path=":projectId" element={<ProjectDetail />}>
@@ -80,8 +82,6 @@ const Router = () => {
           <Route path="gitignore" element={<GitignoreConvention />} />
         </Route>
       </Route>
-      <Route path="/invite" element={<InvitePage />} />
-      <Route path="/notfound" element={<NotFoundPage />} />
     </Routes>
   );
 };
