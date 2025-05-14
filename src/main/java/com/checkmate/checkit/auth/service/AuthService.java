@@ -185,7 +185,7 @@ public class AuthService {
 		// HttpOnly 쿠키로 refreshToken 보내기
 		Cookie refreshTokenCookie = new Cookie("refreshToken", jwtRefreshToken);
 		refreshTokenCookie.setHttpOnly(true);
-		refreshTokenCookie.setSecure(true); // HTTPS에서만 전송
+		// refreshTokenCookie.setSecure(true); // HTTPS에서만 전송
 		refreshTokenCookie.setPath("/");
 		refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
 		response.addCookie(refreshTokenCookie);
