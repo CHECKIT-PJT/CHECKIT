@@ -109,7 +109,7 @@ const GitIgnoreToolbar = ({
             className="bg-blue-700 text-white px-4 py-2 rounded text-sm"
             onClick={handleSave}
           >
-            저장
+            반영
           </button>
           <button
             className="bg-green-800 text-white px-4 py-2 rounded text-sm"
@@ -124,7 +124,7 @@ const GitIgnoreToolbar = ({
             className="bg-blue-700 text-white px-4 py-2 rounded text-sm   "
             onClick={handleSave}
           >
-            저장
+            반영
           </button>
           <button
             className="bg-red-700 text-white px-4 py-2 rounded text-sm"

@@ -418,7 +418,7 @@ const DevelopFunc = () => {
             <ActiveUsers users={activeUsers} size="medium" />
             <div className="flex gap-2">
               <FuncAddButton onClick={handleAdd} />
-              <JiraAddButton onClick={handleAdd} />
+              <JiraAddButton onClick={handleJiraAdd} />
             </div>
           </div>
         </div>
