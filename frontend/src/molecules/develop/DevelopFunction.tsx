@@ -13,22 +13,21 @@ import {
 import useFunctionalSpecStore from '../../stores/functionStore';
 import type { FunctionalSpec } from '../../stores/functionStore';
 import JiraAddButton from '../../components/funccomponent/JiraAddButton';
-<<<<<<< HEAD
+
 import ActiveUsers from '../../components/apicomponent/ActiveUsers';
 import { PRESENCE_ACTIONS, RESOURCE_TYPES } from '../../constants/websocket';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { useAuth } from '../../hooks/useAuth';
 
+import { createJiraIssue } from '../../api/jiraAPI';
+import SuccessModal from '../../components/icon/SuccessModal';
+
 interface User {
   id: string;
   name: string;
   color: string;
 }
-=======
-import { createJiraIssue } from '../../api/jiraAPI';
-import SuccessModal from '../../components/icon/SuccessModal';
->>>>>>> 5ec68854fdd7b0c6829464a44d1a912b29e25d85
 
 const priorityToNumber = (priority: string): number => {
   switch (priority) {
@@ -107,16 +106,15 @@ const DevelopFunc = () => {
   const [selectedFunc, setSelectedFunc] = useState<FunctionalSpec | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-<<<<<<< HEAD
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [activeUsersByFunc, setActiveUsersByFunc] = useState<{ [key: string]: User[] }>({});
-=======
+  const [activeUsersByFunc, setActiveUsersByFunc] = useState<{
+    [key: string]: User[];
+  }>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [jiraLink, setJiraLink] = useState<string | null>(null);
->>>>>>> 5ec68854fdd7b0c6829464a44d1a912b29e25d85
 
   const { specs } = useFunctionalSpecStore();
   const { refetch } = useGetFunctionalSpecs(Number(projectId));
@@ -127,10 +125,20 @@ const DevelopFunc = () => {
   // 사용자별 고유 색상 생성 함수
   const getRandomColor = (seed: string) => {
     const colors = [
-      '#2563EB', '#DC2626', '#059669', '#7C3AED', '#DB2777',
-      '#2563EB', '#EA580C', '#0D9488', '#4F46E5', '#BE185D'
+      '#2563EB',
+      '#DC2626',
+      '#059669',
+      '#7C3AED',
+      '#DB2777',
+      '#2563EB',
+      '#EA580C',
+      '#0D9488',
+      '#4F46E5',
+      '#BE185D',
     ];
-    const index = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = seed
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];
   };
 
@@ -150,10 +158,10 @@ const DevelopFunc = () => {
     const subscriptions: { [key: string]: any } = {};
 
     // 각 기능 명세에 대한 구독 설정
-    specs.forEach((func) => {
+    specs.forEach(func => {
       if (func.id) {
         const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${func.id}`;
-        
+
         // 구독 설정
         const subscription = stompClientRef.current!.subscribe(
           `/sub/presence/${funcResourceId}`,
@@ -206,9 +214,9 @@ const DevelopFunc = () => {
         const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
         stompClient.publish({
           destination: '/pub/presence',
-          body: JSON.stringify({ 
-            resourceId: pageResourceId, 
-            action: PRESENCE_ACTIONS.ENTER 
+          body: JSON.stringify({
+            resourceId: pageResourceId,
+            action: PRESENCE_ACTIONS.ENTER,
           }),
         });
 
@@ -216,11 +224,13 @@ const DevelopFunc = () => {
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
           try {
             const data = JSON.parse(message.body);
-            setActiveUsers(data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getRandomColor(username),
-            })));
+            setActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
@@ -274,17 +284,19 @@ const DevelopFunc = () => {
     if (modalOpen) {
       // 모달 열릴 때 구독 및 입장 메시지 전송
       sendPresenceMessage(funcResourceId, PRESENCE_ACTIONS.ENTER);
-      
+
       const subscription = stompClientRef.current?.subscribe(
         `/sub/presence/${funcResourceId}`,
         message => {
           try {
             const data = JSON.parse(message.body);
-            setModalActiveUsers(data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getRandomColor(username),
-            })));
+            setModalActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
@@ -403,48 +415,46 @@ const DevelopFunc = () => {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-<<<<<<< HEAD
           <div className="ml-4 flex items-center gap-4">
             <ActiveUsers users={activeUsers} size="medium" />
             <div className="flex gap-2">
               <FuncAddButton onClick={handleAdd} />
               <JiraAddButton onClick={handleAdd} />
             </div>
-=======
-          <div className="ml-4 flex gap-2">
-            <FuncAddButton onClick={handleAdd} />
-            <JiraAddButton onClick={handleJiraAdd} />
->>>>>>> 5ec68854fdd7b0c6829464a44d1a912b29e25d85
+            <div className="ml-4 flex gap-2">
+              <FuncAddButton onClick={handleAdd} />
+              <JiraAddButton onClick={handleJiraAdd} />
+            </div>
+          </div>
+          <div className="w-full flex-1 flex justify-center items-start overflow-y-auto">
+            <FuncTable
+              data={filteredData}
+              onRowClick={handleRowClick}
+              selectedCategory={selectedCategory}
+              activeUsersByFunc={activeUsersByFunc}
+            />
           </div>
         </div>
-        <div className="w-full flex-1 flex justify-center items-start overflow-y-auto">
-          <FuncTable
-            data={filteredData}
-            onRowClick={handleRowClick}
-            selectedCategory={selectedCategory}
-            activeUsersByFunc={activeUsersByFunc}
+        {modalOpen && (
+          <FuncDetailModal
+            func={selectedFunc ? convertToFuncDetail(selectedFunc) : null}
+            onClose={handleModalClose}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            activeUsers={modalActiveUsers}
           />
-        </div>
-      </div>
-      {modalOpen && (
-        <FuncDetailModal
-          func={selectedFunc ? convertToFuncDetail(selectedFunc) : null}
-          onClose={handleModalClose}
-          onSave={handleSave}
-          onDelete={handleDelete}
-          activeUsers={modalActiveUsers}
+        )}
+        <SuccessModal
+          visible={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setJiraLink(null);
+          }}
+          title="이슈 등록 완료"
+          description="프로젝트에 성공적으로 등록되었습니다."
+          link={jiraLink || undefined}
         />
-      )}
-      <SuccessModal
-        visible={showSuccessModal}
-        onClose={() => {
-          setShowSuccessModal(false);
-          setJiraLink(null);
-        }}
-        title="이슈 등록 완료"
-        description="프로젝트에 성공적으로 등록되었습니다."
-        link={jiraLink || undefined}
-      />
+      </div>
     </div>
   );
 };
