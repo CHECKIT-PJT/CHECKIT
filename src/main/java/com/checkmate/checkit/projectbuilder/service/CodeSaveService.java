@@ -27,8 +27,10 @@ public class CodeSaveService {
 	 * @param basePackage ex: com.example
 	 * @param javaFiles key = domain/controller/UserController.java, value = java 코드 문자열
 	 */
-	public void save(String springName, String basePackage, Map<String, String> javaFiles) {
-		String root = BASE_PATH + springName + "/src/main/java/" + basePackage.replace(".", "/") + "/";
+	public void save(Integer projectId, String springName, String basePackage, Map<String, String> javaFiles) {
+		String root =
+			BASE_PATH + projectId.toString() + "/" + springName + "/src/main/java/" + basePackage.replace(".", "/")
+				+ "/";
 
 		for (Map.Entry<String, String> entry : javaFiles.entrySet()) {
 			String relativePath = entry.getKey();  // 예: user/controller/UserController.java
@@ -43,6 +45,16 @@ public class CodeSaveService {
 				log.error("[Error] Failed to save Java file: {}", fullPath, e);
 				throw new CommonException(ErrorCode.SPRING_CODE_FILE_SAVE);
 			}
+		}
+	}
+
+	public Path getProjectPath(int projectId) {
+		String projectPath = BASE_PATH + projectId + "/";
+		Path path = Paths.get(projectPath);
+		if (Files.exists(path)) {
+			return path;
+		} else {
+			throw new CommonException(ErrorCode.PROJECT_NOT_FOUND);
 		}
 	}
 }

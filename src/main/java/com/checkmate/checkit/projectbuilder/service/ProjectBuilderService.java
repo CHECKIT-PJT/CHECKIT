@@ -1,6 +1,7 @@
 package com.checkmate.checkit.projectbuilder.service;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class ProjectBuilderService {
 	/**
 	 * 전체 프로젝트 빌드 오케스트레이션: 다운로드 + 코드 생성 + 저장
 	 */
-	public void buildProject(int projectId) throws IOException {
+	public Path buildProject(int projectId) throws IOException {
 		// 1. 스프링 설정 확인
 		SpringSettingsDtoResponse springSettings = springSettingsService.getSpringSettings(projectId);
 		String basePackage = springSettings.getSpringPackageName();
@@ -64,7 +65,7 @@ public class ProjectBuilderService {
 
 		// 4. Spring Initializr로 프로젝트 다운로드 및 압축 해제
 		InitializerRequest initializerRequest = InitializerRequestMapper.from(springSettings);
-		projectDownloadService.downloadAndExtract(initializerRequest);
+		projectDownloadService.downloadAndExtract(projectId, initializerRequest);
 
 		// 5. 코드 자동 생성
 		Map<String, String> entityFiles = entityGenerateService.generateEntitiesFromErdJson(erdJson, basePackage);
@@ -77,11 +78,18 @@ public class ProjectBuilderService {
 			basePackage);
 
 		// 6. 파일 저장
-		codeSaveService.save(springName, basePackage, entityFiles);
-		codeSaveService.save(springName, basePackage, dtoFiles);
-		codeSaveService.save(springName, basePackage, queryDtoFiles);
-		codeSaveService.save(springName, basePackage, repositoryFiles);
-		codeSaveService.save(springName, basePackage, serviceFiles);
-		codeSaveService.save(springName, basePackage, controllerFiles);
+		codeSaveService.save(projectId, springName, basePackage, entityFiles);
+		codeSaveService.save(projectId, springName, basePackage, dtoFiles);
+		codeSaveService.save(projectId, springName, basePackage, queryDtoFiles);
+		codeSaveService.save(projectId, springName, basePackage, repositoryFiles);
+		codeSaveService.save(projectId, springName, basePackage, serviceFiles);
+		codeSaveService.save(projectId, springName, basePackage, controllerFiles);
+
+		return codeSaveService.getProjectPath(projectId);
 	}
+
+	public SpringSettingsDtoResponse getSpringSettings(int projectId) {
+		return springSettingsService.getSpringSettings(projectId);
+	}
+
 }
