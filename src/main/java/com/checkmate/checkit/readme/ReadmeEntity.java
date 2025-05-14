@@ -1,4 +1,4 @@
-package com.checkmate.checkit.project.entity;
+package com.checkmate.checkit.readme;
 
 import com.checkmate.checkit.global.common.entity.BaseEntity;
 import jakarta.persistence.Column;
@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -26,7 +27,22 @@ public class ReadmeEntity extends BaseEntity {
 	@Column(name = "content", nullable = false, columnDefinition = "TEXT")
 	private String readmeContent;
 
+	@Column(name = "is_deleted", nullable = false)
+	private boolean isDeleted = false; // Soft delete 처리
+
+
 	public void updateReadmeContent(String readmeContent) {
 		this.readmeContent = readmeContent;
+	}
+
+	public void delete() {
+		this.isDeleted = true;
+	}
+
+	@Builder
+	public ReadmeEntity(Integer projectId, String readmeContent) {
+		this.projectId = projectId;
+		this.readmeContent = readmeContent;
+		this.isDeleted = false;
 	}
 }
