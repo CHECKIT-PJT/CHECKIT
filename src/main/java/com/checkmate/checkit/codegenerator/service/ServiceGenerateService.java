@@ -34,7 +34,7 @@ public class ServiceGenerateService {
 	private final DtoItemRepository dtoItemRepository;
 
 	private final Set<String> importSet = new HashSet<>();
-	private final StringBuilder imports = new StringBuilder();
+	private final List<String> importLines = new ArrayList<>();
 
 	public Map<String, String> generateServiceCodeByCategory(int projectId, String basePackage) {
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
@@ -52,7 +52,7 @@ public class ServiceGenerateService {
 		for (Map.Entry<String, List<ApiSpecEntity>> entry : categoryGrouped.entrySet()) {
 			String category = entry.getKey();
 			List<ApiSpecEntity> specs = entry.getValue();
-			String className = StringUtils.toPascalCase(category) + "Service"; // 변경
+			String className = StringUtils.toPascalCase(category) + "Service";
 			String classCode = generateServiceClassCode(className, category, specs, basePackage);
 			String filePath = category.toLowerCase() + "/service/" + className + ".java";
 			serviceClassCodes.put(filePath, classCode);
@@ -63,11 +63,15 @@ public class ServiceGenerateService {
 	private String generateServiceClassCode(String className, String category, List<ApiSpecEntity> specs,
 		String basePackage) {
 		importSet.clear();
-		imports.setLength(0);
+		importLines.clear();
 
 		StringBuilder sb = new StringBuilder();
-
-		sb.append("package ").append(basePackage).append(".").append(category.toLowerCase()).append(".service;\n\n");
+		sb.append("package ")
+			.append(basePackage)
+			.append(".")
+			.append(category.toLowerCase())
+			.append(".service;")
+			.append("\n\n");
 
 		addImport("import lombok.RequiredArgsConstructor;");
 		addImport("import org.springframework.stereotype.Service;");
@@ -78,7 +82,6 @@ public class ServiceGenerateService {
 			for (DtoEntity dto : dtos) {
 				if (dto.getDtoType() != DtoEntity.DtoType.RESPONSE)
 					continue;
-
 				List<DtoItemEntity> items = dtoItemRepository.findByDto(dto);
 				for (DtoItemEntity item : items) {
 					String type = item.getDataType();
@@ -94,7 +97,10 @@ public class ServiceGenerateService {
 			}
 		}
 
-		sb.append(imports).append("\n");
+		for (String imp : importLines) {
+			sb.append(imp).append("\n");
+		}
+		sb.append("\n");
 		sb.append("@Service\n@RequiredArgsConstructor\n@Transactional\n");
 		sb.append("public class ").append(className).append(" {\n\n");
 
@@ -107,13 +113,13 @@ public class ServiceGenerateService {
 
 	private String generateMethodFromSpec(ApiSpecEntity spec) {
 		StringBuilder sb = new StringBuilder();
-		String methodName = StringUtils.toCamelCase(spec.getApiName()); // 변경
+		String methodName = StringUtils.toCamelCase(spec.getApiName());
 		String returnType = "void";
 
 		List<DtoEntity> dtos = dtoRepository.findByApiSpecId(spec.getId());
 		for (DtoEntity dto : dtos) {
 			if (dto.getDtoType() == DtoEntity.DtoType.RESPONSE) {
-				returnType = StringUtils.toPascalCase(dto.getDtoName()); // 변경
+				returnType = StringUtils.toPascalCase(dto.getDtoName());
 				break;
 			}
 		}
@@ -149,27 +155,18 @@ public class ServiceGenerateService {
 		return sb.toString();
 	}
 
-	/**
-	 * import 중복 방지 추가
-	 */
 	private void addImport(String statement) {
 		if (importSet.add(statement)) {
-			imports.append(statement).append("\n");
+			importLines.add(statement);
 		}
 	}
 
-	/**
-	 * 클래스 이름 등 첫 글자 대문자 처리
-	 */
 	private String capitalize(String name) {
 		if (name == null || name.isEmpty())
 			return name;
 		return name.substring(0, 1).toUpperCase() + name.substring(1);
 	}
 
-	/**
-	 * API 명세에 입력된 타입(String 기반)을 Java 타입으로 변환
-	 */
 	private String toJavaType(String dataType) {
 		if (dataType == null)
 			return "String";
@@ -177,37 +174,36 @@ public class ServiceGenerateService {
 		String type = dataType.trim();
 
 		switch (type) {
-			case "Integer", "Long", "Short", "Byte", "Float", "Double",
-				"Character", "Boolean", "String":
+			case "Integer":
+			case "Long":
+			case "Short":
+			case "Byte":
+			case "Float":
+			case "Double":
+			case "Character":
+			case "Boolean":
+			case "String":
 				return type;
-
 			case "LocalDate":
 				addImport("import java.time.LocalDate;");
 				return "LocalDate";
-
 			case "LocalDateTime":
 				addImport("import java.time.LocalDateTime;");
 				return "LocalDateTime";
-
 			case "ZonedDateTime":
 				addImport("import java.time.ZonedDateTime;");
 				return "ZonedDateTime";
-
 			case "BigDecimal":
 				addImport("import java.math.BigDecimal;");
 				return "BigDecimal";
-
 			case "BigInteger":
 				addImport("import java.math.BigInteger;");
 				return "BigInteger";
-
 			case "UUID":
 				addImport("import java.util.UUID;");
 				return "UUID";
-
 			case "enum":
-				return "Enum"; // 추후 enum 생성기로 확장 가능
-
+				return "Enum";
 			default:
 				return "String";
 		}

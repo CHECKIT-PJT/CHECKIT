@@ -20,15 +20,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class RepositoryGenerateService {
 
-	private final StringBuilder imports = new StringBuilder();
 	private final Set<String> importSet = new HashSet<>();
+	private final List<String> importLines = new ArrayList<>();
 
 	public Map<String, String> generateRepositoriesFromErdJson(String erdJson, String basePackage) throws IOException {
 		Map<String, String> result = new HashMap<>();
-
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode root = mapper.readTree(erdJson);
-
 		JsonNode tableEntities = root.path("collections").path("tableEntities");
 		JsonNode columnEntities = root.path("collections").path("tableColumnEntities");
 
@@ -50,8 +48,8 @@ public class RepositoryGenerateService {
 
 			MinimalTable table = new MinimalTable(tableName, columns);
 			String domain = table.name().toLowerCase();
-			String className = StringUtils.capitalize(table.name()); // PascalCase 클래스 이름
-			String filePath = domain + "/repository/" + className + "Repository.java"; // PascalCase 파일명
+			String className = StringUtils.capitalize(table.name());
+			String filePath = domain + "/repository/" + className + "Repository.java";
 			String fullPackage = basePackage + "." + domain;
 
 			String repositoryCode = generateRepositoryCode(table, fullPackage, className);
@@ -62,8 +60,8 @@ public class RepositoryGenerateService {
 	}
 
 	private String generateRepositoryCode(MinimalTable table, String fullPackage, String className) {
-		imports.setLength(0);
 		importSet.clear();
+		importLines.clear();
 
 		StringBuilder sb = new StringBuilder();
 		String packageName = fullPackage + ".repository";
@@ -76,15 +74,19 @@ public class RepositoryGenerateService {
 			.map(col -> toJavaType(col.type()))
 			.orElse("Long");
 
+		addImport("import " + entityPackage + ";");
+		addImport("import org.springframework.data.jpa.repository.JpaRepository;");
+		addImport("import org.springframework.stereotype.Repository;");
+
 		sb.append("package ").append(packageName).append(";\n\n");
-		sb.append("import ").append(entityPackage).append(";\n");
-		sb.append("import org.springframework.data.jpa.repository.JpaRepository;\n");
-		sb.append("import org.springframework.stereotype.Repository;\n");
-		sb.append(imports).append("\n");
+		for (String imp : importLines) {
+			sb.append(imp).append("\n");
+		}
+		sb.append("\n");
 
 		sb.append("@Repository\n");
 		sb.append("public interface ").append(className).append("Repository ")
-			.append("extends JpaRepository<").append(className).append(", ").append(pkType).append("> {\n\n");
+			.append("extends JpaRepository<").append(className).append(", ").append(pkType).append("> { \n");
 		sb.append("    // TODO: Custom query methods can be defined here\n");
 		sb.append("}\n");
 
@@ -94,87 +96,98 @@ public class RepositoryGenerateService {
 	private String toJavaType(String dataType) {
 		if (dataType == null)
 			return "String";
-
-		String type = dataType.trim().toUpperCase(); // 대소문자 구분 제거
+		String type = dataType.trim().toUpperCase();
+		String javaType;
 
 		switch (type) {
-			// 숫자형 타입
-			case "BIGINT", "BIGINT(LONG)":
-				return "Long";
-
-			case "INT", "INTEGER", "INT(INTEGER)":
-				return "Integer";
-
-			case "SMALLINT", "SMALLINT(SHORT)":
-				return "Short";
-
-			case "TINYINT", "TINYINT(BYTE)":
-				return "Byte";
-
-			case "FLOAT", "FLOAT(FLOAT)":
-				return "Float";
-
-			case "DOUBLE", "DOUBLE(DOUBLE)":
-				return "Double";
-
-			case "DECIMAL", "NUMERIC", "BIGDECIMAL":
+			case "BIGINT":
+			case "BIGINT(LONG)":
+				javaType = "Long";
+				break;
+			case "INT":
+			case "INTEGER":
+			case "INT(INTEGER)":
+				javaType = "Integer";
+				break;
+			case "SMALLINT":
+			case "SMALLINT(SHORT)":
+				javaType = "Short";
+				break;
+			case "TINYINT":
+			case "TINYINT(BYTE)":
+				javaType = "Byte";
+				break;
+			case "FLOAT":
+			case "FLOAT(FLOAT)":
+				javaType = "Float";
+				break;
+			case "DOUBLE":
+			case "DOUBLE(DOUBLE)":
+				javaType = "Double";
+				break;
+			case "DECIMAL":
+			case "NUMERIC":
+			case "BIGDECIMAL":
 				addImport("import java.math.BigDecimal;");
-				return "BigDecimal";
-
+				javaType = "BigDecimal";
+				break;
 			case "BIGINTEGER":
 				addImport("import java.math.BigInteger;");
-				return "BigInteger";
-
-			// 문자형 타입
-			case "CHAR", "CHAR(CHARACTER)":
-				return "Character";
-
-			case "VARCHAR", "TEXT", "LONGTEXT", "MEDIUMTEXT", "STRING":
-				return "String";
-
-			// 논리형
-			case "BOOLEAN", "BOOL":
-				return "Boolean";
-
-			// 날짜/시간
+				javaType = "BigInteger";
+				break;
+			case "CHAR":
+			case "CHAR(CHARACTER)":
+				javaType = "Character";
+				break;
+			case "VARCHAR":
+			case "TEXT":
+			case "LONGTEXT":
+			case "MEDIUMTEXT":
+			case "STRING":
+				javaType = "String";
+				break;
+			case "BOOLEAN":
+			case "BOOL":
+				javaType = "Boolean";
+				break;
 			case "DATE":
 				addImport("import java.time.LocalDate;");
-				return "LocalDate";
-
-			case "DATETIME", "TIMESTAMP":
+				javaType = "LocalDate";
+				break;
+			case "DATETIME":
+			case "TIMESTAMP":
 				addImport("import java.time.LocalDateTime;");
-				return "LocalDateTime";
-
+				javaType = "LocalDateTime";
+				break;
 			case "TIME":
 				addImport("import java.time.LocalTime;");
-				return "LocalTime";
-
+				javaType = "LocalTime";
+				break;
 			case "ZONEDDATETIME":
 				addImport("import java.time.ZonedDateTime;");
-				return "ZonedDateTime";
-
-			// 식별자
-			case "UUID", "UNIQUEIDENTIFIER":
+				javaType = "ZonedDateTime";
+				break;
+			case "UUID":
+			case "UNIQUEIDENTIFIER":
 				addImport("import java.util.UUID;");
-				return "UUID";
-
-			// enum 타입
+				javaType = "UUID";
+				break;
 			case "ENUM":
-				return "Enum"; // 추후 enum 클래스 생성기에서 처리
-
-			// 바이너리
-			case "BLOB", "LONGBLOB":
-				return "byte[]";
-
-			// 기본값 (문자열)
+				javaType = "Enum";
+				break;
+			case "BLOB":
+			case "LONGBLOB":
+				javaType = "byte[]";
+				break;
 			default:
-				return "String";
+				javaType = "String";
 		}
+		return javaType;
 	}
 
 	private void addImport(String statement) {
 		if (importSet.add(statement)) {
-			imports.append(statement).append("\n");
+			importLines.add(statement);
 		}
 	}
 }

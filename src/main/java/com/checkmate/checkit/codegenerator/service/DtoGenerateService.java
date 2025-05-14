@@ -30,11 +30,8 @@ public class DtoGenerateService {
 	private final ApiQueryStringRepository apiQueryStringRepository;
 
 	private final Set<String> importSet = new HashSet<>();
-	private StringBuilder imports = new StringBuilder();
+	private final List<String> importLines = new ArrayList<>();
 
-	/**
-	 * Request/Response DTO를 자동 생성
-	 */
 	public Map<String, String> generateDtos(int projectId, String basePackage) {
 		Map<String, String> dtoFiles = new HashMap<>();
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
@@ -47,7 +44,6 @@ public class DtoGenerateService {
 			for (DtoEntity dto : dtoList) {
 				String rawName = dto.getDtoName();
 				String className;
-
 				if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
 					className = StringUtils.toPascalCase(rawName) + "Request";
 				} else if (dto.getDtoType() == DtoEntity.DtoType.RESPONSE) {
@@ -58,7 +54,6 @@ public class DtoGenerateService {
 
 				List<DtoItemEntity> dtoItems = new ArrayList<>(dtoItemRepository.findByDto(dto));
 
-				// 쿼리스트링을 Request DTO에 포함
 				if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
 					List<ApiQueryStringEntity> queryStrings = apiQueryStringRepository.findByApiSpec(apiSpec);
 					for (ApiQueryStringEntity query : queryStrings) {
@@ -71,7 +66,7 @@ public class DtoGenerateService {
 					}
 				}
 
-				String dtoCode = generateDtoClass(className, dtoItems);
+				String dtoCode = generateDtoClass(className, dtoItems, basePackage, domain);
 				String filePath = domain + "/dto/" + className + ".java";
 				dtoFiles.put(filePath, dtoCode);
 			}
@@ -79,10 +74,7 @@ public class DtoGenerateService {
 		return dtoFiles;
 	}
 
-	/**
-	 * API 쿼리스트링을 위한 Query DTO 클래스 생성
-	 */
-	public Map<String, String> generateQueryDtos(int projectId) {
+	public Map<String, String> generateQueryDtos(int projectId, String basePackage) {
 		Map<String, String> dtoFiles = new HashMap<>();
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
 
@@ -94,34 +86,38 @@ public class DtoGenerateService {
 			String domain = apiSpec.getCategory().toLowerCase();
 			String className = StringUtils.toPascalCase(apiSpec.getApiName()) + "QueryDto";
 
-			List<SimpleField> fields = queryStrings.stream()
-				.map(q -> new SimpleField(q.getQueryStringVariable(), q.getQueryStringDataType()))
-				.toList();
+			List<SimpleField> fields = new ArrayList<>();
+			for (ApiQueryStringEntity q : queryStrings) {
+				fields.add(new SimpleField(q.getQueryStringVariable(), q.getQueryStringDataType()));
+			}
 
-			String dtoCode = generateSimpleDtoClass(className, fields);
+			String dtoCode = generateSimpleDtoClass(className, fields, basePackage, domain);
 			String filePath = domain + "/dto/" + className + ".java";
 			dtoFiles.put(filePath, dtoCode);
 		}
 		return dtoFiles;
 	}
 
-	private String generateDtoClass(String className, List<DtoItemEntity> fields) {
+	private String generateDtoClass(String className, List<DtoItemEntity> fields, String basePackage, String domain) {
 		importSet.clear();
-		imports.setLength(0);
+		importLines.clear();
 
 		StringBuilder sb = new StringBuilder();
+		String packageName = basePackage + "." + domain + ".dto";
+		sb.append("package ").append(packageName).append(";\n\n");
+
 		addImport("import lombok.*;");
-		sb.append(imports).append("\n");
+		for (DtoItemEntity field : fields) {
+			toJavaType(field.getDataType(), field.getIsList());
+		}
+		importLines.forEach(line -> sb.append(line).append("\n"));
+		sb.append("\n");
 
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
 		sb.append("public class ").append(className).append(" {\n\n");
 
 		for (DtoItemEntity field : fields) {
-			String type = toJavaType(field.getDataType());
-			if (Boolean.TRUE.equals(field.getIsList())) {
-				addImport("import java.util.List;");
-				type = "List<" + type + ">";
-			}
+			String type = toJavaType(field.getDataType(), field.getIsList());
 			sb.append("    private ").append(type).append(" ").append(field.getDtoItemName()).append(";\n");
 		}
 
@@ -129,19 +125,27 @@ public class DtoGenerateService {
 		return sb.toString();
 	}
 
-	private String generateSimpleDtoClass(String className, List<SimpleField> fields) {
+	private String generateSimpleDtoClass(String className, List<SimpleField> fields, String basePackage,
+		String domain) {
 		importSet.clear();
-		imports.setLength(0);
+		importLines.clear();
 
 		StringBuilder sb = new StringBuilder();
+		String packageName = basePackage + "." + domain + ".dto";
+		sb.append("package ").append(packageName).append(";\n\n");
+
 		addImport("import lombok.*;");
-		sb.append(imports).append("\n");
+		for (SimpleField field : fields) {
+			toJavaType(field.getDataType(), false);
+		}
+		importLines.forEach(line -> sb.append(line).append("\n"));
+		sb.append("\n");
 
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
 		sb.append("public class ").append(className).append(" {\n\n");
 
 		for (SimpleField field : fields) {
-			String type = toJavaType(field.getDataType());
+			String type = toJavaType(field.getDataType(), false);
 			sb.append("    private ").append(type).append(" ").append(field.getFieldName()).append(";\n");
 		}
 
@@ -152,47 +156,55 @@ public class DtoGenerateService {
 	/**
 	 * DB 데이터 타입 → Java 타입 변환 및 필요시 import 추가
 	 */
-	private String toJavaType(String dataType) {
+	private String toJavaType(String dataType, Boolean isList) {
 		if (dataType == null)
 			return "String";
 
 		String type = dataType.trim();
+		String javaType;
 
 		switch (type) {
 			case "Integer", "Long", "Short", "Byte", "Float", "Double",
 				"Character", "Boolean", "String":
-				return type;
-
+				javaType = type;
+				break;
 			case "LocalDate":
 				addImport("import java.time.LocalDate;");
-				return "LocalDate";
-
+				javaType = "LocalDate";
+				break;
 			case "LocalDateTime":
 				addImport("import java.time.LocalDateTime;");
-				return "LocalDateTime";
-
+				javaType = "LocalDateTime";
+				break;
 			case "ZonedDateTime":
 				addImport("import java.time.ZonedDateTime;");
-				return "ZonedDateTime";
-
+				javaType = "ZonedDateTime";
+				break;
 			case "BigDecimal":
 				addImport("import java.math.BigDecimal;");
-				return "BigDecimal";
-
+				javaType = "BigDecimal";
+				break;
 			case "BigInteger":
 				addImport("import java.math.BigInteger;");
-				return "BigInteger";
-
+				javaType = "BigInteger";
+				break;
 			case "UUID":
 				addImport("import java.util.UUID;");
-				return "UUID";
-
+				javaType = "UUID";
+				break;
 			case "enum":
-				return "Enum"; // 추후 enum 생성기로 확장 가능
-
+				javaType = "Enum"; // 향후 enum 자동 생성기로 확장 가능
+				break;
 			default:
-				return "String";
+				javaType = "String";
 		}
+
+		if (Boolean.TRUE.equals(isList)) {
+			addImport("import java.util.List;");
+			return "List<" + javaType + ">";
+		}
+
+		return javaType;
 	}
 
 	/**
@@ -200,7 +212,7 @@ public class DtoGenerateService {
 	 */
 	private void addImport(String statement) {
 		if (importSet.add(statement)) {
-			imports.append(statement).append("\n");
+			importLines.add(statement);
 		}
 	}
 
