@@ -2,10 +2,10 @@ import { useCallback } from 'react';
 
 export const useAuth = () => {
   const getToken = useCallback(() => {
-    return localStorage.getItem('token') || '';
+    return sessionStorage.getItem('accessToken') || '';
   }, []);
 
   return {
     token: getToken(),
   };
-}; 
+};
