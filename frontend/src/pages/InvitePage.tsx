@@ -9,7 +9,6 @@ const InvitePage = () => {
   const inviteCode = searchParams.get('inviteCode');
   const { mutate: acceptInvite, isError, error, isSuccess } = useAcceptInvite();
 
-  // '이미 참여함'인 경우도 성공으로 간주
   const isAlreadyParticipated =
     isError && (error as AxiosError)?.response?.status === 400;
 
@@ -32,45 +31,60 @@ const InvitePage = () => {
   }, [inviteCode, acceptInvite, navigate]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <div className="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full text-center space-y-6">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+      <div className="bg-white shadow-2xl rounded-3xl p-10 max-w-lg w-full text-center space-y-8 border border-gray-200">
         {isSuccess || isAlreadyParticipated ? (
           <>
-            <h2 className="text-xl font-semibold text-green-600">
-              참여 요청 완료
-            </h2>
-            <p className="text-sm text-gray-700">
-              팀장이 승인하면 <br />
-              프로젝트 목록에서 확인할 수 있습니다.
-            </p>
-            <button
-              onClick={() => navigate('/project')}
-              className="w-full px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition duration-200 shadow"
-            >
-              main으로 이동
-            </button>
+            <div className="flex flex-col items-center space-y-3">
+              <div className="w-16 h-16 bg-green-100 text-green-600 flex items-center justify-center rounded-full text-2xl font-bold shadow-inner">
+                ✓
+              </div>
+              <h2 className="text-2xl font-bold text-green-700">
+                참여 요청 완료
+              </h2>
+              <p className="text-gray-600 text-sm">
+                팀장이 승인하면
+                <br />
+                프로젝트 목록에서 확인할 수 있습니다.
+              </p>
+              <button
+                onClick={() => navigate('/project')}
+                className="w-full py-2 mt-4 text-white bg-green-600 hover:bg-green-500 rounded-xl transition duration-200 font-medium shadow"
+              >
+                main으로 이동
+              </button>
+            </div>
           </>
         ) : isError ? (
           <>
-            <h2 className="text-xl font-semibold text-red-500">
-              초대 수락 실패
-            </h2>
-            <p className="text-sm text-gray-700">
-              초대 수락에 실패했습니다. 로그인이 필요합니다.
-            </p>
-            <button
-              onClick={() =>
-                navigate('/', {
-                  state: { from: '/invite?inviteCode=' + inviteCode },
-                })
-              }
-              className="w-full px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition duration-200 shadow"
-            >
-              로그인하기
-            </button>
+            <div className="flex flex-col items-center space-y-3">
+              <div className="w-16 h-16 bg-red-100 text-red-600 flex items-center justify-center rounded-full text-3xl font-bold shadow-inner">
+                !
+              </div>
+              <h2 className="text-2xl font-bold text-red-600 mb-4">
+                초대 수락 실패
+              </h2>
+              <p className="text-gray-600 mb-10">
+                초대 수락에 실패했습니다. <br />
+                로그인이 필요합니다.
+              </p>
+              <button
+                onClick={() =>
+                  navigate('/', {
+                    state: { from: '/invite?inviteCode=' + inviteCode },
+                  })
+                }
+                className="w-full py-2 mt-4 text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition duration-200 font-medium shadow"
+              >
+                로그인하기
+              </button>
+            </div>
           </>
         ) : (
-          <p className="text-gray-600 text-sm">처리 중...</p>
+          <div className="flex flex-col items-center">
+            <div className="w-10 h-10 border-4 border-blue-300 border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-gray-600 text-sm">초대 수락 처리 중...</p>
+          </div>
         )}
       </div>
     </div>

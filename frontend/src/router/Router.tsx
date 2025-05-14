@@ -27,7 +27,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 const Router = () => {
   // 로그인 체크
   const ProtectedRoute = ({ element }: { element: React.ReactNode }) => {
-    const token = sessionStorage.getItem('token');
+    const token = sessionStorage.getItem('accessToken');
     return token ? element : <Navigate to="/" replace />;
   };
 
