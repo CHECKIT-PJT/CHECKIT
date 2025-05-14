@@ -139,6 +139,8 @@ public class AuthService {
 		String jwtAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName(),
 			user.getNickname());
 
+		log.info("로그인 성공: 사용자 ID = {}, 사용자 이름 = {}", user.getId(), user.getUserName());
+
 		return new AuthResponse(jwtAccessToken, new LoginResponse(user));
 	}
 
@@ -183,7 +185,7 @@ public class AuthService {
 		// HttpOnly 쿠키로 refreshToken 보내기
 		Cookie refreshTokenCookie = new Cookie("refreshToken", jwtRefreshToken);
 		refreshTokenCookie.setHttpOnly(true);
-		// refreshTokenCookie.setSecure(true); // HTTPS에서만 전송
+		refreshTokenCookie.setSecure(true); // HTTPS에서만 전송
 		refreshTokenCookie.setPath("/");
 		refreshTokenCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
 		response.addCookie(refreshTokenCookie);
