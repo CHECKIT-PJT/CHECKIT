@@ -20,6 +20,7 @@ const OAuthCallback = () => {
       return;
     }
 
+    
     handleAuthCallback(code).then(success => {
       if (success) {
         console.log('success');
