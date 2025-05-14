@@ -1,4 +1,4 @@
-// 생략된 import 유지
+// 수정된 SpringSettingsPage 컴포넌트
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
@@ -11,6 +11,7 @@ import DependencySearch from '../molecules/springsetting/DependencySearch';
 import DependencyList from '../molecules/springsetting/DependencyList';
 import DependencyRecommendations from '../molecules/springsetting/DependencyRecommendations';
 import ActionButtons from '../molecules/springsetting/ActionButtons';
+import Dialog from '../molecules/buildpreview/Dialog';
 
 import {
   getSpringSettings,
@@ -18,6 +19,7 @@ import {
   updateSpringSettings,
   getAvailableDependencies,
 } from '../api/springsettingAPI';
+import { generateCode } from '../api/codegenerateAPI';
 
 interface Dependency {
   id: string;
@@ -38,6 +40,10 @@ const SpringSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [settingsExist, setSettingsExist] = useState(false);
+
+  // Dialog 상태 관리
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
 
   const [springBootVersion, setSpringBootVersion] = useState('3.0.6');
   const [projectType, setProjectType] = useState('Maven Project');
@@ -102,6 +108,7 @@ const SpringSettingsPage: React.FC = () => {
     setProjectName('');
     setPackageName('');
 
+    // 이전에 deps 세팅은 loadData에서 했으므로, 선택만 false로 바꿈
     setDependencies((prev) => prev.map((d) => ({ ...d, selected: false })));
     setSettingsExist(false);
   };
@@ -121,19 +128,28 @@ const SpringSettingsPage: React.FC = () => {
       }
 
       try {
-        // 병렬 요청
-        const [depsResponse, settingsResponse] = await Promise.all([
-          getAvailableDependencies(),
-          getSpringSettings(Number(projectId), accessToken),
-        ]);
-
+        const depsResponse = await getAvailableDependencies();
         const availableDeps: string[] =
           depsResponse?.data?.result?.dependencies || [];
+
+        let settingsResponse = null;
+        try {
+          settingsResponse = await getSpringSettings(
+            Number(projectId),
+            accessToken,
+          );
+        } catch (error) {
+          if (
+            !(error instanceof AxiosError && error.response?.status === 404)
+          ) {
+            throw error; // 예상치 못한 에러는 다시 throw
+          }
+        }
 
         const selectedDeps: string[] =
           settingsResponse?.result?.dependencies || [];
 
-        // dependencies 상태 구성
+        // dependencies 상태 먼저 세팅
         const deps: Dependency[] = availableDeps.map((name: string) => ({
           id: name,
           name,
@@ -142,14 +158,14 @@ const SpringSettingsPage: React.FC = () => {
         }));
         setDependencies(deps);
 
-        // 나머지 설정 반영
-        setSettingsExist(true);
-        mapResponseToState(settingsResponse.result);
-      } catch (error) {
-        if (error instanceof AxiosError && error.response?.status === 404) {
-          resetSettings();
+        if (settingsResponse) {
+          setSettingsExist(true);
+          mapResponseToState(settingsResponse.result);
+        } else {
+          resetSettings(); // 선택만 false로
         }
-        setSettingsExist(false);
+      } catch (error) {
+        console.error('설정 또는 의존성 불러오기 실패:', error);
       } finally {
         setLoading(false);
       }
@@ -209,6 +225,17 @@ const SpringSettingsPage: React.FC = () => {
 
   const selectedCount = dependencies.filter((dep) => dep.selected).length;
 
+  // Dialog 확인 버튼 핸들러
+  const handleDialogConfirm = () => {
+    setIsDialogOpen(false);
+    navigate(`/project/${projectId}/buildpreview`);
+  };
+
+  // Dialog 취소 버튼 핸들러
+  const handleDialogCancel = () => {
+    setIsDialogOpen(false);
+  };
+
   const handleSave = async () => {
     if (!projectId) return;
 
@@ -245,7 +272,19 @@ const SpringSettingsPage: React.FC = () => {
         await createSpringSettings(Number(projectId), requestData, accessToken);
       }
       setSettingsExist(true);
-      alert('설정이 성공적으로 저장되었습니다.');
+
+      // 코드 생성 API 호출
+      try {
+        await generateCode(projectId);
+        // 다이얼로그 표시
+        setDialogMessage(
+          '코드 생성이 완료되었습니다. 코드 미리보기로 이동하시겠습니까?',
+        );
+        setIsDialogOpen(true);
+      } catch (error) {
+        console.error('코드 생성 실패:', error);
+        alert('설정은 저장되었으나 코드 생성 중 오류가 발생했습니다.');
+      }
     } catch (error) {
       console.error('저장 실패:', error);
       alert('설정 저장 중 오류가 발생했습니다.');
@@ -349,6 +388,17 @@ const SpringSettingsPage: React.FC = () => {
           />
         </div>
       </main>
+
+      {/* Dialog 컴포넌트 */}
+      <Dialog
+        isOpen={isDialogOpen}
+        title="코드 생성 완료"
+        message={dialogMessage}
+        confirmText="미리보기로 이동"
+        cancelText="닫기"
+        onConfirm={handleDialogConfirm}
+        onCancel={handleDialogCancel}
+      />
     </div>
   );
 };

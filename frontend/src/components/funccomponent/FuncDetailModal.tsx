@@ -10,12 +10,20 @@ import {
   FaAnglesDown,
 } from 'react-icons/fa6';
 import { FaEquals as FaEqualsOld } from 'react-icons/fa';
+import ActiveUsers from '../apicomponent/ActiveUsers';
+
+interface User {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface FuncDetailModalProps {
   func: FuncDetail | null;
   onClose: () => void;
   onSave: (func: FuncDetail) => void;
   onDelete?: () => void;
+  activeUsers: User[];
 }
 
 const blankFuncDetail: FuncDetail = {
@@ -42,6 +50,7 @@ const FuncDetailModal = ({
   onClose,
   onSave,
   onDelete,
+  activeUsers,
 }: FuncDetailModalProps) => {
   const { currentProject } = useProjectStore();
   const members = currentProject?.projectMembers || [];
@@ -68,9 +77,12 @@ const FuncDetailModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden">
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-blue-700">
-            {func ? '기능 명세서 정보 수정' : '새 기능 추가'}
-          </h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-blue-700">
+              {func ? '기능 명세서 정보 수정' : '새 기능 추가'}
+            </h2>
+            <ActiveUsers users={activeUsers} size="small" />
+          </div>
           <div className="flex gap-3">
             <button
               className="px-5 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition"
@@ -138,7 +150,7 @@ const FuncDetailModal = ({
               >
                 <option value="">담당자 선택</option>
                 {members.map(member => (
-                  <option key={member.id} value={member.id}>
+                  <option key={member.id} value={member.id.toString()}>
                     {member.nickname} (@ {member.userName})
                   </option>
                 ))}

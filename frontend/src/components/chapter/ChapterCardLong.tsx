@@ -23,7 +23,7 @@ const ChapterCardLong = ({
       onClick={onClick}
       className={`p-6 cursor-pointer transition-all duration-300 ease-in-out
         w-full h-14 flex items-center justify-between
-        ${bgColor || ''} bg-white border-b text-black hover:bg-gradient-to-r hover:text-white`}
+        ${bgColor || ''} bg-white border-b text-black hover:bg-gradient-to-r `}
     >
       <div className="flex items-center gap-8">
         <div className="transition-transform duration-300 hover:scale-110">
@@ -32,7 +32,7 @@ const ChapterCardLong = ({
         <div className="text-lg font-semibold tracking-wide">{title}</div>
       </div>
       <div className="flex items-center gap-12">
-        <span className="text-xs font-medium text-gray-400">{subtitle}</span>
+        <span className="text-xs font-medium text-gray-700">{subtitle}</span>
         <RiArrowRightSLine size={18} />
       </div>
     </div>

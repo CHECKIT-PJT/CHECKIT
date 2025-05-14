@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import FuncTable from '../../components/funccomponent/FuncTable';
 import FuncDetailModal from '../../components/funccomponent/FuncDetailModal';
@@ -13,6 +13,22 @@ import {
 import useFunctionalSpecStore from '../../stores/functionStore';
 import type { FunctionalSpec } from '../../stores/functionStore';
 import JiraAddButton from '../../components/funccomponent/JiraAddButton';
+
+import ActiveUsers from '../../components/apicomponent/ActiveUsers';
+import { PRESENCE_ACTIONS, RESOURCE_TYPES } from '../../constants/websocket';
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+import { useAuth } from '../../hooks/useAuth';
+
+import { createJiraIssue } from '../../api/jiraAPI';
+import SuccessModal from '../../components/icon/SuccessModal';
+
+interface User {
+  id: string;
+  name: string;
+  color: string;
+}
+
 const priorityToNumber = (priority: string): number => {
   switch (priority) {
     case 'HIGHEST':
@@ -47,7 +63,6 @@ const numberToPriority = (priority: number): string => {
   }
 };
 
-// Utility functions for type conversion
 const convertToFuncListItem = (spec: FunctionalSpec): FuncListItem => ({
   funcId: spec.id || 0,
   funcName: spec.functionName,
@@ -61,7 +76,7 @@ const convertToFuncListItem = (spec: FunctionalSpec): FuncListItem => ({
 const convertToFuncDetail = (spec: FunctionalSpec): FuncDetail => ({
   funcName: spec.functionName,
   category: spec.category,
-  assignee: spec.userName || '',
+  assignee: spec.userId?.toString() || '',
   storyPoints: spec.storyPoint,
   priority: numberToPriority(spec.priority),
   description: spec.functionDescription,
@@ -81,20 +96,220 @@ const convertFromFuncDetail = (
   successCase: detail.successCase,
   failCase: detail.failCase,
   storyPoint: detail.storyPoints,
+  userId: Number(detail.assignee),
 });
 
 const DevelopFunc = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const { token } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedFunc, setSelectedFunc] = useState<FunctionalSpec | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [activeUsers, setActiveUsers] = useState<User[]>([]);
+  const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
+  const stompClientRef = useRef<Client | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [activeUsersByFunc, setActiveUsersByFunc] = useState<{
+    [key: string]: User[];
+  }>({});
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [jiraLink, setJiraLink] = useState<string | null>(null);
 
   const { specs } = useFunctionalSpecStore();
   const { refetch } = useGetFunctionalSpecs(Number(projectId));
   const createMutation = useCreateFunctionalSpec();
   const updateMutation = useUpdateFunctionalSpec();
   const deleteMutation = useDeleteFunctionalSpec();
+
+  // 사용자별 고유 색상 생성 함수
+  const getRandomColor = (seed: string) => {
+    const colors = [
+      '#2563EB',
+      '#DC2626',
+      '#059669',
+      '#7C3AED',
+      '#DB2777',
+      '#2563EB',
+      '#EA580C',
+      '#0D9488',
+      '#4F46E5',
+      '#BE185D',
+    ];
+    const index = seed
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
+
+  const sendPresenceMessage = (resourceId: string, action: string) => {
+    if (stompClientRef.current?.connected) {
+      stompClientRef.current.publish({
+        destination: '/pub/presence',
+        body: JSON.stringify({ resourceId, action }),
+      });
+    }
+  };
+
+  // 기능 명세별 구독 설정
+  useEffect(() => {
+    if (!isConnected || !stompClientRef.current || !specs.length) return;
+
+    const subscriptions: { [key: string]: any } = {};
+
+    // 각 기능 명세에 대한 구독 설정
+    specs.forEach(func => {
+      if (func.id) {
+        const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${func.id}`;
+
+        // 구독 설정
+        const subscription = stompClientRef.current!.subscribe(
+          `/sub/presence/${funcResourceId}`,
+          message => {
+            try {
+              const data = JSON.parse(message.body);
+              setActiveUsersByFunc(prev => ({
+                ...prev,
+                [func.id!.toString()]: data.users.map((username: string) => ({
+                  id: username,
+                  name: username,
+                  color: getRandomColor(username),
+                })),
+              }));
+            } catch (error) {
+              console.error('Failed to parse presence message:', error);
+            }
+          }
+        );
+
+        subscriptions[func.id.toString()] = subscription;
+      }
+    });
+
+    // 클린업 함수
+    return () => {
+      Object.values(subscriptions).forEach(subscription => {
+        subscription.unsubscribe();
+      });
+    };
+  }, [isConnected, specs]);
+
+  const initStomp = () => {
+    const token = sessionStorage.getItem('accessToken');
+    const sock = new SockJS(
+      `${import.meta.env.VITE_API_BASE_URL}/ws/erd?token=${token}`
+    );
+
+    const stompClient = new Client({
+      webSocketFactory: () => sock,
+      connectHeaders: {
+        Authorization: `Bearer ${token || ''}`,
+      },
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log('STOMP 연결 성공');
+        setIsConnected(true);
+
+        // 페이지 입장 알림
+        const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
+        stompClient.publish({
+          destination: '/pub/presence',
+          body: JSON.stringify({
+            resourceId: pageResourceId,
+            action: PRESENCE_ACTIONS.ENTER,
+          }),
+        });
+
+        // 페이지 사용자 목록 구독
+        stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
+          try {
+            const data = JSON.parse(message.body);
+            setActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
+          } catch (error) {
+            console.error('Failed to parse presence message:', error);
+          }
+        });
+      },
+      onDisconnect: () => {
+        console.log('STOMP 연결 해제');
+        setIsConnected(false);
+
+        // 연결이 끊어질 때 페이지에서 퇴장 처리
+        const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
+        sendPresenceMessage(pageResourceId, PRESENCE_ACTIONS.LEAVE);
+
+        // 현재 보고 있는 기능 명세 상세 페이지가 있다면 퇴장 처리
+        if (selectedFunc?.id) {
+          const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
+          sendPresenceMessage(funcResourceId, PRESENCE_ACTIONS.LEAVE);
+        }
+
+        // 연결 해제 후 사용자 목록 초기화
+        setActiveUsers([]);
+        setModalActiveUsers([]);
+        setActiveUsersByFunc({});
+      },
+      onStompError: frame => {
+        console.error('STOMP 에러:', frame);
+      },
+    });
+
+    stompClient.activate();
+    stompClientRef.current = stompClient;
+  };
+
+  useEffect(() => {
+    initStomp();
+
+    return () => {
+      if (stompClientRef.current?.connected) {
+        const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
+        sendPresenceMessage(pageResourceId, PRESENCE_ACTIONS.LEAVE);
+        stompClientRef.current.deactivate();
+      }
+    };
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!isConnected || !selectedFunc?.id) return;
+
+    const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
+
+    if (modalOpen) {
+      // 모달 열릴 때 구독 및 입장 메시지 전송
+      sendPresenceMessage(funcResourceId, PRESENCE_ACTIONS.ENTER);
+
+      const subscription = stompClientRef.current?.subscribe(
+        `/sub/presence/${funcResourceId}`,
+        message => {
+          try {
+            const data = JSON.parse(message.body);
+            setModalActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
+          } catch (error) {
+            console.error('Failed to parse presence message:', error);
+          }
+        }
+      );
+
+      return () => {
+        // 모달 닫힐 때 구독 해제 및 퇴장 메시지 전송
+        subscription?.unsubscribe();
+        sendPresenceMessage(funcResourceId, PRESENCE_ACTIONS.LEAVE);
+      };
+    }
+  }, [modalOpen, selectedFunc, isConnected]);
 
   useEffect(() => {
     if (projectId) {
@@ -118,12 +333,32 @@ const DevelopFunc = () => {
     setModalOpen(true);
   };
 
+  const handleJiraAdd = async () => {
+    if (!projectId) return;
+    try {
+      const jiraLink = await createJiraIssue(Number(projectId));
+      setShowSuccessModal(true);
+      setJiraLink(jiraLink);
+    } catch (error) {
+      console.error('Jira 이슈 등록 실패:', error);
+    }
+  };
+
   const handleRowClick = (func: FuncListItem) => {
+    // 이전 기능에서 퇴장
+    if (selectedFunc?.id) {
+      const prevResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
+      sendPresenceMessage(prevResourceId, PRESENCE_ACTIONS.LEAVE);
+    }
+
     const spec = specs.find(s => s.id === func.funcId);
     if (spec) {
       setSelectedFunc(spec);
-      setModalOpen(true);
+      // 새로운 기능에 입장
+      const newResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${spec.id}`;
+      sendPresenceMessage(newResourceId, PRESENCE_ACTIONS.ENTER);
     }
+    setModalOpen(true);
   };
 
   const handleSave = (form: FuncDetail) => {
@@ -155,12 +390,22 @@ const DevelopFunc = () => {
     }
   };
 
+  const handleModalClose = () => {
+    // 모달 닫을 때 현재 기능에서 퇴장
+    if (selectedFunc?.id) {
+      const resourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
+      sendPresenceMessage(resourceId, PRESENCE_ACTIONS.LEAVE);
+    }
+    setModalOpen(false);
+    setSelectedFunc(null);
+  };
+
   if (!projectId) return null;
 
   return (
-    <div className="mt-2 min-h-screen w-full flex flex-col bg-gray-50">
+    <div className="mt-2 w-full flex flex-col bg-gray-50">
       <div className="flex-1 flex flex-col justify-center items-center w-full">
-        <div className="w-full flex justify-between items-center mb-4">
+        <div className="w-full flex justify-between items-center my-4">
           <div className="flex-1 max-w-md">
             <input
               type="text"
@@ -170,27 +415,46 @@ const DevelopFunc = () => {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="ml-4 flex gap-2">
-            <FuncAddButton onClick={handleAdd} />
-            <JiraAddButton onClick={handleAdd} />
+          <div className="ml-4 flex items-center gap-4">
+            <ActiveUsers users={activeUsers} size="medium" />
+            <div className="flex gap-2">
+              <FuncAddButton onClick={handleAdd} />
+              <JiraAddButton onClick={handleAdd} />
+            </div>
+            <div className="ml-4 flex gap-2">
+              <FuncAddButton onClick={handleAdd} />
+              <JiraAddButton onClick={handleJiraAdd} />
+            </div>
+          </div>
+          <div className="w-full flex-1 flex justify-center items-start overflow-y-auto">
+            <FuncTable
+              data={filteredData}
+              onRowClick={handleRowClick}
+              selectedCategory={selectedCategory}
+              activeUsersByFunc={activeUsersByFunc}
+            />
           </div>
         </div>
-        <div className="w-full h-full flex-1 flex justify-center items-start">
-          <FuncTable
-            data={filteredData}
-            onRowClick={handleRowClick}
-            selectedCategory={selectedCategory}
+        {modalOpen && (
+          <FuncDetailModal
+            func={selectedFunc ? convertToFuncDetail(selectedFunc) : null}
+            onClose={handleModalClose}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            activeUsers={modalActiveUsers}
           />
-        </div>
-      </div>
-      {modalOpen && (
-        <FuncDetailModal
-          func={selectedFunc ? convertToFuncDetail(selectedFunc) : null}
-          onClose={() => setModalOpen(false)}
-          onSave={handleSave}
-          onDelete={handleDelete}
+        )}
+        <SuccessModal
+          visible={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setJiraLink(null);
+          }}
+          title="이슈 등록 완료"
+          description="프로젝트에 성공적으로 등록되었습니다."
+          link={jiraLink || undefined}
         />
-      )}
+      </div>
     </div>
   );
 };

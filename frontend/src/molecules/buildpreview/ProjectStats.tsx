@@ -1,5 +1,5 @@
 interface ProjectStatsProps {
-  status: number;
+  status: string;
   message: string;
   fileCount: number;
 }
@@ -15,7 +15,7 @@ const ProjectStats: React.FC<ProjectStatsProps> = ({
   return (
     <div className="text-xs text-gray-500 mt-4 p-2">
       <p>
-        상태: <span className="text-green-500">✓ 파일 생성 완료</span>
+        상태: <span className="text-green-500">✓ {status}</span>
       </p>
       <p>메시지: {message}</p>
       <p>생성된 파일: {fileCount}개</p>

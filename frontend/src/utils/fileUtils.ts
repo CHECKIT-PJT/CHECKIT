@@ -5,10 +5,12 @@ import { ProjectData } from '../types';
  * @param {ProjectData} data - 프로젝트 데이터
  * @returns {number} 전체 파일 개수
  */
-export const countFiles = (data: ProjectData): number => {
+export const countFiles = (data: ProjectData | null | undefined): number => {
+  if (!data) return 0;
+
   return Object.values(data).reduce(
     (acc, folder) => acc + Object.keys(folder).length,
-    0
+    0,
   );
 };
 
