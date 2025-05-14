@@ -51,7 +51,9 @@ const DevelopApi = () => {
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [activeUsersByApi, setActiveUsersByApi] = useState<{ [key: string]: User[] }>({});
+  const [activeUsersByApi, setActiveUsersByApi] = useState<{
+    [key: string]: User[];
+  }>({});
 
   // API hooks
   const { data: apiListItems = [], isLoading } = useGetApiSpecs(
@@ -63,10 +65,20 @@ const DevelopApi = () => {
   // 사용자별 고유 색상 생성 함수
   const getRandomColor = (seed: string) => {
     const colors = [
-      '#2563EB', '#DC2626', '#059669', '#7C3AED', '#DB2777',
-      '#2563EB', '#EA580C', '#0D9488', '#4F46E5', '#BE185D'
+      '#2563EB',
+      '#DC2626',
+      '#059669',
+      '#7C3AED',
+      '#DB2777',
+      '#2563EB',
+      '#EA580C',
+      '#0D9488',
+      '#4F46E5',
+      '#BE185D',
     ];
-    const index = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = seed
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];
   };
 
@@ -78,49 +90,6 @@ const DevelopApi = () => {
       });
     }
   };
-
-  // API 명세별 구독 설정
-  useEffect(() => {
-    if (!isConnected || !stompClientRef.current || !apiListItems.length) return;
-
-    const subscriptions: { [key: string]: any } = {};
-
-    // 각 API 명세에 대한 구독 설정
-    apiListItems.forEach((api: ApiDocListItem) => {
-      if (api.apiSpecId) {
-        const apiResourceId = `${RESOURCE_TYPES.API_SPEC}-${api.apiSpecId}`;
-        
-        // 구독 설정
-        const subscription = stompClientRef.current!.subscribe(
-          `/sub/presence/${apiResourceId}`,
-          message => {
-            try {
-              const data = JSON.parse(message.body);
-              setActiveUsersByApi(prev => ({
-                ...prev,
-                [api.apiSpecId!.toString()]: data.users.map((username: string) => ({
-                  id: username,
-                  name: username,
-                  color: getRandomColor(username),
-                })),
-              }));
-            } catch (error) {
-              console.error('Failed to parse presence message:', error);
-            }
-          }
-        );
-
-        subscriptions[api.apiSpecId.toString()] = subscription;
-      }
-    });
-
-    // 클린업 함수
-    return () => {
-      Object.values(subscriptions).forEach(subscription => {
-        subscription.unsubscribe();
-      });
-    };
-  }, [isConnected, apiListItems]);
 
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
@@ -142,9 +111,9 @@ const DevelopApi = () => {
         const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
         stompClient.publish({
           destination: '/pub/presence',
-          body: JSON.stringify({ 
-            resourceId: pageResourceId, 
-            action: PRESENCE_ACTIONS.ENTER 
+          body: JSON.stringify({
+            resourceId: pageResourceId,
+            action: PRESENCE_ACTIONS.ENTER,
           }),
         });
 
@@ -152,15 +121,46 @@ const DevelopApi = () => {
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
           try {
             const data = JSON.parse(message.body);
-            setActiveUsers(data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getRandomColor(username),
-            })));
+            setActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
         });
+
+        // API 명세별 구독 설정
+        if (apiListItems.length > 0) {
+          apiListItems.forEach((api: ApiDocListItem) => {
+            if (api.apiSpecId) {
+              const apiResourceId = `${RESOURCE_TYPES.API_SPEC}-${api.apiSpecId}`;
+              stompClient.subscribe(
+                `/sub/presence/${apiResourceId}`,
+                message => {
+                  try {
+                    const data = JSON.parse(message.body);
+                    setActiveUsersByApi(prev => ({
+                      ...prev,
+                      [api.apiSpecId!.toString()]: data.users.map(
+                        (username: string) => ({
+                          id: username,
+                          name: username,
+                          color: getRandomColor(username),
+                        })
+                      ),
+                    }));
+                  } catch (error) {
+                    console.error('Failed to parse presence message:', error);
+                  }
+                }
+              );
+            }
+          });
+        }
       },
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
@@ -210,17 +210,19 @@ const DevelopApi = () => {
     if (modalOpen) {
       // 모달 열릴 때 구독 및 입장 메시지 전송
       sendPresenceMessage(apiResourceId, PRESENCE_ACTIONS.ENTER);
-      
+
       const subscription = stompClientRef.current?.subscribe(
         `/sub/presence/${apiResourceId}`,
         message => {
           try {
             const data = JSON.parse(message.body);
-            setModalActiveUsers(data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getRandomColor(username),
-            })));
+            setModalActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
@@ -310,7 +312,9 @@ const DevelopApi = () => {
         onSuccess: () => {
           setModalOpen(false);
           setSelectedApi(null);
-          queryClient.invalidateQueries({ queryKey: ['apiSpecs', Number(projectId)] });
+          queryClient.invalidateQueries({
+            queryKey: ['apiSpecs', Number(projectId)],
+          });
         },
       }
     );
@@ -329,7 +333,9 @@ const DevelopApi = () => {
           onSuccess: () => {
             setModalOpen(false);
             setSelectedApi(null);
-            queryClient.invalidateQueries({ queryKey: ['apiSpecs', Number(projectId)] });
+            queryClient.invalidateQueries({
+              queryKey: ['apiSpecs', Number(projectId)],
+            });
           },
         }
       );

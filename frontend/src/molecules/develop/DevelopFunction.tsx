@@ -151,49 +151,6 @@ const DevelopFunc = () => {
     }
   };
 
-  // 기능 명세별 구독 설정
-  useEffect(() => {
-    if (!isConnected || !stompClientRef.current || !specs.length) return;
-
-    const subscriptions: { [key: string]: any } = {};
-
-    // 각 기능 명세에 대한 구독 설정
-    specs.forEach(func => {
-      if (func.id) {
-        const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${func.id}`;
-
-        // 구독 설정
-        const subscription = stompClientRef.current!.subscribe(
-          `/sub/presence/${funcResourceId}`,
-          message => {
-            try {
-              const data = JSON.parse(message.body);
-              setActiveUsersByFunc(prev => ({
-                ...prev,
-                [func.id!.toString()]: data.users.map((username: string) => ({
-                  id: username,
-                  name: username,
-                  color: getRandomColor(username),
-                })),
-              }));
-            } catch (error) {
-              console.error('Failed to parse presence message:', error);
-            }
-          }
-        );
-
-        subscriptions[func.id.toString()] = subscription;
-      }
-    });
-
-    // 클린업 함수
-    return () => {
-      Object.values(subscriptions).forEach(subscription => {
-        subscription.unsubscribe();
-      });
-    };
-  }, [isConnected, specs]);
-
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -235,6 +192,35 @@ const DevelopFunc = () => {
             console.error('Failed to parse presence message:', error);
           }
         });
+
+        // 기능 명세별 구독 설정
+        if (specs.length > 0) {
+          specs.forEach(func => {
+            if (func.id) {
+              const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${func.id}`;
+              stompClient.subscribe(
+                `/sub/presence/${funcResourceId}`,
+                message => {
+                  try {
+                    const data = JSON.parse(message.body);
+                    setActiveUsersByFunc(prev => ({
+                      ...prev,
+                      [func.id!.toString()]: data.users.map(
+                        (username: string) => ({
+                          id: username,
+                          name: username,
+                          color: getRandomColor(username),
+                        })
+                      ),
+                    }));
+                  } catch (error) {
+                    console.error('Failed to parse presence message:', error);
+                  }
+                }
+              );
+            }
+          });
+        }
       },
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
