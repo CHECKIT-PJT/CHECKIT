@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import Layout from '../pages/Layout';
 import DevelopErd from '../molecules/develop/DevelopErd';
 import DevelopApi from '../molecules/develop/DevelopApi';
@@ -26,9 +26,10 @@ import NotFoundPage from '../pages/NotFoundPage';
 
 const Router = () => {
   // 로그인 체크
-  const ProtectedRoute = ({ element }: { element: React.ReactNode }) => {
-    const token = sessionStorage.getItem('token');
-    return token ? element : <Navigate to="/" replace />;
+  const ProtectedRoute = () => {
+    const token = sessionStorage.getItem('accessToken');
+    console.log('token', token);
+    return token ? <Outlet /> : <Navigate to="/" replace />;
   };
 
   return (
@@ -40,46 +41,48 @@ const Router = () => {
       <Route path="*" element={<NotFoundPage />} />
 
       {/* 로그인 페이지 */}
-      <Route element={<ProtectedRoute element={<Layout />} />}>
-        <Route path="/project" element={<ProjectPage />}>
-          <Route index element={<ProjectList />} />
-          <Route path=":projectId" element={<ProjectDetail />}>
-            <Route index element={<InputSelect />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route path="/project" element={<ProjectPage />}>
+            <Route index element={<ProjectList />} />
+            <Route path=":projectId" element={<ProjectDetail />}>
+              <Route index element={<InputSelect />} />
+            </Route>
           </Route>
-        </Route>
-        <Route path="/project/:projectId/develop" element={<DevelopPage />}>
-          <Route index element={<InputSelect />} />
-          <Route path="erd" element={<DevelopErd />} />
-          <Route path="api" element={<DevelopApi />} />
-          <Route path="function" element={<DevelopFunction />} />
-        </Route>
-        <Route path="/create" element={<ProjectCreatePage />} />
-        <Route path="/project/:projectId/build" element={<BuildSelect />} />
-        <Route
-          path="/project/:projectId/spring"
-          element={<SpringSettingPage />}
-        />
-        <Route
-          path="/project/:projectId/doc/sequence"
-          element={<SequenceDiagramPage />}
-        />
-        <Route
-          path="/project/:projectId/doc/readme"
-          element={<MarkdownEditorPage />}
-        />
-        <Route
-          path="/project/:projectId/buildpreview"
-          element={<BuildPreviewPage />}
-        />
+          <Route path="/project/:projectId/develop" element={<DevelopPage />}>
+            <Route index element={<InputSelect />} />
+            <Route path="erd" element={<DevelopErd />} />
+            <Route path="api" element={<DevelopApi />} />
+            <Route path="function" element={<DevelopFunction />} />
+          </Route>
+          <Route path="/create" element={<ProjectCreatePage />} />
+          <Route path="/project/:projectId/build" element={<BuildSelect />} />
+          <Route
+            path="/project/:projectId/spring"
+            element={<SpringSettingPage />}
+          />
+          <Route
+            path="/project/:projectId/doc/sequence"
+            element={<SequenceDiagramPage />}
+          />
+          <Route
+            path="/project/:projectId/doc/readme"
+            element={<MarkdownEditorPage />}
+          />
+          <Route
+            path="/project/:projectId/buildpreview"
+            element={<BuildPreviewPage />}
+          />
 
-        <Route
-          path="/project/:projectId/build/option"
-          element={<BuildOptionPage />}
-        >
-          <Route index element={<BranchConvention />} />
-          <Route path="branch" element={<BranchConvention />} />
-          <Route path="commit" element={<CommitConvention />} />
-          <Route path="gitignore" element={<GitignoreConvention />} />
+          <Route
+            path="/project/:projectId/build/option"
+            element={<BuildOptionPage />}
+          >
+            <Route index element={<BranchConvention />} />
+            <Route path="branch" element={<BranchConvention />} />
+            <Route path="commit" element={<CommitConvention />} />
+            <Route path="gitignore" element={<GitignoreConvention />} />
+          </Route>
         </Route>
       </Route>
     </Routes>
