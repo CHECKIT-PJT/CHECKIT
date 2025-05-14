@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class EntityGenerateService {
 
-	private final StringBuilder imports = new StringBuilder();
 	private final Set<String> importSet = new HashSet<>();
+	private final List<String> importLines = new ArrayList<>();
 
 	public Map<String, String> generateEntitiesFromErdJson(String erdJson, String basePackage) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
@@ -61,21 +61,27 @@ public class EntityGenerateService {
 	}
 
 	public String generateEntityCode(MinimalTable table, String fullPackage, String className) {
-		imports.setLength(0);
 		importSet.clear();
-
+		importLines.clear();
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("package ").append(fullPackage).append(";\n\n");
 
 		addImport("import jakarta.persistence.*;");
 		addImport("import lombok.*;");
-		sb.append(imports).append("\n");
+
+		for (MinimalColumn column : table.columns()) {
+			toJavaType(column.type());
+		}
+
+		for (String imp : importLines) {
+			sb.append(imp).append("\n");
+		}
+		sb.append("\n");
 
 		sb.append("@Entity\n");
 		sb.append("@Table(name = \"").append(table.name().toLowerCase()).append("\")\n");
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
-
 		sb.append("public class ").append(className).append(" {\n\n");
 
 		for (MinimalColumn col : table.columns()) {
@@ -126,86 +132,90 @@ public class EntityGenerateService {
 		return sb.toString();
 	}
 
-	/**
-	 * DB의 데이터 타입을 Java 타입으로 변환합니다.
-	 * + 해당 타입이 필요한 경우 자동으로 import 문도 추가합니다.
-	 */
 	private String toJavaType(String dataType) {
 		if (dataType == null)
 			return "String";
 
 		String upper = dataType.toUpperCase();
+		String javaType = "String";
 
-		// 숫자 타입 매핑
-		if (upper.equals("BIGINT") || upper.equals("BIGINT(LONG)"))
-			return "Long";
-		if (upper.equals("INT") || upper.equals("INTEGER") || upper.equals("INT(INTEGER)"))
-			return "Integer";
-		if (upper.equals("SMALLINT") || upper.equals("SMALLINT(SHORT)"))
-			return "Short";
-		if (upper.equals("TINYINT") || upper.equals("TINYINT(BYTE)"))
-			return "Byte";
-		if (upper.equals("FLOAT") || upper.equals("FLOAT(FLOAT)"))
-			return "Float";
-		if (upper.equals("DOUBLE") || upper.equals("DOUBLE(DOUBLE)"))
-			return "Double";
-
-		// 문자 타입 매핑
-		if (upper.equals("CHAR") || upper.equals("CHAR(CHARACTER)"))
-			return "Character";
-		if (upper.matches("VARCHAR|TEXT|LONGTEXT|MEDIUMTEXT|STRING"))
-			return "String";
-
-		// 불리언
-		if (upper.equals("BOOLEAN") || upper.equals("BOOL"))
-			return "Boolean";
-
-		// 날짜/시간
-		if (upper.equals("DATE")) {
-			if (!imports.toString().contains("java.time.LocalDate")) {
+		switch (upper) {
+			case "BIGINT":
+			case "BIGINT(LONG)":
+				javaType = "Long";
+				break;
+			case "INT":
+			case "INTEGER":
+			case "INT(INTEGER)":
+				javaType = "Integer";
+				break;
+			case "SMALLINT":
+			case "SMALLINT(SHORT)":
+				javaType = "Short";
+				break;
+			case "TINYINT":
+			case "TINYINT(BYTE)":
+				javaType = "Byte";
+				break;
+			case "FLOAT":
+			case "FLOAT(FLOAT)":
+				javaType = "Float";
+				break;
+			case "DOUBLE":
+			case "DOUBLE(DOUBLE)":
+				javaType = "Double";
+				break;
+			case "CHAR":
+			case "CHAR(CHARACTER)":
+				javaType = "Character";
+				break;
+			case "VARCHAR":
+			case "TEXT":
+			case "LONGTEXT":
+			case "MEDIUMTEXT":
+			case "STRING":
+				javaType = "String";
+				break;
+			case "BOOLEAN":
+			case "BOOL":
+				javaType = "Boolean";
+				break;
+			case "DATE":
 				addImport("import java.time.LocalDate;");
-			}
-			return "LocalDate";
-		}
-
-		if (upper.equals("DATETIME") || upper.equals("TIMESTAMP")) {
-			if (!imports.toString().contains("java.time.LocalDateTime")) {
+				javaType = "LocalDate";
+				break;
+			case "DATETIME":
+			case "TIMESTAMP":
 				addImport("import java.time.LocalDateTime;");
-			}
-			return "LocalDateTime";
-		}
-
-		if (upper.equals("TIME")) {
-			if (!imports.toString().contains("java.time.LocalTime")) {
+				javaType = "LocalDateTime";
+				break;
+			case "TIME":
 				addImport("import java.time.LocalTime;");
-			}
-			return "LocalTime";
-		}
-
-		// 기타
-		if (upper.equals("UUID") || upper.equals("UNIQUEIDENTIFIER")) {
-			if (!imports.toString().contains("java.util.UUID")) {
+				javaType = "LocalTime";
+				break;
+			case "UUID":
+			case "UNIQUEIDENTIFIER":
 				addImport("import java.util.UUID;");
-			}
-			return "UUID";
-		}
-
-		if (upper.equals("DECIMAL") || upper.equals("NUMERIC")) {
-			if (!imports.toString().contains("java.math.BigDecimal")) {
+				javaType = "UUID";
+				break;
+			case "DECIMAL":
+			case "NUMERIC":
 				addImport("import java.math.BigDecimal;");
-			}
-			return "BigDecimal";
+				javaType = "BigDecimal";
+				break;
+			case "BLOB":
+			case "LONGBLOB":
+				javaType = "byte[]";
+				break;
+			default:
+				javaType = "String";
 		}
-
-		if (upper.equals("BLOB") || upper.equals("LONGBLOB"))
-			return "byte[]";
-
-		// 기본값
-		return "String";
+		return javaType;
 	}
 
-	private void addImport(String imp) {
-		if (importSet.add(imp))
-			imports.append(imp).append("\n");
+	private void addImport(String statement) {
+		if (importSet.add(statement)) {
+			importLines.add(statement);
+		}
 	}
 }
