@@ -3,7 +3,7 @@ import axiosInstance from './axiosInstance';
 // GitLab OAuth 리다이렉션
 export const redirectToGitLabLogin = () => {
   const clientId = import.meta.env.VITE_GITLAB_CLIENT_ID;
-  const redirectUri = 'https://checkit.my/gitlab/callback';
+  const redirectUri = 'http://checkit.my/gitlab/callback';
   const scope = 'read_user read_repository write_repository api';
   const encodedScope = encodeURIComponent(scope);
   const gitlabUrl = `https://lab.ssafy.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodedScope}`;
