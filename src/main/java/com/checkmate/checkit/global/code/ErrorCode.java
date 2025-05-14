@@ -55,6 +55,10 @@ public enum ErrorCode {
 	// 이메일 관련 에러
 	MAIL_SEND_FAILED(500, INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
 
+	//Spring 프로젝트 관련 에러
+	SPRING_PROJECT_DOWNLOAD(404, BAD_REQUEST, "Spring 프로젝트 다운로드 실패"),
+	SPRING_CODE_FILE_SAVE(400, BAD_REQUEST, "코드 파일 저장 실패"),
+
 	// Git 관련 에러
 	GIT_SETTING_NOT_FOUND(404, NOT_FOUND, "Git 설정을 찾을 수 없습니다."),
 	GIT_IGNORE_NOT_FOUND(404, NOT_FOUND, "GitIgnore를 찾을 수 없습니다."),

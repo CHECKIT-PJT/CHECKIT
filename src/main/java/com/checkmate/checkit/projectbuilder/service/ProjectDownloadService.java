@@ -12,6 +12,8 @@ import org.springframework.web.client.RestTemplate;
 
 import net.lingala.zip4j.ZipFile;
 
+import com.checkmate.checkit.global.code.ErrorCode;
+import com.checkmate.checkit.global.exception.CommonException;
 import com.checkmate.checkit.projectbuilder.dto.InitializerRequest;
 import com.checkmate.checkit.projectbuilder.util.FileUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -61,8 +63,9 @@ public class ProjectDownloadService {
 			log.info("[Success] Extracted project to: {}", BASE_PATH + request.getSpringName());
 		} catch (Exception e) {
 			log.error("[Error] Failed to download or extract zip", e);
-			throw new RuntimeException("Spring 프로젝트 다운로드 실패");
+			throw new CommonException(ErrorCode.SPRING_PROJECT_DOWNLOAD);
 		}
+		
 	}
 
 	/**
