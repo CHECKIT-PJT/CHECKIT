@@ -156,6 +156,7 @@ const DevelopFunc = () => {
     }
   };
 
+<<<<<<< HEAD
   // 기능 명세별 구독 설정
   useEffect(() => {
     if (!isConnected || !stompClientRef.current || !specs.length) return;
@@ -229,6 +230,8 @@ const DevelopFunc = () => {
     };
   }, [handleMouseMove]);
 
+=======
+>>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -271,6 +274,7 @@ const DevelopFunc = () => {
           }
         });
 
+<<<<<<< HEAD
         // 커서 위치 구독
         stompClient.subscribe(`/sub/cursor/${projectId}/function`, message => {
           try {
@@ -292,6 +296,36 @@ const DevelopFunc = () => {
             console.error('Failed to parse cursor message:', error);
           }
         });
+=======
+        // 기능 명세별 구독 설정
+        if (specs.length > 0) {
+          specs.forEach(func => {
+            if (func.id) {
+              const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${func.id}`;
+              stompClient.subscribe(
+                `/sub/presence/${funcResourceId}`,
+                message => {
+                  try {
+                    const data = JSON.parse(message.body);
+                    setActiveUsersByFunc(prev => ({
+                      ...prev,
+                      [func.id!.toString()]: data.users.map(
+                        (username: string) => ({
+                          id: username,
+                          name: username,
+                          color: getRandomColor(username),
+                        })
+                      ),
+                    }));
+                  } catch (error) {
+                    console.error('Failed to parse presence message:', error);
+                  }
+                }
+              );
+            }
+          });
+        }
+>>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
       },
       onDisconnect: () => {
         console.log('STOMP 연결 해제');

@@ -54,7 +54,7 @@ const SpringSettingsPage: React.FC = () => {
   const [groupId, setGroupId] = useState('com.example');
   const [artifactId, setArtifactId] = useState('demo');
   const [description, setDescription] = useState(
-    'Spring Boot 기반 백엔드 프로젝트',
+    'Spring Boot 기반 백엔드 프로젝트'
   );
   const [projectName, setProjectName] = useState('demo');
   const [packageName, setPackageName] = useState('com.example.demo');
@@ -109,7 +109,7 @@ const SpringSettingsPage: React.FC = () => {
     setPackageName('');
 
     // 이전에 deps 세팅은 loadData에서 했으므로, 선택만 false로 바꿈
-    setDependencies((prev) => prev.map((d) => ({ ...d, selected: false })));
+    setDependencies(prev => prev.map(d => ({ ...d, selected: false })));
     setSettingsExist(false);
   };
 
@@ -136,7 +136,7 @@ const SpringSettingsPage: React.FC = () => {
         try {
           settingsResponse = await getSpringSettings(
             Number(projectId),
-            accessToken,
+            accessToken
           );
         } catch (error) {
           if (
@@ -189,11 +189,17 @@ const SpringSettingsPage: React.FC = () => {
     const projectTypeMap = { MAVEN: 'Maven Project', GRADLE: 'Gradle Project' };
     const languageMap = { JAVA: 'Java', KOTLIN: 'Kotlin', GROOVY: 'Groovy' };
     const packagingMap = { JAR: 'Jar', WAR: 'War' };
-
     setSpringBootVersion(formatSpringVersion(data.springVersion));
-    setProjectType(projectTypeMap[data.springProject] || 'Maven Project');
-    setLanguage(languageMap[data.springLanguage] || 'Java');
-    setPackaging(packagingMap[data.springPackaging] || 'Jar');
+    setProjectType(
+      projectTypeMap[data.springProject as keyof typeof projectTypeMap] ||
+        'Maven Project'
+    );
+    setLanguage(
+      languageMap[data.springLanguage as keyof typeof languageMap] || 'Java'
+    );
+    setPackaging(
+      packagingMap[data.springPackaging as keyof typeof packagingMap] || 'Jar'
+    );
     setJavaVersion(data.springJavaVersion?.toString() || '17');
 
     setGroupId(data.springGroup || '');
@@ -205,9 +211,9 @@ const SpringSettingsPage: React.FC = () => {
 
   const toggleDependency = (id: string) => {
     setDependencies(
-      dependencies.map((dep) =>
-        dep.id === id ? { ...dep, selected: !dep.selected } : dep,
-      ),
+      dependencies.map(dep =>
+        dep.id === id ? { ...dep, selected: !dep.selected } : dep
+      )
     );
   };
 
@@ -217,13 +223,13 @@ const SpringSettingsPage: React.FC = () => {
 
   const filteredDependencies = searchQuery
     ? dependencies.filter(
-        (dep) =>
+        dep =>
           dep.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          dep.description.toLowerCase().includes(searchQuery.toLowerCase()),
+          dep.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : dependencies;
 
-  const selectedCount = dependencies.filter((dep) => dep.selected).length;
+  const selectedCount = dependencies.filter(dep => dep.selected).length;
 
   // Dialog 확인 버튼 핸들러
   const handleDialogConfirm = () => {
@@ -260,9 +266,7 @@ const SpringSettingsPage: React.FC = () => {
         springPackaging: packaging === 'Jar' ? 'JAR' : 'WAR',
         springJavaVersion: parseInt(javaVersion),
       },
-      selectedDependencies: dependencies
-        .filter((d) => d.selected)
-        .map((d) => d.id),
+      selectedDependencies: dependencies.filter(d => d.selected).map(d => d.id),
     };
 
     try {
@@ -278,7 +282,7 @@ const SpringSettingsPage: React.FC = () => {
         await generateCode(projectId);
         // 다이얼로그 표시
         setDialogMessage(
-          '코드 생성이 완료되었습니다. 코드 미리보기로 이동하시겠습니까?',
+          '코드 생성이 완료되었습니다. 코드 미리보기로 이동하시겠습니까?'
         );
         setIsDialogOpen(true);
       } catch (error) {
@@ -394,7 +398,7 @@ const SpringSettingsPage: React.FC = () => {
         isOpen={isDialogOpen}
         title="코드 생성 완료"
         message={dialogMessage}
-        confirmText="미리보기로 이동"
+        confirmText="미리보기"
         cancelText="닫기"
         onConfirm={handleDialogConfirm}
         onCancel={handleDialogCancel}

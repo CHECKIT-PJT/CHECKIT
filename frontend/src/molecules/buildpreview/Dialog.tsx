@@ -1,3 +1,5 @@
+import { FaCheck } from 'react-icons/fa';
+
 interface DialogProps {
   isOpen: boolean;
   title?: string;
@@ -12,7 +14,7 @@ const Dialog: React.FC<DialogProps> = ({
   isOpen,
   title,
   message,
-  confirmText = '확인',
+  confirmText,
   cancelText = '취소',
   onConfirm,
   onCancel,
@@ -20,52 +22,27 @@ const Dialog: React.FC<DialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity" onClick={onCancel}>
-          <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg px-14 py-8 max-w-sm mx-4 shadow-xl text-center">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <FaCheck className="w-8 h-8 text-blue-700" />
         </div>
+        <h2 className="text-xl font-semibold mb-2 text-blue-800">{title}</h2>
+        <p className="text-gray-700 whitespace-pre-line mb-10">{message}</p>
 
-        {/* 모달 창 */}
-        <div
-          className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-headline"
-        >
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="sm:flex sm:items-start">
-              <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                {title && (
-                  <h3
-                    className="text-lg leading-6 font-medium text-gray-900"
-                    id="modal-headline"
-                  >
-                    {title}
-                  </h3>
-                )}
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">{message}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-            <button
-              type="button"
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-              onClick={onConfirm}
-            >
-              {confirmText}
-            </button>
-            <button
-              type="button"
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-              onClick={onCancel}
-            >
-              {cancelText}
-            </button>
-          </div>
+        <div className="flex justify-center gap-11">
+          <button
+            onClick={onCancel}
+            className="w-full py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm transition text-slate-700"
+          >
+            <b>{cancelText}</b>
+          </button>
+          <button
+            onClick={onConfirm}
+            className="w-full py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-md text-sm transition"
+          >
+            <b>{confirmText}</b>
+          </button>
         </div>
       </div>
     </div>

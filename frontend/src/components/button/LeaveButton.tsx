@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useDeleteProject, useLeaveProject } from '../../api/projectAPI';
 import { toast } from 'react-toastify';
 import { RiDeleteBin6Line } from 'react-icons/ri';
+import { ImExit } from 'react-icons/im';
 
 interface LeaveButtonProps {
   onClick?: () => void;
@@ -50,8 +51,9 @@ const LeaveButton = ({ onClick, role }: LeaveButtonProps) => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`shadow px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-primary-50 transition-colors`}
+        className={`px-2 py-2 text-base text-red-800 text-primary-600 rounded-lg border border-transparent hover:bg-white hover:border-gray-200 transition-all flex items-center gap-2`}
       >
+        <ImExit className="w-4 h-4 " />
         {role === 'OWNER' ? '프로젝트 삭제' : '떠나기'}
       </button>
       {showModal && (

@@ -54,9 +54,15 @@ const DevelopApi = () => {
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+<<<<<<< HEAD
   const [activeUsersByApi, setActiveUsersByApi] = useState<{ [key: string]: User[] }>({});
   const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
   const containerRef = useRef<HTMLDivElement>(null);
+=======
+  const [activeUsersByApi, setActiveUsersByApi] = useState<{
+    [key: string]: User[];
+  }>({});
+>>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
 
   // API hooks
   const { data: apiListItems = [], isLoading } = useGetApiSpecs(
@@ -68,10 +74,20 @@ const DevelopApi = () => {
   // 사용자별 고유 색상 생성 함수
   const getRandomColor = (seed: string) => {
     const colors = [
-      '#2563EB', '#DC2626', '#059669', '#7C3AED', '#DB2777',
-      '#2563EB', '#EA580C', '#0D9488', '#4F46E5', '#BE185D'
+      '#2563EB',
+      '#DC2626',
+      '#059669',
+      '#7C3AED',
+      '#DB2777',
+      '#2563EB',
+      '#EA580C',
+      '#0D9488',
+      '#4F46E5',
+      '#BE185D',
     ];
-    const index = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = seed
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];
   };
 
@@ -84,6 +100,7 @@ const DevelopApi = () => {
     }
   };
 
+<<<<<<< HEAD
   // 기능 명세별 구독 설정
   useEffect(() => {
     if (!isConnected || !stompClientRef.current || !apiListItems.length) return;
@@ -187,6 +204,8 @@ const DevelopApi = () => {
   }, [handleMouseMove]);
 
   // 웹소켓 연결 시 커서 구독 추가
+=======
+>>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -207,9 +226,9 @@ const DevelopApi = () => {
         const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
         stompClient.publish({
           destination: '/pub/presence',
-          body: JSON.stringify({ 
-            resourceId: pageResourceId, 
-            action: PRESENCE_ACTIONS.ENTER 
+          body: JSON.stringify({
+            resourceId: pageResourceId,
+            action: PRESENCE_ACTIONS.ENTER,
           }),
         });
 
@@ -217,16 +236,19 @@ const DevelopApi = () => {
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
           try {
             const data = JSON.parse(message.body);
-            setActiveUsers(data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getRandomColor(username),
-            })));
+            setActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
         });
 
+<<<<<<< HEAD
         // 커서 위치 구독
         stompClient.subscribe(`/sub/cursor/${projectId}/api`, message => {
           try {
@@ -248,6 +270,36 @@ const DevelopApi = () => {
             console.error('Failed to parse cursor message:', error);
           }
         });
+=======
+        // API 명세별 구독 설정
+        if (apiListItems.length > 0) {
+          apiListItems.forEach((api: ApiDocListItem) => {
+            if (api.apiSpecId) {
+              const apiResourceId = `${RESOURCE_TYPES.API_SPEC}-${api.apiSpecId}`;
+              stompClient.subscribe(
+                `/sub/presence/${apiResourceId}`,
+                message => {
+                  try {
+                    const data = JSON.parse(message.body);
+                    setActiveUsersByApi(prev => ({
+                      ...prev,
+                      [api.apiSpecId!.toString()]: data.users.map(
+                        (username: string) => ({
+                          id: username,
+                          name: username,
+                          color: getRandomColor(username),
+                        })
+                      ),
+                    }));
+                  } catch (error) {
+                    console.error('Failed to parse presence message:', error);
+                  }
+                }
+              );
+            }
+          });
+        }
+>>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
       },
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
@@ -298,17 +350,19 @@ const DevelopApi = () => {
     if (modalOpen) {
       // 모달 열릴 때 구독 및 입장 메시지 전송
       sendPresenceMessage(apiResourceId, PRESENCE_ACTIONS.ENTER);
-      
+
       const subscription = stompClientRef.current?.subscribe(
         `/sub/presence/${apiResourceId}`,
         message => {
           try {
             const data = JSON.parse(message.body);
-            setModalActiveUsers(data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getRandomColor(username),
-            })));
+            setModalActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
@@ -398,7 +452,9 @@ const DevelopApi = () => {
         onSuccess: () => {
           setModalOpen(false);
           setSelectedApi(null);
-          queryClient.invalidateQueries({ queryKey: ['apiSpecs', Number(projectId)] });
+          queryClient.invalidateQueries({
+            queryKey: ['apiSpecs', Number(projectId)],
+          });
         },
       }
     );
@@ -417,7 +473,9 @@ const DevelopApi = () => {
           onSuccess: () => {
             setModalOpen(false);
             setSelectedApi(null);
-            queryClient.invalidateQueries({ queryKey: ['apiSpecs', Number(projectId)] });
+            queryClient.invalidateQueries({
+              queryKey: ['apiSpecs', Number(projectId)],
+            });
           },
         }
       );
