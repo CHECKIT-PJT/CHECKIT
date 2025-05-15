@@ -5,11 +5,7 @@ const redirectUriInfo = import.meta.env.VITE_REDIRECT_URI_INFO;
 // GitLab OAuth 리다이렉션
 export const redirectToGitLabLogin = () => {
   const clientId = import.meta.env.VITE_GITLAB_CLIENT_ID;
-<<<<<<< HEAD
-  const redirectUri = 'http://localhost:5173/gitlab/callback';
-=======
   const redirectUri = `${redirectUriInfo}/gitlab/callback`;
->>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
   const scope = 'read_user read_repository write_repository api';
   const encodedScope = encodeURIComponent(scope);
   const gitlabUrl = `https://lab.ssafy.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodedScope}`;
@@ -20,11 +16,7 @@ export const redirectToGitLabLogin = () => {
 // Jira OAuth 리다이렉션
 export const redirectToJiraLogin = () => {
   const clientId = import.meta.env.VITE_JIRA_CLIENT_ID;
-<<<<<<< HEAD
-  const redirectUri = 'http://localhost:5173/jira/callback';
-=======
   const redirectUri = `${redirectUriInfo}/jira/callback`;
->>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
   const scope =
     'read:jira-work write:jira-work read:board-scope:jira-software read:project:jira read:jira-user offline_access';
   const authorizeUrl = `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id=${clientId}&scope=${encodeURIComponent(
