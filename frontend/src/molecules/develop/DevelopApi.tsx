@@ -54,10 +54,13 @@ const DevelopApi = () => {
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [activeUsersByApi, setActiveUsersByApi] = useState<{ [key: string]: User[] }>({});
-  const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
+  const [activeUsersByApi, setActiveUsersByApi] = useState<{
+    [key: string]: User[];
+  }>({});
+  const [remoteCursors, setRemoteCursors] = useState<{
+    [key: string]: RemoteCursorData;
+  }>({});
   const containerRef = useRef<HTMLDivElement>(null);
-
 
   // API hooks
   const { data: apiListItems = [], isLoading } = useGetApiSpecs(
@@ -111,7 +114,7 @@ const DevelopApi = () => {
       apiListItems.forEach((api: ApiDocListItem) => {
         if (api.apiSpecId) {
           const apiResourceId = `${RESOURCE_TYPES.API_SPEC}-${api.apiSpecId}`;
-          
+
           // 구독 설정
           const subscription = stompClientRef.current!.subscribe(
             `/sub/presence/${apiResourceId}`,
@@ -120,11 +123,13 @@ const DevelopApi = () => {
                 const data = JSON.parse(message.body);
                 setActiveUsersByApi(prev => ({
                   ...prev,
-                  [api.apiSpecId!.toString()]: data.users.map((username: string) => ({
-                    id: username,
-                    name: username,
-                    color: getRandomColor(username),
-                  })),
+                  [api.apiSpecId!.toString()]: data.users.map(
+                    (username: string) => ({
+                      id: username,
+                      name: username,
+                      color: getRandomColor(username),
+                    })
+                  ),
                 }));
               } catch (error) {
                 console.error('Failed to parse presence message:', error);
@@ -168,23 +173,26 @@ const DevelopApi = () => {
   }, [isConnected, apiListItems]);
 
   // 마우스 이벤트 핸들러
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!containerRef.current || !stompClientRef.current?.connected) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!containerRef.current || !stompClientRef.current?.connected) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-    stompClientRef.current.publish({
-      destination: `/pub/cursor/${projectId}/api`,
-      body: JSON.stringify({
-        userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
-        x,
-        y,
-        pageType: 'api'
-      })
-    });
-  }, [projectId]);
+      stompClientRef.current.publish({
+        destination: `/pub/cursor/${projectId}/api`,
+        body: JSON.stringify({
+          userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+          x,
+          y,
+          pageType: 'api',
+        }),
+      });
+    },
+    [projectId]
+  );
 
   // 마우스 이벤트 리스너 등록
   useEffect(() => {
@@ -245,7 +253,7 @@ const DevelopApi = () => {
           try {
             const cursorData = JSON.parse(message.body);
             const myUserId = getUserIdFromToken(token);
-            
+
             // 자신의 커서는 표시하지 않음
             if (cursorData.userId === myUserId) return;
 
@@ -254,8 +262,8 @@ const DevelopApi = () => {
               [cursorData.userId]: {
                 ...cursorData,
                 color: getRandomColor(cursorData.userId),
-                username: cursorData.userId
-              }
+                username: cursorData.userId,
+              },
             }));
           } catch (error) {
             console.error('Failed to parse cursor message:', error);
@@ -476,7 +484,7 @@ const DevelopApi = () => {
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="mt-2 min-h-screen w-full flex flex-col bg-gray-50 relative"
     >
