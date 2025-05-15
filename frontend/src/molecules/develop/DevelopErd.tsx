@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import '@dineug/erd-editor';
 import { ErdEditorElement } from '../../types/erd-editor';
 import ToggleButton from '../../components/button/ToggleButton';
@@ -8,6 +8,8 @@ import { Client } from '@stomp/stompjs';
 import { useParams } from 'react-router-dom';
 import ActiveUsers from '../../components/apicomponent/ActiveUsers';
 import { PRESENCE_ACTIONS, RESOURCE_TYPES } from '../../constants/websocket';
+import RemoteCursor from '../../components/cursor/RemoteCursor';
+import type { RemoteCursorData } from '../../types/cursor';
 
 interface User {
   id: string;
@@ -37,6 +39,8 @@ const DevelopErd = () => {
   const saveInterval = useRef<number | null>(null);
   const isInternalUpdate = useRef(false);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
+  const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // 사용자별 고유 색상 생성 함수
   const getRandomColor = (seed: string) => {
@@ -83,6 +87,36 @@ const DevelopErd = () => {
     }
   };
 
+  // 마우스 이벤트 핸들러
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!containerRef.current || !stompClientRef.current?.connected) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    stompClientRef.current.publish({
+      destination: `/pub/cursor/${projectId}/erd`,
+      body: JSON.stringify({
+        userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+        x,
+        y,
+        pageType: 'erd'
+      })
+    });
+  }, [projectId]);
+
+  // 마우스 이벤트 리스너 등록
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      container.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [handleMouseMove]);
+
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -122,6 +156,28 @@ const DevelopErd = () => {
           }
         });
 
+        // 커서 위치 구독
+        stompClient.subscribe(`/sub/cursor/${projectId}/erd`, message => {
+          try {
+            const cursorData = JSON.parse(message.body);
+            const myUserId = getUserIdFromToken(token);
+            
+            // 자신의 커서는 표시하지 않음
+            if (cursorData.userId === myUserId) return;
+
+            setRemoteCursors(prev => ({
+              ...prev,
+              [cursorData.userId]: {
+                ...cursorData,
+                color: getRandomColor(cursorData.userId),
+                username: cursorData.userId
+              }
+            }));
+          } catch (error) {
+            console.error('Failed to parse cursor message:', error);
+          }
+        });
+
         // ERD 실시간 수정 구독
         stompClient.subscribe(`/sub/erd/${projectId}`, message => {
           const parsed = JSON.parse(message.body);
@@ -153,6 +209,7 @@ const DevelopErd = () => {
 
         // 연결 해제 후 사용자 목록 초기화
         setActiveUsers([]);
+        setRemoteCursors({});
       },
       onStompError: frame => {
         console.error('STOMP 에러:', frame);
@@ -243,7 +300,20 @@ const DevelopErd = () => {
   }, [projectId]);
 
   return (
-    <div className="flex flex-col items-center w-full h-full">
+    <div 
+      ref={containerRef}
+      className="flex flex-col items-center w-full h-full relative"
+    >
+      {/* 원격 커서 렌더링 */}
+      {Object.values(remoteCursors).map(cursor => (
+        <RemoteCursor
+          key={cursor.userId}
+          x={cursor.x}
+          y={cursor.y}
+          username={cursor.username}
+          color={cursor.color}
+        />
+      ))}
       <div className="flex justify-between w-[90%] mb-2">
         <div className="flex items-center gap-4">
           <ToggleButton />

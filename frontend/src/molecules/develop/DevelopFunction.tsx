@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import FuncTable from '../../components/funccomponent/FuncTable';
 import FuncDetailModal from '../../components/funccomponent/FuncDetailModal';
@@ -22,6 +22,9 @@ import { useAuth } from '../../hooks/useAuth';
 
 import { createJiraIssue } from '../../api/jiraAPI';
 import SuccessModal from '../../components/icon/SuccessModal';
+import RemoteCursor from '../../components/cursor/RemoteCursor';
+import type { RemoteCursorData } from '../../types/cursor';
+import { getUserIdFromToken } from '../../utils/tokenUtils';
 
 interface User {
   id: string;
@@ -115,6 +118,8 @@ const DevelopFunc = () => {
   }>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [jiraLink, setJiraLink] = useState<string | null>(null);
+  const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { specs } = useFunctionalSpecStore();
   const { refetch } = useGetFunctionalSpecs(Number(projectId));
@@ -194,6 +199,36 @@ const DevelopFunc = () => {
     };
   }, [isConnected, specs]);
 
+  // 마우스 이벤트 핸들러
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!containerRef.current || !stompClientRef.current?.connected) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    stompClientRef.current.publish({
+      destination: `/pub/cursor/${projectId}/function`,
+      body: JSON.stringify({
+        userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+        x,
+        y,
+        pageType: 'function'
+      })
+    });
+  }, [projectId]);
+
+  // 마우스 이벤트 리스너 등록
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    container.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      container.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [handleMouseMove]);
+
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -235,6 +270,28 @@ const DevelopFunc = () => {
             console.error('Failed to parse presence message:', error);
           }
         });
+
+        // 커서 위치 구독
+        stompClient.subscribe(`/sub/cursor/${projectId}/function`, message => {
+          try {
+            const cursorData = JSON.parse(message.body);
+            const myUserId = getUserIdFromToken(token);
+            
+            // 자신의 커서는 표시하지 않음
+            if (cursorData.userId === myUserId) return;
+
+            setRemoteCursors(prev => ({
+              ...prev,
+              [cursorData.userId]: {
+                ...cursorData,
+                color: getRandomColor(cursorData.userId),
+                username: cursorData.userId
+              }
+            }));
+          } catch (error) {
+            console.error('Failed to parse cursor message:', error);
+          }
+        });
       },
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
@@ -254,6 +311,7 @@ const DevelopFunc = () => {
         setActiveUsers([]);
         setModalActiveUsers([]);
         setActiveUsersByFunc({});
+        setRemoteCursors({});
       },
       onStompError: frame => {
         console.error('STOMP 에러:', frame);
@@ -402,7 +460,20 @@ const DevelopFunc = () => {
   if (!projectId) return null;
 
   return (
-    <div className="mt-2 w-full flex flex-col bg-gray-50">
+    <div 
+      ref={containerRef}
+      className="mt-2 min-h-screen w-full flex flex-col bg-gray-50 relative"
+    >
+      {/* 원격 커서 렌더링 */}
+      {Object.values(remoteCursors).map(cursor => (
+        <RemoteCursor
+          key={cursor.userId}
+          x={cursor.x}
+          y={cursor.y}
+          username={cursor.username}
+          color={cursor.color}
+        />
+      ))}
       <div className="flex-1 flex flex-col justify-center items-center w-full">
         <div className="w-full flex justify-between items-center my-4">
           <div className="flex-1 max-w-md">
