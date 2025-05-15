@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { PRESENCE_ACTIONS, RESOURCE_TYPES } from '../../constants/websocket';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import type { StompSubscription } from '@stomp/stompjs';
 import { useAuth } from '../../hooks/useAuth';
 import RemoteCursor from '../../components/cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
@@ -54,6 +55,7 @@ const DevelopApi = () => {
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
+  const modalSubscriptionRef = useRef<StompSubscription | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [activeUsersByApi, setActiveUsersByApi] = useState<{
     [key: string]: User[];
@@ -367,7 +369,13 @@ const DevelopApi = () => {
 
     if (modalOpen) {
       // 모달 열릴 때 구독 및 입장 메시지 전송
-      sendPresenceMessage(apiResourceId, PRESENCE_ACTIONS.ENTER);
+      stompClientRef.current?.publish({
+        destination: '/pub/presence',
+        body: JSON.stringify({
+          resourceId: apiResourceId,
+          action: PRESENCE_ACTIONS.ENTER,
+        }),
+      });
 
       const subscription = stompClientRef.current?.subscribe(
         `/sub/presence/${apiResourceId}`,
@@ -390,7 +398,13 @@ const DevelopApi = () => {
       return () => {
         // 모달 닫힐 때 구독 해제 및 퇴장 메시지 전송
         subscription?.unsubscribe();
-        sendPresenceMessage(apiResourceId, PRESENCE_ACTIONS.LEAVE);
+        stompClientRef.current?.publish({
+          destination: '/pub/presence',
+          body: JSON.stringify({
+            resourceId: apiResourceId,
+            action: PRESENCE_ACTIONS.LEAVE,
+          }),
+        });
       };
     }
   }, [modalOpen, selectedApi, isConnected]);
@@ -433,7 +447,13 @@ const DevelopApi = () => {
     // 이전 API에서 퇴장
     if (selectedApi?.id) {
       const prevResourceId = `${RESOURCE_TYPES.API_SPEC}-${selectedApi.id}`;
-      sendPresenceMessage(prevResourceId, PRESENCE_ACTIONS.LEAVE);
+      stompClientRef.current?.publish({
+        destination: '/pub/presence',
+        body: JSON.stringify({
+          resourceId: prevResourceId,
+          action: PRESENCE_ACTIONS.LEAVE,
+        }),
+      });
     }
 
     const fullApi = apiListItems.find(
@@ -443,7 +463,37 @@ const DevelopApi = () => {
       setSelectedApi(fullApi);
       // 새로운 API에 입장
       const newResourceId = `${RESOURCE_TYPES.API_SPEC}-${fullApi.id}`;
-      sendPresenceMessage(newResourceId, PRESENCE_ACTIONS.ENTER);
+      stompClientRef.current?.publish({
+        destination: '/pub/presence',
+        body: JSON.stringify({
+          resourceId: newResourceId,
+          action: PRESENCE_ACTIONS.ENTER,
+        }),
+      });
+
+      // 새로운 API의 presence 구독 설정
+      const subscription = stompClientRef.current?.subscribe(
+        `/sub/presence/${newResourceId}`,
+        message => {
+          try {
+            const data = JSON.parse(message.body);
+            setModalActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getUserColor(username),
+              }))
+            );
+          } catch (error) {
+            console.error('Failed to parse presence message:', error);
+          }
+        }
+      );
+
+      // 모달이 닫힐 때 구독 해제를 위해 저장
+      if (subscription) {
+        modalSubscriptionRef.current = subscription;
+      }
     }
     setModalOpen(true);
   };
@@ -452,10 +502,21 @@ const DevelopApi = () => {
     // 모달 닫을 때 현재 API에서 퇴장
     if (selectedApi?.id) {
       const resourceId = `${RESOURCE_TYPES.API_SPEC}-${selectedApi.id}`;
-      sendPresenceMessage(resourceId, PRESENCE_ACTIONS.LEAVE);
+      stompClientRef.current?.publish({
+        destination: '/pub/presence',
+        body: JSON.stringify({
+          resourceId: resourceId,
+          action: PRESENCE_ACTIONS.LEAVE,
+        }),
+      });
+
+      // 구독 해제
+      modalSubscriptionRef.current?.unsubscribe();
+      modalSubscriptionRef.current = null;
     }
     setModalOpen(false);
     setSelectedApi(null);
+    setModalActiveUsers([]); // 모달 닫을 때 모달 활성 사용자 목록 초기화
   };
 
   const handleSave = (apiSpecRequest: ApiSpecRequest) => {
