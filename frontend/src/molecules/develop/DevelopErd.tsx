@@ -10,6 +10,8 @@ import ActiveUsers from '../../components/apicomponent/ActiveUsers';
 import { PRESENCE_ACTIONS, RESOURCE_TYPES } from '../../constants/websocket';
 import RemoteCursor from '../../components/cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
+import { getUserIdFromToken } from '../../utils/tokenUtils';
+import { getUserColor } from '../../utils/colorUtils';
 
 interface User {
   id: string;
@@ -41,26 +43,6 @@ const DevelopErd = () => {
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // 사용자별 고유 색상 생성 함수
-  const getRandomColor = (seed: string) => {
-    const colors = [
-      '#2563EB',
-      '#DC2626',
-      '#059669',
-      '#7C3AED',
-      '#DB2777',
-      '#2563EB',
-      '#EA580C',
-      '#0D9488',
-      '#4F46E5',
-      '#BE185D',
-    ];
-    const index = seed
-      .split('')
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[index % colors.length];
-  };
 
   const sendPresenceMessage = (resourceId: string, action: string) => {
     if (stompClientRef.current?.connected) {
@@ -127,6 +109,31 @@ const DevelopErd = () => {
     };
   }, [handleMouseMove]);
 
+  // 페이지 가시성 변경 감지
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && stompClientRef.current?.connected) {
+        // 페이지가 숨겨질 때 커서 제거
+        setRemoteCursors({});
+      }
+    };
+
+    // 브라우저 창 닫기 감지
+    const handleBeforeUnload = () => {
+      if (stompClientRef.current?.connected) {
+        setRemoteCursors({});
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -150,17 +157,31 @@ const DevelopErd = () => {
             resourceId: pageResourceId,
             action: PRESENCE_ACTIONS.ENTER,
           }),
-        });
+        }); 
 
         // ERD 페이지 사용자 목록 구독
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
           try {
             const data = JSON.parse(message.body);
+            const currentUsers = data.users;
+            
+            // presence 메시지를 통해 현재 활성 사용자 확인 및 커서 관리
+            setRemoteCursors(prev => {
+              const newCursors = { ...prev };
+              // 현재 활성 사용자가 아닌 커서 제거
+              Object.keys(newCursors).forEach(userId => {
+                if (!currentUsers.includes(userId)) {
+                  delete newCursors[userId];
+                }
+              });
+              return newCursors;
+            });
+
             setActiveUsers(
-              data.users.map((username: string) => ({
+              currentUsers.map((username: string) => ({
                 id: username,
                 name: username,
-                color: getRandomColor(username),
+                color: getUserColor(username),
               }))
             );
           } catch (error) {
@@ -181,7 +202,7 @@ const DevelopErd = () => {
               ...prev,
               [cursorData.userId]: {
                 ...cursorData,
-                color: getRandomColor(cursorData.userId),
+                color: getUserColor(cursorData.userId),
                 username: cursorData.userId
               }
             }));
@@ -305,6 +326,7 @@ const DevelopErd = () => {
       if (stompClientRef.current?.connected) {
         const pageResourceId = `page-erd-${projectId}`;
         sendPresenceMessage(pageResourceId, PRESENCE_ACTIONS.LEAVE);
+        setRemoteCursors({}); // 페이지 나갈 때 커서 초기화
         stompClientRef.current.deactivate();
       }
       window.removeEventListener('beforeunload', handleUnload);
@@ -351,17 +373,5 @@ const DevelopErd = () => {
     </div>
   );
 };
-
-function getUserIdFromToken(token: string | null): string | null {
-  if (!token) return null;
-  try {
-    const payload = token.split('.')[1];
-    const decoded = JSON.parse(atob(payload));
-    return decoded.userName;
-  } catch (err) {
-    console.error('JWT 파싱 실패', err);
-    return null;
-  }
-}
 
 export default DevelopErd;
