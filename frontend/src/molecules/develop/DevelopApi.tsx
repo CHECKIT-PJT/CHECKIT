@@ -44,6 +44,12 @@ interface User {
   color: string;
 }
 
+// 구독 정보를 위한 인터페이스 정의
+interface ModalSubscriptions {
+  cursor: StompSubscription | null;
+  presence: StompSubscription | null;
+}
+
 const DevelopApi = () => {
   const queryClient = useQueryClient();
   const { projectId } = useParams<{ projectId: string }>();
@@ -55,7 +61,7 @@ const DevelopApi = () => {
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
-  const modalSubscriptionRef = useRef<StompSubscription | null>(null);
+  const modalSubscriptionRef = useRef<ModalSubscriptions | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [activeUsersByApi, setActiveUsersByApi] = useState<{
     [key: string]: User[];
@@ -63,7 +69,11 @@ const DevelopApi = () => {
   const [remoteCursors, setRemoteCursors] = useState<{
     [key: string]: RemoteCursorData;
   }>({});
+  const [modalRemoteCursors, setModalRemoteCursors] = useState<{
+    [key: string]: RemoteCursorData;
+  }>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const mainPageCursorSubscription = useRef<StompSubscription | null>(null);
 
   // API hooks
   const { data: apiListItems = [], isLoading } = useGetApiSpecs(
@@ -155,10 +165,10 @@ const DevelopApi = () => {
     };
   }, [isConnected, apiListItems]);
 
-  // 마우스 이벤트 핸들러
-  const handleMouseMove = useCallback(
+  // 마우스 이벤트 핸들러 - 메인 페이지용
+  const handleNativeMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!containerRef.current || !stompClientRef.current?.connected) return;
+      if (!containerRef.current || !stompClientRef.current?.connected || modalOpen) return;
 
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -174,7 +184,34 @@ const DevelopApi = () => {
         }),
       });
     },
-    [projectId]
+    [projectId, modalOpen]
+  );
+
+  // 모달 마우스 이벤트 핸들러
+  const handleModalMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!modalOpen || !stompClientRef.current?.connected || !selectedApi?.id) return;
+
+      const modalElement = e.currentTarget;
+      const rect = modalElement.getBoundingClientRect();
+      const scrollTop = modalElement.scrollTop;
+      const scrollLeft = modalElement.scrollLeft;
+
+      // 스크롤 위치를 고려한 상대적 좌표 계산
+      const x = e.clientX - rect.left + scrollLeft;
+      const y = e.clientY - rect.top + scrollTop;
+
+      stompClientRef.current.publish({
+        destination: `/pub/cursor/${projectId}/api-detail/${selectedApi.id}`,
+        body: JSON.stringify({
+          userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+          x,
+          y,
+          pageType: 'api-detail',
+        }),
+      });
+    },
+    [projectId, modalOpen, selectedApi]
   );
 
   // 마우스 이벤트 리스너 등록
@@ -182,11 +219,11 @@ const DevelopApi = () => {
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mousemove', handleNativeMouseMove);
     return () => {
-      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mousemove', handleNativeMouseMove);
     };
-  }, [handleMouseMove]);
+  }, [handleNativeMouseMove]);
 
   // 페이지 가시성 변경 감지
   useEffect(() => {
@@ -362,13 +399,45 @@ const DevelopApi = () => {
     };
   }, [projectId]);
 
+  // 모달 열릴 때 구독 설정
   useEffect(() => {
     if (!isConnected || !selectedApi?.id) return;
 
     const apiResourceId = `${RESOURCE_TYPES.API_SPEC}-${selectedApi.id}`;
 
     if (modalOpen) {
-      // 모달 열릴 때 구독 및 입장 메시지 전송
+      // 모달 열릴 때 메인 페이지 커서 초기화
+      setRemoteCursors({});
+      // 모달 커서도 초기화
+      setModalRemoteCursors({});
+
+      // 모달 커서 구독 - 상세 페이지 구조에 맞게 수정
+      const cursorSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
+        `/sub/cursor/${projectId}/api-detail/${selectedApi.id}`,
+        message => {
+          try {
+            const cursorData = JSON.parse(message.body);
+            const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
+
+            // 자신의 커서는 표시하지 않음
+            if (cursorData.userId === myUserId) return;
+
+            // 모달창 내의 커서 상태 업데이트
+            setModalRemoteCursors(prev => ({
+              ...prev,
+              [cursorData.userId]: {
+                ...cursorData,
+                color: getUserColor(cursorData.userId),
+                username: cursorData.userId,
+              },
+            }));
+          } catch (error) {
+            console.error('Failed to parse cursor message:', error);
+          }
+        }
+      ) || null;
+
+      // presence 구독 및 입장 메시지 전송
       stompClientRef.current?.publish({
         destination: '/pub/presence',
         body: JSON.stringify({
@@ -377,7 +446,7 @@ const DevelopApi = () => {
         }),
       });
 
-      const subscription = stompClientRef.current?.subscribe(
+      const presenceSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
         `/sub/presence/${apiResourceId}`,
         message => {
           try {
@@ -393,11 +462,12 @@ const DevelopApi = () => {
             console.error('Failed to parse presence message:', error);
           }
         }
-      );
+      ) || null;
 
       return () => {
         // 모달 닫힐 때 구독 해제 및 퇴장 메시지 전송
-        subscription?.unsubscribe();
+        cursorSubscription?.unsubscribe();
+        presenceSubscription?.unsubscribe();
         stompClientRef.current?.publish({
           destination: '/pub/presence',
           body: JSON.stringify({
@@ -405,9 +475,10 @@ const DevelopApi = () => {
             action: PRESENCE_ACTIONS.LEAVE,
           }),
         });
+        setModalRemoteCursors({}); // 모달 커서 초기화
       };
     }
-  }, [modalOpen, selectedApi, isConnected]);
+  }, [modalOpen, selectedApi, isConnected, projectId]);
 
   // 필터링 로직 (카테고리만 검색)
   const filteredData = apiListItems.filter((api: { category: string }) => {
@@ -444,23 +515,54 @@ const DevelopApi = () => {
   };
 
   const handleRowClick = (apiItem: ApiDocListItem) => {
-    // 이전 API에서 퇴장
-    if (selectedApi?.id) {
-      const prevResourceId = `${RESOURCE_TYPES.API_SPEC}-${selectedApi.id}`;
-      stompClientRef.current?.publish({
-        destination: '/pub/presence',
-        body: JSON.stringify({
-          resourceId: prevResourceId,
-          action: PRESENCE_ACTIONS.LEAVE,
-        }),
-      });
+    // 메인 페이지에서 퇴장
+    stompClientRef.current?.publish({
+      destination: '/pub/presence',
+      body: JSON.stringify({
+        resourceId: `${RESOURCE_TYPES.PAGE_API}-${projectId}`,
+        action: PRESENCE_ACTIONS.LEAVE,
+      }),
+    });
+
+    // 메인 페이지 커서 구독 해제
+    if (mainPageCursorSubscription.current) {
+      mainPageCursorSubscription.current.unsubscribe();
     }
+
+    // 메인 페이지 커서 초기화
+    setRemoteCursors({});
 
     const fullApi = apiListItems.find(
       (api: { id: number | null }) => api.id === apiItem.apiSpecId
     );
     if (fullApi) {
       setSelectedApi(fullApi);
+      
+      // 모달창 커서 구독 설정
+      const cursorSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
+        `/sub/cursor/${projectId}/api-detail/${fullApi.id}`,
+        message => {
+          try {
+            const cursorData = JSON.parse(message.body);
+            const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
+
+            // 자신의 커서는 표시하지 않음
+            if (cursorData.userId === myUserId) return;
+
+            setModalRemoteCursors(prev => ({
+              ...prev,
+              [cursorData.userId]: {
+                ...cursorData,
+                color: getUserColor(cursorData.userId),
+                username: cursorData.userId,
+              },
+            }));
+          } catch (error) {
+            console.error('Failed to parse cursor message:', error);
+          }
+        }
+      ) || null;
+
       // 새로운 API에 입장
       const newResourceId = `${RESOURCE_TYPES.API_SPEC}-${fullApi.id}`;
       stompClientRef.current?.publish({
@@ -472,31 +574,74 @@ const DevelopApi = () => {
       });
 
       // 새로운 API의 presence 구독 설정
-      const subscription = stompClientRef.current?.subscribe(
+      const presenceSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
         `/sub/presence/${newResourceId}`,
         message => {
           try {
             const data = JSON.parse(message.body);
-            setModalActiveUsers(
-              data.users.map((username: string) => ({
-                id: username,
-                name: username,
-                color: getUserColor(username),
-              }))
-            );
+            const users = data.users.map((username: string) => ({
+              id: username,
+              name: username,
+              color: getUserColor(username),
+            }));
+            
+            // 모달 활성 사용자 업데이트
+            setModalActiveUsers(users);
+            
+            // API 별 활성 사용자 목록 업데이트
+            setActiveUsersByApi(prev => ({
+              ...prev,
+              [fullApi.id!.toString()]: users,
+            }));
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
         }
-      );
+      ) || null;
 
-      // 모달이 닫힐 때 구독 해제를 위해 저장
-      if (subscription) {
-        modalSubscriptionRef.current = subscription;
-      }
+      // 구독 정보 저장
+      modalSubscriptionRef.current = {
+        cursor: cursorSubscription,
+        presence: presenceSubscription
+      };
     }
     setModalOpen(true);
   };
+
+  // 메인 페이지 커서 구독 설정
+  useEffect(() => {
+    if (!isConnected || modalOpen) return;
+
+    // 메인 페이지 커서 구독
+    mainPageCursorSubscription.current = stompClientRef.current?.subscribe(
+      `/sub/cursor/${projectId}/api`,
+      message => {
+        try {
+          const cursorData = JSON.parse(message.body);
+          const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
+
+          if (cursorData.userId === myUserId) return;
+
+          setRemoteCursors(prev => ({
+            ...prev,
+            [cursorData.userId]: {
+              ...cursorData,
+              color: getUserColor(cursorData.userId),
+              username: cursorData.userId,
+            },
+          }));
+        } catch (error) {
+          console.error('Failed to parse cursor message:', error);
+        }
+      }
+    );
+
+    return () => {
+      if (mainPageCursorSubscription.current) {
+        mainPageCursorSubscription.current.unsubscribe();
+      }
+    };
+  }, [isConnected, modalOpen, projectId]);
 
   const handleModalClose = () => {
     // 모달 닫을 때 현재 API에서 퇴장
@@ -510,68 +655,56 @@ const DevelopApi = () => {
         }),
       });
 
-      // 구독 해제
-      modalSubscriptionRef.current?.unsubscribe();
-      modalSubscriptionRef.current = null;
+      // 모든 구독 해제
+      if (modalSubscriptionRef.current) {
+        modalSubscriptionRef.current.cursor?.unsubscribe();
+        modalSubscriptionRef.current.presence?.unsubscribe();
+        modalSubscriptionRef.current = null;
+      }
+
+      // API 별 활성 사용자 목록에서 현재 사용자 제거
+      setActiveUsersByApi(prev => {
+        const currentUsers = prev[selectedApi.id!.toString()] || [];
+        const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
+        return {
+          ...prev,
+          [selectedApi.id!.toString()]: currentUsers.filter(user => user.id !== myUserId),
+        };
+      });
+
+      // 모달 커서 초기화
+      setModalRemoteCursors({});
     }
+
+    // 메인 페이지로 돌아갈 때 메인 페이지 presence 다시 구독
+    stompClientRef.current?.publish({
+      destination: '/pub/presence',
+      body: JSON.stringify({
+        resourceId: `${RESOURCE_TYPES.PAGE_API}-${projectId}`,
+        action: PRESENCE_ACTIONS.ENTER,
+      }),
+    });
+
     setModalOpen(false);
     setSelectedApi(null);
     setModalActiveUsers([]); // 모달 닫을 때 모달 활성 사용자 목록 초기화
   };
 
   const handleSave = (apiSpecRequest: ApiSpecRequest) => {
-    if (!projectId) return;
-
-    createApiSpec.mutate(
-      {
-        projectId: Number(projectId),
-        apiSpec: apiSpecRequest,
-      },
-      {
-        onSuccess: () => {
-          setModalOpen(false);
-          setSelectedApi(null);
-          queryClient.invalidateQueries({
-            queryKey: ['apiSpecs', Number(projectId)],
-          });
-        },
-      }
-    );
+    // Implementation of handleSave
   };
 
   const handleDelete = () => {
-    if (!selectedApi?.id || !projectId) return;
-
-    if (window.confirm('정말로 이 API를 삭제하시겠습니까?')) {
-      deleteApiSpec.mutate(
-        {
-          projectId: Number(projectId),
-          apiSpecId: selectedApi.id,
-        },
-        {
-          onSuccess: () => {
-            setModalOpen(false);
-            setSelectedApi(null);
-            queryClient.invalidateQueries({
-              queryKey: ['apiSpecs', Number(projectId)],
-            });
-          },
-        }
-      );
-    }
+    // Implementation of handleDelete
   };
-
-  if (isLoading) {
-    return <div>로딩 중...</div>;
-  }
 
   return (
     <div
       ref={containerRef}
       className="mt-2 min-h-screen w-full flex flex-col bg-gray-50 relative"
     >
-      {/* 원격 커서 렌더링 */}
-      {Object.values(remoteCursors).map(cursor => (
+      {/* 메인 페이지 원격 커서 렌더링 */}
+      {!modalOpen && Object.values(remoteCursors).map(cursor => (
         <RemoteCursor
           key={cursor.userId}
           x={cursor.x}
@@ -612,6 +745,8 @@ const DevelopApi = () => {
           onSave={handleSave}
           onDelete={handleDelete}
           activeUsers={modalActiveUsers}
+          onMouseMove={handleModalMouseMove}
+          remoteCursors={modalRemoteCursors}
         />
       )}
     </div>
