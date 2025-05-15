@@ -11,19 +11,11 @@ import { countFiles, createFilePath } from '../utils/fileUtils';
 import { ExpandedFolders, SelectedFile, ApiResponse } from '../types';
 import { useNavigate, useParams } from 'react-router-dom';
 import Dialog from '../molecules/buildpreview/Dialog';
-/**
- * 프로젝트 미리보기 페이지 컴포넌트
- */
+
 const BuildPreviewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
-  const [expandedFolders, setExpandedFolders] = useState<ExpandedFolders>({
-    entity: true,
-    dto: true,
-    controller: true,
-    service: true,
-    repository: true,
-  });
+  const [expandedFolders, setExpandedFolders] = useState<ExpandedFolders>({});
   const [codeDarkMode, setCodeDarkMode] = useState<boolean>(false);
   const [projectData, setProjectData] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -32,7 +24,8 @@ const BuildPreviewPage: React.FC = () => {
   const [dialogTitle, setDialogTitle] = useState<string>('');
   const [dialogMessage, setDialogMessage] = useState<string>('');
   const navigate = useNavigate();
-  // 시스템 테마 감지하여 초기 코드 뷰어 테마 설정
+
+  // 시스템 테마 감지
   const systemDarkMode = useThemeDetection();
 
   useEffect(() => {
@@ -65,32 +58,34 @@ const BuildPreviewPage: React.FC = () => {
     fetchProjectData();
   }, [projectId]);
 
-  /**
-   * 폴더 확장/축소 토글 함수
-   */
-  const toggleFolder = (folder: string): void => {
-    setExpandedFolders({
-      ...expandedFolders,
-      [folder]: !expandedFolders[folder],
-    });
+  const toggleFolder = (folderPath: string): void => {
+    setExpandedFolders((prev) => ({
+      ...prev,
+      [folderPath]: !prev[folderPath],
+    }));
   };
 
-  /**
-   * 파일 선택 함수
-   */
-  const selectFile = (folder: string, fileName: string): void => {
+  const selectFile = (folderPath: string, fileName: string): void => {
     if (!projectData) return;
+
+    const pathSegments = folderPath.split('/');
+    let current: any = projectData.data;
+
+    for (const segment of pathSegments) {
+      if (!current[segment]) return;
+      current = current[segment];
+    }
+
+    const fileContent = current[fileName];
+    if (!fileContent) return;
 
     setSelectedFile({
       name: fileName,
-      content: projectData.data[folder][fileName],
-      path: createFilePath(folder, fileName),
+      content: fileContent,
+      path: `${folderPath}/${fileName}`,
     });
   };
 
-  /**
-   * 프로젝트 다운로드 핸들러
-   */
   const handleDownload = async (): Promise<void> => {
     try {
       await downloadProject();
@@ -129,20 +124,6 @@ const BuildPreviewPage: React.FC = () => {
     setIsDialogOpen(false);
   };
 
-  // /**
-  //  * 새 프로젝트 생성 핸들러
-  //  */
-  // const handleCreateNew = async (): Promise<void> => {
-  //   try {
-  //     await createNewProject();
-  //     // 새 프로젝트 생성 페이지로 이동하는 로직 추가
-  //   } catch (error) {
-  //     console.error("프로젝트 생성 중 오류 발생:", error);
-  //     alert("프로젝트 생성 중 오류가 발생했습니다.");
-  //   }
-  // };
-
-  // 파일 개수 계산
   const fileCount = projectData ? countFiles(projectData.data) : 0;
 
   if (isLoading) {

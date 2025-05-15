@@ -3,11 +3,11 @@
  */
 
 export interface FileData {
-  [fileName: string]: string;
+  [fileOrFolder: string]: string | FileData;
 }
 
 export interface ProjectData {
-  [key: string]: FileData;
+  [domain: string]: FileData;
 }
 
 export interface ApiResponse {

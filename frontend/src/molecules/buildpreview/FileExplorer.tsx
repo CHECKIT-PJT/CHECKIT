@@ -5,9 +5,9 @@ import { ProjectData, SelectedFile, ExpandedFolders } from '../../types';
 interface FileExplorerProps {
   data: ProjectData | null;
   expandedFolders: ExpandedFolders;
-  toggleFolder: (folder: string) => void;
+  toggleFolder: (folderPath: string) => void;
   selectedFile: SelectedFile | null;
-  selectFile: (folder: string, fileName: string) => void;
+  selectFile: (folderPath: string, fileName: string) => void;
 }
 
 /**
@@ -48,12 +48,14 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
           </div>
         </div>
 
-        {Object.keys(data).map((folder) => (
+        {Object.entries(data).map(([domainName, folders]) => (
           <FolderTreeItem
-            key={folder}
-            folderName={folder}
-            files={data[folder]}
-            isExpanded={expandedFolders[folder]}
+            key={domainName}
+            folderPath={domainName}
+            displayName={domainName}
+            files={folders}
+            isExpanded={expandedFolders[domainName] || false}
+            expandedFolders={expandedFolders} // ✅ 하위 폴더도 접근 가능하게
             onToggle={toggleFolder}
             selectedFile={selectedFile}
             onSelectFile={selectFile}
