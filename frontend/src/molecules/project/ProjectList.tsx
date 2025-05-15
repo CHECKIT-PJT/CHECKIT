@@ -7,6 +7,7 @@ import { useGetProjects } from '../../api/projectAPI';
 import { getToken } from '../../api/authAPI';
 import JiraAccessButton from '../../components/button/JiraAccessButton';
 import { checkJiraLinked } from '../../api/jiraAPI';
+import ChatButton from '../../components/chatbot/ChatButton';
 
 interface Project {
   projectId: number;
@@ -121,6 +122,7 @@ const ProjectList = () => {
           )}
         </div>
       )}
+      <ChatButton />
     </div>
   );
 };

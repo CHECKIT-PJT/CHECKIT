@@ -54,7 +54,7 @@ const LeaveButton = ({ onClick, role }: LeaveButtonProps) => {
         className={`px-2 py-2 text-base text-red-800 text-primary-600 rounded-lg border border-transparent hover:bg-white hover:border-gray-200 transition-all flex items-center gap-2`}
       >
         <ImExit className="w-4 h-4 " />
-        {role === 'OWNER' ? '프로젝트 삭제' : '떠나기'}
+        {role === 'OWNER' ? '프로젝트 삭제' : '프로젝트 떠나기'}
       </button>
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

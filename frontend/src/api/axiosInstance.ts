@@ -43,6 +43,13 @@ axiosInstance.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
 
+    // Handle 403 Forbidden errors
+    if (error.response?.status === 403) {
+      sessionStorage.removeItem('accessToken');
+      window.location.href = '/';
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

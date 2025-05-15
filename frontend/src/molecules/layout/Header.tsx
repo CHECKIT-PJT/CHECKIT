@@ -12,14 +12,11 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
       sessionStorage.clear();
       navigate('/');
-    } catch (error) {
-      alert(
-        error instanceof Error
-          ? error.message
-          : '로그아웃 중 오류가 발생했습니다.'
-      );
     }
   };
 
@@ -33,7 +30,7 @@ const Header = () => {
         <img src={title} className="w-1/2 h-full" />
       </div>
 
-      <div className="absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold text-blue-800 truncate max-w-xl text-center">
+      <div className="font-tmoney absolute left-1/2 transform -translate-x-1/2 text-2xl font-bold text-blue-800 truncate max-w-xl text-center">
         {location.pathname.match(/^\/project\/\d+$/) &&
           (currentProject?.projectName || '')}
       </div>
