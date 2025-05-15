@@ -36,7 +36,7 @@ public class SecurityConfig {
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(authz -> authz
 				.requestMatchers("/api/auth/**").permitAll() // 인증 관련 API는 모두 허용
-					.requestMatchers("/ws/erd/**").permitAll()
+				.requestMatchers("/ws/erd/**").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userRepository),
 				UsernamePasswordAuthenticationFilter.class);
@@ -48,7 +48,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173",
-				"https://checkit.my")); //TODO: 추후 프론트엔드 URL로 변경 필요
+			"https://checkit.my"));
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
 		configuration.setAllowCredentials(true); // 쿠키를 포함한 요청 허용

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,8 @@ public class ProjectService {
 	private final RedisTemplate<String, Object> redisTemplate;
 	private final DockerComposeService dockerComposeService;
 
-	private final String PROJECT_INVITE_URL = "http://localhost:5173/invite";
+	@Value("${project.invite.url}")
+	private String projectInviteUrl;
 
 	/**
 	 * 프로젝트 생성
@@ -282,7 +284,7 @@ public class ProjectService {
 		// 이메일로 초대 코드 전송
 		for (String email : emails) {
 			mailService.sendInviteEmail(email,
-				PROJECT_INVITE_URL + "?inviteCode=" + inviteCode);
+				projectInviteUrl + "?inviteCode=" + inviteCode);
 		}
 
 	}
@@ -304,7 +306,7 @@ public class ProjectService {
 		String key = "invite:" + inviteCode;
 		redisTemplate.opsForValue().set(key, Integer.toString(projectId), 30, TimeUnit.MINUTES);
 
-		return new InvitationLinkCreateResponse(PROJECT_INVITE_URL + "?inviteCode=" + inviteCode);
+		return new InvitationLinkCreateResponse(projectInviteUrl + "?inviteCode=" + inviteCode);
 	}
 
 	/**

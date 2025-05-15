@@ -6,7 +6,7 @@ spring:
       - classpath:application-jwt.yml
       - classpath:application-oauth.yml
       - classpath:application-mail.yml
-      - classpath:application-ai.yml
+      - optional:application-project.yml
       - optional:file:.env[.properties]
   application:
     name: checkit

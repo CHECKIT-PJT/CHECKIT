@@ -28,8 +28,10 @@ import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
+import com.checkmate.checkit.project.dto.response.JiraLinkResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
+import com.checkmate.checkit.project.dto.response.ProjectJiraResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.service.JiraProjectService;
@@ -274,17 +276,30 @@ public class ProjectController {
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 
+	// 프로젝트에 등록된 Jira 정보 조회
+	@GetMapping("/{projectId}/jira")
+	public ResponseEntity<JSONResponse<ProjectJiraResponse>> getJiraInfo(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		ProjectJiraResponse projectJiraResponse = jiraProjectService.getJiraInfo(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, projectJiraResponse));
+	}
+
 	// Jira에 Issue 등록
 	@PostMapping("/{projectId}/jira/issues")
-	public ResponseEntity<JSONResponse<Void>> createJiraIssue(
+	public ResponseEntity<JSONResponse<JiraLinkResponse>> createJiraIssue(
 		@RequestHeader("Authorization") String authorization,
 		@PathVariable Integer projectId
 	) {
 
 		String token = authorization.substring(7);
 
-		jiraProjectService.createJiraIssues(token, projectId);
+		JiraLinkResponse jiraLinkResponse = jiraProjectService.createJiraIssues(token, projectId);
 
-		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, jiraLinkResponse));
 	}
 }

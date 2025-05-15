@@ -139,6 +139,8 @@ public class AuthService {
 		String jwtAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getUserName(),
 			user.getNickname());
 
+		log.info("로그인 성공: 사용자 ID = {}, 사용자 이름 = {}", user.getId(), user.getUserName());
+
 		return new AuthResponse(jwtAccessToken, new LoginResponse(user));
 	}
 
@@ -530,7 +532,7 @@ public class AuthService {
 	 * @param token : 액세스 토큰
 	 * @return List<JiraProjectListResponse> : Jira 프로젝트 목록
 	 */
-	@Transactional(readOnly = true)
+	@Transactional
 	public List<JiraProjectListResponse> getJiraProjects(String token) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
@@ -562,7 +564,7 @@ public class AuthService {
 
 		return webClient.get()
 			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/project/search", oAuthToken.getCloudId())
-			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + getValidJiraAccessToken(oAuthToken))
 			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 			.retrieve()
 			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
@@ -609,7 +611,7 @@ public class AuthService {
 		return webClient.get()
 			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/agile/1.0/board?projectKeyOrId={jiraProjectKey}",
 				oAuthToken.getCloudId(), jiraProjectKey)
-			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + getValidJiraAccessToken(oAuthToken))
 			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 			.retrieve()
 			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
@@ -669,7 +671,7 @@ public class AuthService {
 		return webClient.get()
 			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/user/search?query={email}", oAuthToken.getCloudId(),
 				email)
-			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + getValidJiraAccessToken(oAuthToken))
 			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 			.retrieve()
 			.bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
@@ -692,7 +694,7 @@ public class AuthService {
 		// Jira API 호출
 		List<Map<String, Object>> response = webClient.get()
 			.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/field", oAuthToken.getCloudId())
-			.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + getValidJiraAccessToken(oAuthToken))
 			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 			.retrieve()
 			.bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
@@ -755,7 +757,7 @@ public class AuthService {
 
 			webClient.post()
 				.uri(jira.getApiUri() + "/ex/jira/{cloudId}/rest/api/3/issue", oAuthToken.getCloudId())
-				.header(HttpHeaders.AUTHORIZATION, "Bearer " + oAuthToken.getAccessToken())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + getValidJiraAccessToken(oAuthToken))
 				.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 				.bodyValue(Map.of("fields", fields))
 				.retrieve()
@@ -802,5 +804,48 @@ public class AuthService {
 			case 5 -> "Lowest";
 			default -> "Medium";
 		};
+	}
+
+	private String getValidJiraAccessToken(OAuthToken token) {
+		// 만료되었거나, 1분 이내로 만료될 예정이면 갱신
+		if (token.getExpiresIn().isBefore(LocalDateTime.now().plusMinutes(1))) {
+			// 리프레시 토큰으로 새로운 액세스 토큰을 발급
+			log.info("Jira 액세스 토큰이 만료되었습니다. 갱신 중...");
+			return refreshAccessToken(token);
+		}
+		log.info("Jira 액세스 토큰이 유효합니다. 만료 시간: {}", token.getExpiresIn());
+		return token.getAccessToken();
+	}
+
+	private String refreshAccessToken(OAuthToken token) {
+		OAuthProperties.Provider jira = oauthProperties.getProvider("jira");
+
+		MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+		formData.add("grant_type", "refresh_token");
+		formData.add("client_id", jira.getClientId());
+		formData.add("client_secret", jira.getClientSecret());
+		formData.add("refresh_token", token.getRefreshToken());
+
+		Map<String, Object> response = webClient.post()
+			.uri(jira.getTokenUri())
+			.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+			.body(BodyInserters.fromFormData(formData))
+			.retrieve()
+			.bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+			})
+			.block();
+
+		String newAccessToken = response.get("access_token").toString();
+		String newRefreshToken = response.get("refresh_token").toString();
+		int expiresIn = (int)response.get("expires_in");
+		LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(expiresIn);
+
+		// DB 업데이트
+		token.updateAccessToken(newAccessToken);
+		token.updateExpiresIn(expiresAt);
+		token.updateRefreshToken(newRefreshToken);
+		oAuthTokenRepository.save(token);
+
+		return newAccessToken;
 	}
 }

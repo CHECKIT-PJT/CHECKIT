@@ -17,54 +17,43 @@ import com.checkmate.checkit.api.repository.ApiQueryStringRepository;
 import com.checkmate.checkit.api.repository.ApiSpecRepository;
 import com.checkmate.checkit.api.repository.DtoItemRepository;
 import com.checkmate.checkit.api.repository.DtoRepository;
+import com.checkmate.checkit.codegenerator.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 
-/**
- * 현재 해당 코드는 API 명세서를 기반으로 Java Dto를 자동 생성하는 서비스 클래스이다.
- * - DtoEntity, DtoItemEntity, ApiQueryStringEntity 등을 기반으로 DTO 코드를 생성하며
- * - 프론트에서 허용한 16가지 데이터 타입만을 타입 변환을 지원하도록 한다.
- * - Request/Response DTO: Dtos + DtoItems 기반 생성
- * - Query DTO : Api QueryStrings 기반 생성
- */
 @Service
 @RequiredArgsConstructor
 public class DtoGenerateService {
 
-	// 각 Repository 주입
 	private final ApiSpecRepository apiSpecRepository;
 	private final DtoRepository dtoRepository;
 	private final DtoItemRepository dtoItemRepository;
 	private final ApiQueryStringRepository apiQueryStringRepository;
 
-	//import 중복 방지용 Set 및 누적 StringBuilder
 	private final Set<String> importSet = new HashSet<>();
-	private StringBuilder imports = new StringBuilder();
+	private final List<String> importLines = new ArrayList<>();
 
-	/**
-	 * 하나의 프로젝트 내 모든 API 명세에 연결된 DTO들을 순회하여 Java 코드 형태로 생성한다.
-	 * Request/Response DTO를 자동 생성한다.
-	 *
-	 * @param projectId   대상 프로젝트 ID
-	 * @param basePackage 패키지 경로 (현재 사용하지 않지만 확장 가능)
-	 * @return Map<파일명, Java 코드 문자열>
-	 */
 	public Map<String, String> generateDtos(int projectId, String basePackage) {
 		Map<String, String> dtoFiles = new HashMap<>();
-
-		// 프로젝트에 연결된 모든 API 명세 조회
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
 
 		for (ApiSpecEntity apiSpec : apiSpecs) {
 			Long apiSpecId = apiSpec.getId();
-
-			//API 명세서에 연결된 모든 DTO 목록 조회
+			String domain = apiSpec.getCategory().toLowerCase();
 			List<DtoEntity> dtoList = dtoRepository.findByApiSpecId(apiSpecId);
 
 			for (DtoEntity dto : dtoList) {
-				String className = dto.getDtoName();// class 명
+				String rawName = dto.getDtoName();
+				String className;
+				if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
+					className = StringUtils.toPascalCase(rawName) + "Request";
+				} else if (dto.getDtoType() == DtoEntity.DtoType.RESPONSE) {
+					className = StringUtils.toPascalCase(rawName) + "Response";
+				} else {
+					className = StringUtils.toPascalCase(rawName);
+				}
+
 				List<DtoItemEntity> dtoItems = new ArrayList<>(dtoItemRepository.findByDto(dto));
 
-				//Request 타입일 경우 쿼리 스트링 정보도 병합
 				if (dto.getDtoType() == DtoEntity.DtoType.REQUEST) {
 					List<ApiQueryStringEntity> queryStrings = apiQueryStringRepository.findByApiSpec(apiSpec);
 					for (ApiQueryStringEntity query : queryStrings) {
@@ -77,24 +66,16 @@ public class DtoGenerateService {
 					}
 				}
 
-				String dtoCode = generateDtoClass(className, dtoItems);
-				dtoFiles.put(className + ".java", dtoCode);
+				String dtoCode = generateDtoClass(className, dtoItems, basePackage, domain);
+				String filePath = domain + "/dto/" + className + ".java";
+				dtoFiles.put(filePath, dtoCode);
 			}
-
 		}
-
 		return dtoFiles;
 	}
 
-	/**
-	 * 쿼리스트링만 따로 사용하는 DTO 생성기
-	 * - 이름: {ApiName}QueryDto
-	 * - 항목: ApiQueryStringEntity
-	 */
-
-	public Map<String, String> generateQueryDtos(int projectId) {
+	public Map<String, String> generateQueryDtos(int projectId, String basePackage) {
 		Map<String, String> dtoFiles = new HashMap<>();
-
 		List<ApiSpecEntity> apiSpecs = apiSpecRepository.findAllByProjectId_Id(projectId);
 
 		for (ApiSpecEntity apiSpec : apiSpecs) {
@@ -102,80 +83,70 @@ public class DtoGenerateService {
 			if (queryStrings.isEmpty())
 				continue;
 
-			String className = toClassName(apiSpec.getApiName() + "QueryDto");
+			String domain = apiSpec.getCategory().toLowerCase();
+			String className = StringUtils.toPascalCase(apiSpec.getApiName()) + "QueryDto";
 
-			List<SimpleField> fields = queryStrings.stream()
-				.map(q -> new SimpleField(q.getQueryStringVariable(),
-					q.getQueryStringDataType()))
-				.toList();
+			List<SimpleField> fields = new ArrayList<>();
+			for (ApiQueryStringEntity q : queryStrings) {
+				fields.add(new SimpleField(q.getQueryStringVariable(), q.getQueryStringDataType()));
+			}
 
-			String dtoCode = generateSimpleDtoClass(className, fields);
-			dtoFiles.put(className + ".java", dtoCode);
+			String dtoCode = generateSimpleDtoClass(className, fields, basePackage, domain);
+			String filePath = domain + "/dto/" + className + ".java";
+			dtoFiles.put(filePath, dtoCode);
 		}
 		return dtoFiles;
-
 	}
 
-	private String generateSimpleDtoClass(String className, List<SimpleField> fields) {
-
+	private String generateDtoClass(String className, List<DtoItemEntity> fields, String basePackage, String domain) {
 		importSet.clear();
-		imports.setLength(0);
+		importLines.clear();
 
 		StringBuilder sb = new StringBuilder();
+		String packageName = basePackage + "." + domain + ".dto";
+		sb.append("package ").append(packageName).append(";\n\n");
+
 		addImport("import lombok.*;");
-		sb.append(imports).append("\n");
-
-		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
-		sb.append("public class ").append(className).append(" {\n\n");
-
-		for (SimpleField field : fields) {
-			String type = toJavaType(field.getDataType());
-			sb.append("    private ").append(type).append(" ").append(field.getFieldName()).append(";\n");
+		for (DtoItemEntity field : fields) {
+			toJavaType(field.getDataType(), field.getIsList());
 		}
-
-		sb.append("}\n");
-		return sb.toString();
-	}
-	// 간단한 필드 구조 표현 (쿼리 DTO용)
-
-	/**
-	 * API 명세 이름을 Java 클래스 명으로 변환
-	 * 예: "create-user" → "CreateUser"
-	 */
-	private String toClassName(String apiName) {
-		String[] parts = apiName.split("[_\\-\\s]"); // -, _, 공백 기준 분리
-		StringBuilder sb = new StringBuilder();
-		for (String part : parts) {
-			if (!part.isEmpty()) {
-				sb.append(part.substring(0, 1).toUpperCase()).append(part.substring(1));
-			}
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * 실제 DTO Java 코드를 생성하는 메서드
-	 * @param className : 생성할 DTO 클래스 이름
-	 * @param fields : 필드 정보 리스트 (요청/응답 모두 ApiField 구현체)
-	 */
-	private String generateDtoClass(String className, List<DtoItemEntity> fields) {
-		importSet.clear();
-		imports.setLength(0);
-
-		StringBuilder sb = new StringBuilder();
-		addImport("import lombok.*;");
-		sb.append(imports).append("\n");
+		importLines.forEach(line -> sb.append(line).append("\n"));
+		sb.append("\n");
 
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
 		sb.append("public class ").append(className).append(" {\n\n");
 
 		for (DtoItemEntity field : fields) {
-			String type = toJavaType(field.getDataType());
-			if (Boolean.TRUE.equals(field.getIsList())) {
-				addImport("import java.util.List;");
-				type = "List<" + type + ">";
-			}
+			String type = toJavaType(field.getDataType(), field.getIsList());
 			sb.append("    private ").append(type).append(" ").append(field.getDtoItemName()).append(";\n");
+		}
+
+		sb.append("}\n");
+		return sb.toString();
+	}
+
+	private String generateSimpleDtoClass(String className, List<SimpleField> fields, String basePackage,
+		String domain) {
+		importSet.clear();
+		importLines.clear();
+
+		StringBuilder sb = new StringBuilder();
+		String packageName = basePackage + "." + domain + ".dto";
+		sb.append("package ").append(packageName).append(";\n\n");
+
+		addImport("import lombok.*;");
+		for (SimpleField field : fields) {
+			toJavaType(field.getDataType(), false);
+		}
+		importLines.forEach(line -> sb.append(line).append("\n"));
+		sb.append("\n");
+
+		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
+		sb.append("public class ").append(className).append(" {\n\n");
+
+		for (SimpleField field : fields) {
+			String type = toJavaType(field.getDataType(), false);
+			sb.append("    private ").append(type).append(" ").append(field.getFieldName()).append(";\n");
 		}
 
 		sb.append("}\n");
@@ -185,47 +156,55 @@ public class DtoGenerateService {
 	/**
 	 * DB 데이터 타입 → Java 타입 변환 및 필요시 import 추가
 	 */
-	private String toJavaType(String dataType) {
+	private String toJavaType(String dataType, Boolean isList) {
 		if (dataType == null)
 			return "String";
 
 		String type = dataType.trim();
+		String javaType;
 
 		switch (type) {
 			case "Integer", "Long", "Short", "Byte", "Float", "Double",
 				"Character", "Boolean", "String":
-				return type;
-
+				javaType = type;
+				break;
 			case "LocalDate":
 				addImport("import java.time.LocalDate;");
-				return "LocalDate";
-
+				javaType = "LocalDate";
+				break;
 			case "LocalDateTime":
 				addImport("import java.time.LocalDateTime;");
-				return "LocalDateTime";
-
+				javaType = "LocalDateTime";
+				break;
 			case "ZonedDateTime":
 				addImport("import java.time.ZonedDateTime;");
-				return "ZonedDateTime";
-
+				javaType = "ZonedDateTime";
+				break;
 			case "BigDecimal":
 				addImport("import java.math.BigDecimal;");
-				return "BigDecimal";
-
+				javaType = "BigDecimal";
+				break;
 			case "BigInteger":
 				addImport("import java.math.BigInteger;");
-				return "BigInteger";
-
+				javaType = "BigInteger";
+				break;
 			case "UUID":
 				addImport("import java.util.UUID;");
-				return "UUID";
-
+				javaType = "UUID";
+				break;
 			case "enum":
-				return "Enum"; // 추후 enum 생성기로 확장 가능
-
+				javaType = "Enum"; // 향후 enum 자동 생성기로 확장 가능
+				break;
 			default:
-				return "String";
+				javaType = "String";
 		}
+
+		if (Boolean.TRUE.equals(isList)) {
+			addImport("import java.util.List;");
+			return "List<" + javaType + ">";
+		}
+
+		return javaType;
 	}
 
 	/**
@@ -233,7 +212,7 @@ public class DtoGenerateService {
 	 */
 	private void addImport(String statement) {
 		if (importSet.add(statement)) {
-			imports.append(statement).append("\n");
+			importLines.add(statement);
 		}
 	}
 

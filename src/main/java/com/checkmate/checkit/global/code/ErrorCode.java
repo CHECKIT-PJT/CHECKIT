@@ -46,8 +46,20 @@ public enum ErrorCode {
 	INVALID_INVITE_CODE(400, BAD_REQUEST, "유효하지 않은 초대 코드입니다."),
 	INVALID_INVITE_MEMBER(400, BAD_REQUEST, "초대된 멤버가 아닙니다."),
 
+	// 코드 생성 관련 에러 추가
+	SPRING_SETTINGS_NOT_FOUND(404, BAD_REQUEST, "Spring 설정이 존재하지 않거나 잘못되었습니다."),
+	ERD_NOT_FOUND(405, NOT_FOUND, "ERD 데이터가 존재하지 않습니다."),
+	API_SPEC_NOT_FOUND(401, BAD_REQUEST, "API 명세서가 존재하지 않습니다."),
+	ERD_PARSING_FAILED(500, INTERNAL_SERVER_ERROR, "ERD 파싱 중 오류가 발생했습니다."),
+	FUNCTIONAL_SPEC_NOT_FOUND(402, BAD_REQUEST, "기능 명세서가 존재하지 않습니다."),
 	// 이메일 관련 에러
 	MAIL_SEND_FAILED(500, INTERNAL_SERVER_ERROR, "이메일 전송에 실패했습니다."),
+
+	//Spring 프로젝트 관련 에러
+	SPRING_PROJECT_DOWNLOAD(404, BAD_REQUEST, "Spring 프로젝트 다운로드 실패"),
+	SPRING_CODE_FILE_SAVE(400, BAD_REQUEST, "코드 파일 저장 실패"),
+	SPRING_PROJECT_ZIP_FAILED(400, BAD_REQUEST, "프로젝트 압축을 할 수 없습니다."),
+	SPRING_PROJECT_BUILD_FAILED(400, BAD_REQUEST, "프로젝트 빌드 할 수 없습니다."),
 
 	// Git 관련 에러
 	GIT_SETTING_NOT_FOUND(404, NOT_FOUND, "Git 설정을 찾을 수 없습니다."),
@@ -70,8 +82,7 @@ public enum ErrorCode {
 	SEQUENCE_DIAGRAM_ALREADY_EXISTS(409, CONFLICT, "이미 해당 API에 Sequence가 존재합니다."),
 
 	// Jira 관련 에러
-	JIRA_PROJECT_NOT_FOUND(404, NOT_FOUND, "Jira에 연동된 프로젝트를 찾을 수 없습니다."),
-	;
+	JIRA_PROJECT_NOT_FOUND(404, NOT_FOUND, "Jira에 연동된 프로젝트를 찾을 수 없습니다.");
 
 
 
