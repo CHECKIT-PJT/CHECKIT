@@ -3,17 +3,18 @@
  */
 
 export interface FileData {
-  [fileName: string]: string;
+  [fileOrFolder: string]: string | FileData;
 }
 
 export interface ProjectData {
-  [key: string]: FileData;
+  [domain: string]: FileData;
 }
 
 export interface ApiResponse {
   status: string;
   message: string;
   data: ProjectData;
+  rootPackage: string;
 }
 
 export interface SelectedFile {
@@ -26,5 +27,5 @@ export interface ExpandedFolders {
   [folder: string]: boolean;
 }
 
-export type ButtonVariant = 'primary' | 'secondary';
-export type IconColor = 'blue' | 'yellow';
+export type ButtonVariant = "primary" | "secondary";
+export type IconColor = "blue" | "yellow";

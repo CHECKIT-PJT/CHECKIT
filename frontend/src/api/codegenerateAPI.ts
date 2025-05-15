@@ -1,73 +1,55 @@
-import axiosInstance from './axiosInstance';
-import { AxiosError } from 'axios';
-import { ApiResponse } from '../types';
+import axiosInstance from "./axiosInstance";
+import { AxiosError } from "axios";
+import { ApiResponse } from "../types";
 
 /**
  * API 응답을 파싱하여 프로젝트 데이터 형식으로 변환
  */
 const parseApiResponse = (response: string): ApiResponse => {
-  const files: { [key: string]: { [key: string]: string } } = {
-    entity: {},
-    dto: {},
-    controller: {},
-    service: {},
-    repository: {},
-  };
+  const files: Record<string, Record<string, Record<string, string>>> = {};
+  let rootPackage = "";
 
-  const fileContents = response
-    .split('package ')
-    .filter((content) => content.trim());
+  const packageSections = response
+    .split("package ")
+    .filter((section) => section.trim())
+    .map((section) => "package " + section);
 
-  fileContents.forEach((content) => {
-    const fullContent = 'package ' + content;
-    const lines = fullContent.split('\n');
-    const packageLine = lines[0];
-    const packagePath = packageLine.replace('package ', '').replace(';', '');
+  packageSections.forEach((fullContent, index) => {
+    const lines = fullContent.split("\n");
+    const packageLine = lines.find((line) => line.startsWith("package "));
+    if (!packageLine) return;
 
-    const classLine = lines.find(
-      (line) => line.includes('class ') || line.includes('interface '),
-    );
+    const packagePath = packageLine
+      .replace("package ", "")
+      .replace(";", "")
+      .trim();
+    const packageParts = packagePath.split(".");
 
-    if (classLine) {
-      const fileName =
-        classLine.split('class ')[1]?.split(' ')[0] ||
-        classLine.split('interface ')[1]?.split(' ')[0];
-
-      if (fileName) {
-        const folder = packagePath.includes('.entity')
-          ? 'entity'
-          : packagePath.includes('.dto')
-            ? 'dto'
-            : packagePath.includes('.controller')
-              ? 'controller'
-              : packagePath.includes('.service')
-                ? 'service'
-                : packagePath.includes('.repository')
-                  ? 'repository'
-                  : '';
-
-        if (folder) {
-          const cleanedContent = fullContent
-            .replace(
-              /import jakarta\.persistence\.\*;.*?import jakarta\.persistence\.\*;/s,
-              'import jakarta.persistence.*;',
-            )
-            .replace(
-              /import lombok\.\*;.*?import lombok\.\*;/s,
-              'import lombok.*;',
-            )
-            .trim();
-
-          files[folder][`${fileName}.java`] = cleanedContent;
-        }
-      }
+    // ✅ rootPackage 추출 (ex: sdfsdf.test.service → sdfsdf.test)
+    if (index === 0 && packageParts.length >= 2) {
+      rootPackage = packageParts.slice(0, packageParts.length - 2).join(".");
     }
+
+    const domain = packageParts[packageParts.length - 2] || "common";
+    const folder = packageParts[packageParts.length - 1] || "etc";
+
+    const classMatch = fullContent.match(
+      /(public\s+)?(class|interface)\s+(\w+)/
+    );
+    const className =
+      classMatch?.[3] || `Unknown${Math.random().toString(36).substring(2, 6)}`;
+
+    if (!files[domain]) files[domain] = {};
+    if (!files[domain][folder]) files[domain][folder] = {};
+
+    files[domain][folder][`${className}.java`] = fullContent.trim();
   });
 
   return {
-    status: 'success',
-    message: '코드 생성이 완료되었습니다.',
+    status: "success",
+    message: "코드 생성이 완료되었습니다.",
     data: files,
+    rootPackage, // ⬅️ 동적으로 추출된 패키지 경로 포함
   };
 };
 
@@ -77,8 +59,9 @@ const parseApiResponse = (response: string): ApiResponse => {
 export const generateCode = async (projectId: string): Promise<ApiResponse> => {
   try {
     const response = await axiosInstance.post(
-      `/api/generate/build/${projectId}`,
+      `/api/generate/build/${projectId}`
     );
+    console.log(response.data);
     return parseApiResponse(response.data);
   } catch (error) {
     const axiosError = error as AxiosError;
@@ -88,9 +71,7 @@ export const generateCode = async (projectId: string): Promise<ApiResponse> => {
 
     const code = data?.code;
     const message =
-      data?.message || '코드 생성 중 알 수 없는 오류가 발생했습니다.';
-
-    // 서버에서 내려준 에러코드 문자열이 있으면 그대로 전달
+      data?.message || "코드 생성 중 알 수 없는 오류가 발생했습니다.";
     throw {
       status,
       code,
