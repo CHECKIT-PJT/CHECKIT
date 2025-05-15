@@ -22,6 +22,7 @@ import { useAuth } from '../../hooks/useAuth';
 import RemoteCursor from '../../components/cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
+import { getUserColor } from '../../utils/colorUtils';
 
 // API 세부 정보를 목록 형식으로 변환하는 유틸리티 함수
 const convertDetailToListItem = (apiDetail: ApiDetail): ApiDocListItem => {
@@ -69,26 +70,6 @@ const DevelopApi = () => {
   const createApiSpec = useCreateApiSpec();
   const deleteApiSpec = useDeleteApiSpec();
 
-  // 사용자별 고유 색상 생성 함수
-  const getRandomColor = (seed: string) => {
-    const colors = [
-      '#2563EB',
-      '#DC2626',
-      '#059669',
-      '#7C3AED',
-      '#DB2777',
-      '#2563EB',
-      '#EA580C',
-      '#0D9488',
-      '#4F46E5',
-      '#BE185D',
-    ];
-    const index = seed
-      .split('')
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[index % colors.length];
-  };
-
   const sendPresenceMessage = (resourceId: string, action: string) => {
     if (stompClientRef.current?.connected) {
       stompClientRef.current.publish({
@@ -127,7 +108,7 @@ const DevelopApi = () => {
                     (username: string) => ({
                       id: username,
                       name: username,
-                      color: getRandomColor(username),
+                      color: getUserColor(username),
                     })
                   ),
                 }));
@@ -205,6 +186,31 @@ const DevelopApi = () => {
     };
   }, [handleMouseMove]);
 
+  // 페이지 가시성 변경 감지
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && stompClientRef.current?.connected) {
+        // 페이지가 숨겨질 때 커서 제거
+        setRemoteCursors({});
+      }
+    };
+
+    // 브라우저 창 닫기 감지
+    const handleBeforeUnload = () => {
+      if (stompClientRef.current?.connected) {
+        setRemoteCursors({});
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   // 웹소켓 연결 시 커서 구독 추가
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
@@ -220,7 +226,6 @@ const DevelopApi = () => {
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('STOMP 연결 성공');
-        setIsConnected(true);
 
         // 페이지 입장 알림
         const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
@@ -236,11 +241,25 @@ const DevelopApi = () => {
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
           try {
             const data = JSON.parse(message.body);
+            const currentUsers = data.users;
+            
+            // presence 메시지를 통해 현재 활성 사용자 확인 및 커서 관리
+            setRemoteCursors(prev => {
+              const newCursors = { ...prev };
+              // 현재 활성 사용자가 아닌 커서 제거
+              Object.keys(newCursors).forEach(userId => {
+                if (!currentUsers.includes(userId)) {
+                  delete newCursors[userId];
+                }
+              });
+              return newCursors;
+            });
+
             setActiveUsers(
-              data.users.map((username: string) => ({
+              currentUsers.map((username: string) => ({
                 id: username,
                 name: username,
-                color: getRandomColor(username),
+                color: getUserColor(username),
               }))
             );
           } catch (error) {
@@ -261,7 +280,7 @@ const DevelopApi = () => {
               ...prev,
               [cursorData.userId]: {
                 ...cursorData,
-                color: getRandomColor(cursorData.userId),
+                color: getUserColor(cursorData.userId),
                 username: cursorData.userId,
               },
             }));
@@ -269,6 +288,7 @@ const DevelopApi = () => {
             console.error('Failed to parse cursor message:', error);
           }
         });
+
         // API 명세별 구독 설정
         if (apiListItems.length > 0) {
           apiListItems.forEach((api: ApiDocListItem) => {
@@ -285,7 +305,7 @@ const DevelopApi = () => {
                         (username: string) => ({
                           id: username,
                           name: username,
-                          color: getRandomColor(username),
+                          color: getUserColor(username),
                         })
                       ),
                     }));
@@ -334,6 +354,7 @@ const DevelopApi = () => {
       if (stompClientRef.current?.connected) {
         const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
         sendPresenceMessage(pageResourceId, PRESENCE_ACTIONS.LEAVE);
+        setRemoteCursors({}); // 페이지 나갈 때 커서 초기화
         stompClientRef.current.deactivate();
       }
     };
@@ -357,7 +378,7 @@ const DevelopApi = () => {
               data.users.map((username: string) => ({
                 id: username,
                 name: username,
-                color: getRandomColor(username),
+                color: getUserColor(username),
               }))
             );
           } catch (error) {
