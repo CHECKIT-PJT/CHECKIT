@@ -58,6 +58,8 @@ public enum ErrorCode {
 	//Spring 프로젝트 관련 에러
 	SPRING_PROJECT_DOWNLOAD(404, BAD_REQUEST, "Spring 프로젝트 다운로드 실패"),
 	SPRING_CODE_FILE_SAVE(400, BAD_REQUEST, "코드 파일 저장 실패"),
+	SPRING_PROJECT_ZIP_FAILED(400, BAD_REQUEST, "프로젝트 압축을 할 수 없습니다."),
+	SPRING_PROJECT_BUILD_FAILED(400, BAD_REQUEST, "프로젝트 빌드 할 수 없습니다."),
 
 	// Git 관련 에러
 	GIT_SETTING_NOT_FOUND(404, NOT_FOUND, "Git 설정을 찾을 수 없습니다."),
@@ -78,8 +80,7 @@ public enum ErrorCode {
 	SEQUENCE_DIAGRAM_NOT_FOUND(404, NOT_FOUND, "시퀀스 다이어그램을 찾을 수 없습니다."),
 
 	// Jira 관련 에러
-	JIRA_PROJECT_NOT_FOUND(404, NOT_FOUND, "Jira에 연동된 프로젝트를 찾을 수 없습니다."),
-	;
+	JIRA_PROJECT_NOT_FOUND(404, NOT_FOUND, "Jira에 연동된 프로젝트를 찾을 수 없습니다.");
 
 	private final int code;
 	private final HttpStatus httpStatus;

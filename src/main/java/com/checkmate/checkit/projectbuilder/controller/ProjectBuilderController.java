@@ -1,5 +1,7 @@
 package com.checkmate.checkit.projectbuilder.controller;
 
+import java.nio.file.Path;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,14 +32,14 @@ public class ProjectBuilderController {
 	 * 프로젝트 ID를 기반으로 전체 Spring 프로젝트 생성 실행
 	 */
 	@PostMapping("/build/{projectId}")
-	public ResponseEntity<JSONResponse<Void>> buildProject(@PathVariable Integer projectId) {
+	public ResponseEntity<JSONResponse<String>> buildProject(@PathVariable Integer projectId) {
 		try {
-			projectBuilderService.buildProject(projectId);
-			return ResponseEntity.ok(JSONResponse.onSuccess(null));
+			Path projectPath = projectBuilderService.buildProject(projectId);
+			return ResponseEntity.ok(JSONResponse.onSuccess(projectPath.toString()));
 		} catch (CommonException e) {
 			log.error("[Error] 프로젝트 빌드 실패 - {}", e.getMessage());
 			return ResponseEntity
-				.status(e.getErrorCode().getHttpStatus()) // 🔁 여기 수정
+				.status(e.getErrorCode().getHttpStatus())
 				.body(JSONResponse.onFailure(e.getErrorCode()));
 		} catch (Exception e) {
 			log.error("[Error] 서버 내부 오류", e);

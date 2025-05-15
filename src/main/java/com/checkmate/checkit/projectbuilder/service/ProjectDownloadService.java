@@ -32,40 +32,42 @@ public class ProjectDownloadService {
 
 	/**
 	 * start.spring.io에서 프로젝트 ZIP 파일을 다운로드하고 압축을 해제합니다.
+	 * @param projectId 프로젝트 ID (디렉터리 구분용)
 	 * @param request 사용자 Spring 설정 정보가 포함된 요청 객체
 	 */
-	public void downloadAndExtract(InitializerRequest request) {
+	public void downloadAndExtract(Integer projectId, InitializerRequest request) {
 		String url = buildDownloadUrl(request); // 요청 URL 생성
 		log.info("[Download] spring project from: {}", url);
 
+		String targetDir = BASE_PATH + projectId + "/" + request.getSpringName();
+
 		try {
 			// 기존 동일 이름의 디렉터리가 있다면 삭제 (클린 상태 유지)
-			FileUtil.deleteFolder(BASE_PATH + request.getSpringName());
+			FileUtil.deleteFolder(targetDir);
 
 			// start.spring.io로 요청 보냄
 			URI uri = URI.create(url);
 			RestTemplate rt = new RestTemplate();
 			ResponseEntity<byte[]> response = rt.getForEntity(uri, byte[].class); // ZIP 파일 byte[]로 받기
 
-			// 저장 디렉터리 없으면 생성
-			File folder = new File(BASE_PATH);
-			if (!folder.exists())
-				folder.mkdirs();
+			// 프로젝트 전용 디렉터리 생성
+			File projectFolder = new File(BASE_PATH + projectId);
+			if (!projectFolder.exists())
+				projectFolder.mkdirs();
 
 			// ZIP 파일 저장 경로 정의 및 저장
-			Path zipPath = Paths.get(BASE_PATH, request.getSpringName() + ".zip");
+			Path zipPath = Paths.get(BASE_PATH + projectId, request.getSpringName() + ".zip");
 			FileCopyUtils.copy(response.getBody(), zipPath.toFile());
 
 			// 저장된 ZIP 파일 압축 해제 (zip4j 사용)
 			ZipFile zipFile = new ZipFile(zipPath.toFile());
-			zipFile.extractAll(BASE_PATH + request.getSpringName());
+			zipFile.extractAll(targetDir);
 
-			log.info("[Success] Extracted project to: {}", BASE_PATH + request.getSpringName());
+			log.info("[Success] Extracted project to: {}", targetDir);
 		} catch (Exception e) {
 			log.error("[Error] Failed to download or extract zip", e);
 			throw new CommonException(ErrorCode.SPRING_PROJECT_DOWNLOAD);
 		}
-		
 	}
 
 	/**
