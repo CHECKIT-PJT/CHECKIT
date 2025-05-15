@@ -75,12 +75,16 @@ public enum ErrorCode {
 
 	// README 관련 에러
 	README_NOT_FOUND(404, NOT_FOUND, "README 파일을 찾을 수 없습니다."),
+	README_ALREADY_EXISTS(409, CONFLICT, "이미 해당 프로젝트에 README가 존재합니다."),
 
 	// 시퀀스 다이어그램 관련 에러
 	SEQUENCE_DIAGRAM_NOT_FOUND(404, NOT_FOUND, "시퀀스 다이어그램을 찾을 수 없습니다."),
+	SEQUENCE_DIAGRAM_ALREADY_EXISTS(409, CONFLICT, "이미 해당 API에 Sequence가 존재합니다."),
 
 	// Jira 관련 에러
 	JIRA_PROJECT_NOT_FOUND(404, NOT_FOUND, "Jira에 연동된 프로젝트를 찾을 수 없습니다.");
+
+
 
 	private final int code;
 	private final HttpStatus httpStatus;

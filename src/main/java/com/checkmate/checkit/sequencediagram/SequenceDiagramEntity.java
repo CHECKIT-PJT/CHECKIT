@@ -1,4 +1,4 @@
-package com.checkmate.checkit.project.entity;
+package com.checkmate.checkit.sequencediagram;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +15,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class SequenceDiagramEntity {
 
 	@Id
@@ -25,11 +29,17 @@ public class SequenceDiagramEntity {
 	@Column(name = "plant_uml_code", columnDefinition = "TEXT")
 	private String plantUmlCode;
 
-	public void updatePlantUmlCode(String plantUmlCode) {
+
+	@Column(name = "image_url", columnDefinition = "TEXT")
+	private String imageUrl;
+
+	public void updatePlantUmlCode(String plantUmlCode, String imageUrl) {
 		this.plantUmlCode = plantUmlCode;
+		this.imageUrl = imageUrl;
 	}
 
 	public void deletePlantUmlCode() {
 		this.plantUmlCode = null;
+		this.imageUrl = null;
 	}
 }
