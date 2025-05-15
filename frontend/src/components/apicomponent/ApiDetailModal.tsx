@@ -6,6 +6,7 @@ import {
   ApiResponse,
   Dto,
   DtoItem,
+  ApiSpecRequest,
 } from '../../types/apiDocs';
 import DtoEditor from './DtoEditor';
 import { FaRegTrashAlt, FaRegSave } from 'react-icons/fa';
@@ -17,6 +18,8 @@ import {
   validateApiSpecRequest,
 } from '../../utils/apiUtils';
 import ActiveUsers from './ActiveUsers';
+import RemoteCursor from '../cursor/RemoteCursor';
+import type { RemoteCursorData } from '../../types/cursor';
 
 interface User {
   id: string;
@@ -27,9 +30,11 @@ interface User {
 interface ApiDetailModalProps {
   api: ApiDetail | null;
   onClose: () => void;
-  onSave: (apiSpecRequest: any) => void;
+  onSave: (apiSpecRequest: ApiSpecRequest) => void;
   onDelete?: () => void;
   activeUsers: User[];
+  onMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  remoteCursors: { [key: string]: RemoteCursorData };
 }
 
 // 빈 API 상세 정보
@@ -70,6 +75,8 @@ const ApiDetailModal = ({
   onSave,
   onDelete,
   activeUsers,
+  onMouseMove,
+  remoteCursors,
 }: ApiDetailModalProps) => {
   const [tab, setTab] = useState<'RESOURCE' | 'HEADER' | 'QUERY'>('RESOURCE');
   const [form, setForm] = useState<ApiDetail>(api ?? blankApiDetail);
@@ -260,7 +267,28 @@ const ApiDetailModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-[90%] max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+      <div 
+        className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden relative"
+        onMouseMove={onMouseMove}
+      >
+        {/* 원격 커서 렌더링 */}
+        <div className="fixed pointer-events-none" style={{ 
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          transform: 'translate(0, 0)'
+        }}>
+          {Object.values(remoteCursors).map(cursor => (
+            <RemoteCursor
+              key={cursor.userId}
+              x={cursor.x}
+              y={cursor.y}
+              username={cursor.username}
+              color={cursor.color}
+            />
+          ))}
+        </div>
         <div className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-blue-700">

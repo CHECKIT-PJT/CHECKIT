@@ -35,7 +35,7 @@ const Layout = () => {
   return (
     <div className="flex h-full w-full bg-gray-50 text-gray-900">
       <div className="flex flex-col w-full h-full">
-        <Header isLoggedIn={true} />
+        <Header />
         <div className="flex-1 overflow-y-auto p-4 scrollbar-hide scroll-target">
           <Outlet />
         </div>
