@@ -150,7 +150,7 @@ const DevelopErd = () => {
             resourceId: pageResourceId,
             action: PRESENCE_ACTIONS.ENTER,
           }),
-        });
+        }); 
 
         // ERD 페이지 사용자 목록 구독
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {

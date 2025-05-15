@@ -54,15 +54,10 @@ const DevelopApi = () => {
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-<<<<<<< HEAD
   const [activeUsersByApi, setActiveUsersByApi] = useState<{ [key: string]: User[] }>({});
   const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
   const containerRef = useRef<HTMLDivElement>(null);
-=======
-  const [activeUsersByApi, setActiveUsersByApi] = useState<{
-    [key: string]: User[];
-  }>({});
->>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
+
 
   // API hooks
   const { data: apiListItems = [], isLoading } = useGetApiSpecs(
@@ -100,7 +95,6 @@ const DevelopApi = () => {
     }
   };
 
-<<<<<<< HEAD
   // 기능 명세별 구독 설정
   useEffect(() => {
     if (!isConnected || !stompClientRef.current || !apiListItems.length) return;
@@ -204,8 +198,6 @@ const DevelopApi = () => {
   }, [handleMouseMove]);
 
   // 웹소켓 연결 시 커서 구독 추가
-=======
->>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -248,7 +240,6 @@ const DevelopApi = () => {
           }
         });
 
-<<<<<<< HEAD
         // 커서 위치 구독
         stompClient.subscribe(`/sub/cursor/${projectId}/api`, message => {
           try {
@@ -270,7 +261,6 @@ const DevelopApi = () => {
             console.error('Failed to parse cursor message:', error);
           }
         });
-=======
         // API 명세별 구독 설정
         if (apiListItems.length > 0) {
           apiListItems.forEach((api: ApiDocListItem) => {
@@ -299,7 +289,6 @@ const DevelopApi = () => {
             }
           });
         }
->>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
       },
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
