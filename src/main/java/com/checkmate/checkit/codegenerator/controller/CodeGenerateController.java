@@ -79,7 +79,7 @@ public class CodeGenerateController {
 			dtoGenerateService.generateDtos(projectId, basePackage)
 				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
-			dtoGenerateService.generateQueryDtos(projectId)
+			dtoGenerateService.generateQueryDtos(projectId, basePackage)
 				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
 			serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage)

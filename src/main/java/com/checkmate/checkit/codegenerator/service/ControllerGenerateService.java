@@ -2,8 +2,10 @@ package com.checkmate.checkit.codegenerator.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -51,6 +53,8 @@ public class ControllerGenerateService {
 
 	private String generateControllerClassCode(String category, List<ApiSpecEntity> specs, String basePackage) {
 		StringBuilder sb = new StringBuilder();
+		Set<String> importSet = new HashSet<>();
+		List<String> importLines = new ArrayList<>();
 
 		String domain = category.toLowerCase();
 		String className = StringUtils.toPascalCase(category) + "Controller";
@@ -58,29 +62,21 @@ public class ControllerGenerateService {
 		String serviceName = StringUtils.toCamelCase(category) + "Service";
 
 		sb.append("package ")
-			.append(basePackage)
-			.append(".")
-			.append(domain)
-			.append(".controller;\n\n")
-			.append("import lombok.RequiredArgsConstructor;\n")
-			.append("import org.springframework.web.bind.annotation.*;\n")
-			.append("import org.springframework.http.ResponseEntity;\n")
-			.append("import org.springframework.http.HttpStatus;\n")
-			.append("import ")
-			.append(basePackage)
-			.append(".")
-			.append(domain)
-			.append(".service.")
-			.append(serviceType)
-			.append(";\n")
-			.append("import ")
-			.append(basePackage)
-			.append(".")
-			.append(domain)
-			.append(".dto.*;\n")
-			.append("import javax.validation.Valid;\n\n");
+			.append(basePackage).append(".").append(domain).append(".controller;").append("\n\n");
 
-		sb.append("@RestController\n")
+		addImport(importSet, importLines, "import lombok.RequiredArgsConstructor;");
+		addImport(importSet, importLines, "import org.springframework.web.bind.annotation.*;");
+		addImport(importSet, importLines, "import org.springframework.http.ResponseEntity;");
+		addImport(importSet, importLines, "import org.springframework.http.HttpStatus;");
+		addImport(importSet, importLines, "import " + basePackage + "." + domain + ".service." + serviceType + ";");
+		addImport(importSet, importLines, "import " + basePackage + "." + domain + ".dto.*;");
+		addImport(importSet, importLines, "import javax.validation.Valid;");
+
+		for (String imp : importLines) {
+			sb.append(imp).append("\n");
+		}
+
+		sb.append("\n@RestController\n")
 			.append("@RequestMapping(\"/api/").append(domain).append("\")\n")
 			.append("@RequiredArgsConstructor\n")
 			.append("public class ").append(className).append(" {\n\n")
@@ -92,6 +88,12 @@ public class ControllerGenerateService {
 
 		sb.append("}\n");
 		return sb.toString();
+	}
+
+	private void addImport(Set<String> set, List<String> list, String imp) {
+		if (set.add(imp)) {
+			list.add(imp);
+		}
 	}
 
 	private String generateControllerMethod(ApiSpecEntity spec, String serviceName) {
@@ -155,11 +157,10 @@ public class ControllerGenerateService {
 		if (!returnType.equals("Void")) {
 			sb.append(returnType).append(" result = ");
 		}
-		sb.append(serviceName)
-			.append(".").append(methodName)
-			.append("(").append(String.join(", ", argNames)).append(");\n");
+		sb.append(serviceName).append(".").append(methodName).append("(")
+			.append(String.join(", ", argNames)).append(");\n");
 
-		sb.append("        return ResponseEntity.status(HttpStatus.valueOf(").append(statusCode).append("))");
+		sb.append("        return ResponseEntity.status(HttpStatus.valueOf(").append(statusCode).append(")");
 		if (!returnType.equals("Void")) {
 			sb.append(".body(result);\n");
 		} else {
@@ -173,10 +174,9 @@ public class ControllerGenerateService {
 	private String toJavaType(String dataType) {
 		if (dataType == null)
 			return "String";
-		String type = dataType.trim();
-		return switch (type) {
+		return switch (dataType.trim()) {
 			case "Integer", "Long", "Short", "Byte", "Float", "Double",
-				"Character", "Boolean", "String" -> type;
+				"Character", "Boolean", "String" -> dataType.trim();
 			case "LocalDate" -> "LocalDate";
 			case "LocalDateTime" -> "LocalDateTime";
 			case "ZonedDateTime" -> "ZonedDateTime";
