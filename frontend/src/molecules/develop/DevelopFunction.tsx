@@ -118,7 +118,9 @@ const DevelopFunc = () => {
   }>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [jiraLink, setJiraLink] = useState<string | null>(null);
-  const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
+  const [remoteCursors, setRemoteCursors] = useState<{
+    [key: string]: RemoteCursorData;
+  }>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { specs } = useFunctionalSpecStore();
@@ -155,8 +157,6 @@ const DevelopFunc = () => {
       });
     }
   };
-
-<<<<<<< HEAD
   // 기능 명세별 구독 설정
   useEffect(() => {
     if (!isConnected || !stompClientRef.current || !specs.length) return;
@@ -201,23 +201,26 @@ const DevelopFunc = () => {
   }, [isConnected, specs]);
 
   // 마우스 이벤트 핸들러
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!containerRef.current || !stompClientRef.current?.connected) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!containerRef.current || !stompClientRef.current?.connected) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-    stompClientRef.current.publish({
-      destination: `/pub/cursor/${projectId}/function`,
-      body: JSON.stringify({
-        userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
-        x,
-        y,
-        pageType: 'function'
-      })
-    });
-  }, [projectId]);
+      stompClientRef.current.publish({
+        destination: `/pub/cursor/${projectId}/function`,
+        body: JSON.stringify({
+          userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+          x,
+          y,
+          pageType: 'function',
+        }),
+      });
+    },
+    [projectId]
+  );
 
   // 마우스 이벤트 리스너 등록
   useEffect(() => {
@@ -230,8 +233,6 @@ const DevelopFunc = () => {
     };
   }, [handleMouseMove]);
 
-=======
->>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
@@ -273,14 +274,12 @@ const DevelopFunc = () => {
             console.error('Failed to parse presence message:', error);
           }
         });
-
-<<<<<<< HEAD
         // 커서 위치 구독
         stompClient.subscribe(`/sub/cursor/${projectId}/function`, message => {
           try {
             const cursorData = JSON.parse(message.body);
             const myUserId = getUserIdFromToken(token);
-            
+
             // 자신의 커서는 표시하지 않음
             if (cursorData.userId === myUserId) return;
 
@@ -289,14 +288,13 @@ const DevelopFunc = () => {
               [cursorData.userId]: {
                 ...cursorData,
                 color: getRandomColor(cursorData.userId),
-                username: cursorData.userId
-              }
+                username: cursorData.userId,
+              },
             }));
           } catch (error) {
             console.error('Failed to parse cursor message:', error);
           }
         });
-=======
         // 기능 명세별 구독 설정
         if (specs.length > 0) {
           specs.forEach(func => {
@@ -325,7 +323,6 @@ const DevelopFunc = () => {
             }
           });
         }
->>>>>>> 0422c4812aef9f30f9efb31f6630585a78b19ed1
       },
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
@@ -494,7 +491,7 @@ const DevelopFunc = () => {
   if (!projectId) return null;
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="mt-2 min-h-screen w-full flex flex-col bg-gray-50 relative"
     >
