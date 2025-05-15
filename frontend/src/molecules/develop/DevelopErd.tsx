@@ -41,10 +41,20 @@ const DevelopErd = () => {
   // 사용자별 고유 색상 생성 함수
   const getRandomColor = (seed: string) => {
     const colors = [
-      '#2563EB', '#DC2626', '#059669', '#7C3AED', '#DB2777',
-      '#2563EB', '#EA580C', '#0D9488', '#4F46E5', '#BE185D'
+      '#2563EB',
+      '#DC2626',
+      '#059669',
+      '#7C3AED',
+      '#DB2777',
+      '#2563EB',
+      '#EA580C',
+      '#0D9488',
+      '#4F46E5',
+      '#BE185D',
     ];
-    const index = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = seed
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];
   };
 
@@ -102,9 +112,9 @@ const DevelopErd = () => {
         const pageResourceId = `page-erd-${projectId}`;
         stompClient.publish({
           destination: '/pub/presence',
-          body: JSON.stringify({ 
-            resourceId: pageResourceId, 
-            action: PRESENCE_ACTIONS.ENTER 
+          body: JSON.stringify({
+            resourceId: pageResourceId,
+            action: PRESENCE_ACTIONS.ENTER,
           }),
         });
 
@@ -112,11 +122,13 @@ const DevelopErd = () => {
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
           try {
             const data = JSON.parse(message.body);
-            setActiveUsers(data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getRandomColor(username),
-            })));
+            setActiveUsers(
+              data.users.map((username: string) => ({
+                id: username,
+                name: username,
+                color: getRandomColor(username),
+              }))
+            );
           } catch (error) {
             console.error('Failed to parse presence message:', error);
           }
@@ -247,14 +259,16 @@ const DevelopErd = () => {
       <div className="flex justify-between w-[90%] mb-2">
         <div className="flex items-center gap-4">
           <ToggleButton />
-          <ActiveUsers users={activeUsers} size="medium" />
         </div>
-        <button
-          onClick={handleManualSave}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          저장하기
-        </button>
+        <div className="flex items-center gap-4">
+          <ActiveUsers users={activeUsers} size="medium" />
+          <button
+            onClick={handleManualSave}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            저장하기
+          </button>
+        </div>
       </div>
       <div className="w-[90%] h-[500px]">
         <erd-editor

@@ -97,7 +97,7 @@ const JiraButton = ({ onClick }: JiraButtonProps) => {
     <>
       <button
         onClick={handleOpenModal}
-        className={`shadow flex items-center gap-2 px-4 py-2 text-base text-primary-600 border border-primary-600 rounded-lg bg-white hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white transition-colors`}
+        className={`flex justify-center items-center gap-2 px-4 py-2 text-base text-primary-600 border border-transparent rounded-lg hover:bg-white hover:border-blue-500 transition-colors`}
       >
         <img src={jiraLogo} className="w-4 h-4" />
         연동하기
