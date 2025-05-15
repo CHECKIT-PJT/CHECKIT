@@ -12,7 +12,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ content, isDarkMode }) => {
           : "bg-white text-gray-900 border border-gray-200"
       }`}
     >
-      <pre className="font-mono text-sm">
+      <pre className="font-mono text-sm whitespace-pre-wrap">
         <code>{content}</code>
       </pre>
     </div>
