@@ -604,6 +604,17 @@ const DevelopApi = () => {
               // 모달 활성 사용자 업데이트
               setModalActiveUsers(users);
 
+              // 현재 활성 사용자가 아닌 커서 제거
+              setModalRemoteCursors(prev => {
+                const newCursors = { ...prev };
+                Object.keys(newCursors).forEach(userId => {
+                  if (!data.users.includes(userId)) {
+                    delete newCursors[userId];
+                  }
+                });
+                return newCursors;
+              });
+
               // API 별 활성 사용자 목록 업데이트
               setActiveUsersByApi(prev => ({
                 ...prev,
@@ -696,6 +707,7 @@ const DevelopApi = () => {
 
       // 모달 커서 초기화
       setModalRemoteCursors({});
+      setModalActiveUsers([]); // 모달 활성 사용자 목록 초기화
     }
 
     // 메인 페이지로 돌아갈 때 메인 페이지 presence 다시 구독
@@ -709,7 +721,6 @@ const DevelopApi = () => {
 
     setModalOpen(false);
     setSelectedApi(null);
-    setModalActiveUsers([]); // 모달 닫을 때 모달 활성 사용자 목록 초기화
   };
 
   const handleSave = (apiSpecRequest: ApiSpecRequest) => {
