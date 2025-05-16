@@ -196,7 +196,7 @@ const DevelopApi = () => {
       const rect = modalElement.getBoundingClientRect();
       const scrollTop = modalElement.scrollTop;
       const scrollLeft = modalElement.scrollLeft;
-
+      
       // 스크롤 위치를 고려한 상대적 좌표 계산
       const x = e.clientX - rect.left + scrollLeft;
       const y = e.clientY - rect.top + scrollTop;
@@ -412,30 +412,32 @@ const DevelopApi = () => {
       setModalRemoteCursors({});
 
       // 모달 커서 구독 - 상세 페이지 구조에 맞게 수정
-      const cursorSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
-        `/sub/cursor/${projectId}/api-detail/${selectedApi.id}`,
-        message => {
-          try {
-            const cursorData = JSON.parse(message.body);
-            const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
+      const cursorSubscription: StompSubscription | null = stompClientRef.current?.connected
+        ? stompClientRef.current.subscribe(
+            `/sub/cursor/${projectId}/api-detail/${selectedApi.id}`,
+            message => {
+              try {
+                const cursorData = JSON.parse(message.body);
+                const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
 
-            // 자신의 커서는 표시하지 않음
-            if (cursorData.userId === myUserId) return;
+                // 자신의 커서는 표시하지 않음
+                if (cursorData.userId === myUserId) return;
 
-            // 모달창 내의 커서 상태 업데이트
-            setModalRemoteCursors(prev => ({
-              ...prev,
-              [cursorData.userId]: {
-                ...cursorData,
-                color: getUserColor(cursorData.userId),
-                username: cursorData.userId,
-              },
-            }));
-          } catch (error) {
-            console.error('Failed to parse cursor message:', error);
-          }
-        }
-      ) || null;
+                // 모달창 내의 커서 상태 업데이트
+                setModalRemoteCursors(prev => ({
+                  ...prev,
+                  [cursorData.userId]: {
+                    ...cursorData,
+                    color: getUserColor(cursorData.userId),
+                    username: cursorData.userId,
+                  },
+                }));
+              } catch (error) {
+                console.error('Failed to parse cursor message:', error);
+              }
+            }
+          )
+        : null;
 
       // presence 구독 및 입장 메시지 전송
       stompClientRef.current?.publish({
@@ -446,23 +448,25 @@ const DevelopApi = () => {
         }),
       });
 
-      const presenceSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
-        `/sub/presence/${apiResourceId}`,
-        message => {
-          try {
-            const data = JSON.parse(message.body);
-            setModalActiveUsers(
-              data.users.map((username: string) => ({
-                id: username,
-                name: username,
-                color: getUserColor(username),
-              }))
-            );
-          } catch (error) {
-            console.error('Failed to parse presence message:', error);
-          }
-        }
-      ) || null;
+      const presenceSubscription: StompSubscription | null = stompClientRef.current?.connected
+        ? stompClientRef.current.subscribe(
+            `/sub/presence/${apiResourceId}`,
+            message => {
+              try {
+                const data = JSON.parse(message.body);
+                setModalActiveUsers(
+                  data.users.map((username: string) => ({
+                    id: username,
+                    name: username,
+                    color: getUserColor(username),
+                  }))
+                );
+              } catch (error) {
+                console.error('Failed to parse presence message:', error);
+              }
+            }
+          )
+        : null;
 
       return () => {
         // 모달 닫힐 때 구독 해제 및 퇴장 메시지 전송
@@ -539,65 +543,71 @@ const DevelopApi = () => {
       setSelectedApi(fullApi);
       
       // 모달창 커서 구독 설정
-      const cursorSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
-        `/sub/cursor/${projectId}/api-detail/${fullApi.id}`,
-        message => {
-          try {
-            const cursorData = JSON.parse(message.body);
-            const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
+      const cursorSubscription: StompSubscription | null = stompClientRef.current?.connected
+        ? stompClientRef.current.subscribe(
+            `/sub/cursor/${projectId}/api-detail/${fullApi.id}`,
+            message => {
+              try {
+                const cursorData = JSON.parse(message.body);
+                const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
 
-            // 자신의 커서는 표시하지 않음
-            if (cursorData.userId === myUserId) return;
+                // 자신의 커서는 표시하지 않음
+                if (cursorData.userId === myUserId) return;
 
-            setModalRemoteCursors(prev => ({
-              ...prev,
-              [cursorData.userId]: {
-                ...cursorData,
-                color: getUserColor(cursorData.userId),
-                username: cursorData.userId,
-              },
-            }));
-          } catch (error) {
-            console.error('Failed to parse cursor message:', error);
-          }
-        }
-      ) || null;
+                setModalRemoteCursors(prev => ({
+                  ...prev,
+                  [cursorData.userId]: {
+                    ...cursorData,
+                    color: getUserColor(cursorData.userId),
+                    username: cursorData.userId,
+                  },
+                }));
+              } catch (error) {
+                console.error('Failed to parse cursor message:', error);
+              }
+            }
+          )
+        : null;
 
       // 새로운 API에 입장
       const newResourceId = `${RESOURCE_TYPES.API_SPEC}-${fullApi.id}`;
-      stompClientRef.current?.publish({
-        destination: '/pub/presence',
-        body: JSON.stringify({
-          resourceId: newResourceId,
-          action: PRESENCE_ACTIONS.ENTER,
-        }),
-      });
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.publish({
+          destination: '/pub/presence',
+          body: JSON.stringify({
+            resourceId: newResourceId,
+            action: PRESENCE_ACTIONS.ENTER,
+          }),
+        });
+      }
 
       // 새로운 API의 presence 구독 설정
-      const presenceSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
-        `/sub/presence/${newResourceId}`,
-        message => {
-          try {
-            const data = JSON.parse(message.body);
-            const users = data.users.map((username: string) => ({
-              id: username,
-              name: username,
-              color: getUserColor(username),
-            }));
-            
-            // 모달 활성 사용자 업데이트
-            setModalActiveUsers(users);
-            
-            // API 별 활성 사용자 목록 업데이트
-            setActiveUsersByApi(prev => ({
-              ...prev,
-              [fullApi.id!.toString()]: users,
-            }));
-          } catch (error) {
-            console.error('Failed to parse presence message:', error);
-          }
-        }
-      ) || null;
+      const presenceSubscription: StompSubscription | null = stompClientRef.current?.connected
+        ? stompClientRef.current.subscribe(
+            `/sub/presence/${newResourceId}`,
+            message => {
+              try {
+                const data = JSON.parse(message.body);
+                const users = data.users.map((username: string) => ({
+                  id: username,
+                  name: username,
+                  color: getUserColor(username),
+                }));
+                
+                // 모달 활성 사용자 업데이트
+                setModalActiveUsers(users);
+                
+                // API 별 활성 사용자 목록 업데이트
+                setActiveUsersByApi(prev => ({
+                  ...prev,
+                  [fullApi.id!.toString()]: users,
+                }));
+              } catch (error) {
+                console.error('Failed to parse presence message:', error);
+              }
+            }
+          )
+        : null;
 
       // 구독 정보 저장
       modalSubscriptionRef.current = {
