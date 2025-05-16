@@ -273,21 +273,29 @@ const ApiDetailModal = ({
       >
         {/* 원격 커서 렌더링 */}
         <div className="fixed pointer-events-none" style={{ 
+          position: 'absolute',
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
+          right: 0,
+          bottom: 0,
+          overflow: 'hidden',
           transform: 'translate(0, 0)'
         }}>
-          {Object.values(remoteCursors).map(cursor => (
-            <RemoteCursor
-              key={cursor.userId}
-              x={cursor.x}
-              y={cursor.y}
-              username={cursor.username}
-              color={cursor.color}
-            />
-          ))}
+          {Object.values(remoteCursors).map(cursor => {
+            // 스크롤 위치에 따른 커서 위치 조정
+            const adjustedY = cursor.y;
+            const adjustedX = cursor.x;
+            
+            return (
+              <RemoteCursor
+                key={cursor.userId}
+                x={adjustedX}
+                y={adjustedY}
+                username={cursor.username}
+                color={cursor.color}
+              />
+            );
+          })}
         </div>
         <div className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-4">
