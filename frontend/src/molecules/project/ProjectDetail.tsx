@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import InputSelect from '../develop/InputSelect';
-import DocSelect from '../document/DocSelect';
+// import DocSelect from '../document/DocSelect';
 import BuildSelect from '../buildpreview/BuildSelect';
 import { useGetProjectById } from '../../api/projectAPI';
 import JiraButton from '../../components/button/JiraButton';
@@ -88,7 +88,7 @@ const ProjectDetail = () => {
         <div className="space-y-8">
           {/* 설계 */}
           <section className="relative pl-6">
-            <h3 className="text-xl font-bold mb-4">설계</h3>
+            <h3 className="text-xl font-bold mb-4">설계 문서 작업</h3>
             <div className="relative">
               <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200" />
               <div className="ml-8 py-4 bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -100,7 +100,7 @@ const ProjectDetail = () => {
             </div>
           </section>
 
-          {/* 문서 */}
+          {/* 문서
           <section className="relative pl-6">
             <h3 className="text-xl font-bold mb-4">문서 확인하기</h3>
             <div className="relative">
@@ -113,16 +113,16 @@ const ProjectDetail = () => {
                 <DocSelect className="justify-start" />
               </div>
             </div>
-          </section>
+          </section> */}
 
           {/* 빌드 */}
           <section className="relative pl-6">
-            <h3 className="text-xl font-bold mb-4">Build Preview</h3>
+            <h3 className="text-xl font-bold mb-4">빌드 미리보기</h3>
             <div className="relative">
               <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200" />
               <div className="ml-8 py-4 bg-white rounded-lg border border-gray-200 shadow-sm">
                 <p className="text-xs text-gray-400 mb-3 ml-6">
-                  좋은 설계는 완벽한 파일 제공에 도움이 됩니다.
+                  좋은 설계를 통해 프로젝트 파일을 제공합니다.
                 </p>
                 <BuildSelect className="justify-start" />
               </div>

@@ -19,7 +19,7 @@ const BuildSelect = ({
       className={`flex ${direction === 'row' ? 'flex-row' : 'flex-col'}  items-center justify-center px-3 ${className}`}
     >
       <ChapterCardLong
-        title="컨벤션 설정하기"
+        title="Git 설정 추가"
         subtitle="빌드 전 조건들을 지정하기"
         icon={<FaPlay size={18} />}
         bgColor="hover:bg-blue-600 hover:bg-opacity-40 border-t"
@@ -29,7 +29,7 @@ const BuildSelect = ({
         title="Spring 설정"
         subtitle="초기 스프링 설정 선택하기"
         icon={<SiSpring size={18} />}
-        bgColor="hover:bg-blue-600 hover:bg-opacity-40"
+        bgColor="hover:bg-blue-600 hover:bg-opacity-40 border-t"
         onClick={() => navigate('spring')}
       />
       <ChapterCardLong
