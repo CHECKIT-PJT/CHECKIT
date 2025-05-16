@@ -11,7 +11,7 @@ import { countFiles, createFilePath } from "../utils/fileUtils";
 import { ExpandedFolders, SelectedFile, ApiResponse } from "../types";
 import { useNavigate, useParams } from "react-router-dom";
 import Dialog from "../molecules/buildpreview/Dialog";
-
+import { downloadBuildZip } from "../api/downloadAPI";
 const BuildPreviewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
@@ -87,13 +87,14 @@ const BuildPreviewPage: React.FC = () => {
   };
 
   const handleDownload = async (): Promise<void> => {
-    try {
-      await downloadProject();
-      alert("프로젝트 다운로드가 완료되었습니다.");
-    } catch (error) {
-      console.error("다운로드 중 오류 발생:", error);
-      alert("다운로드 중 오류가 발생했습니다.");
+    if (!projectId) return;
+
+    const token = sessionStorage.getItem("accessToken");
+    if (!token) {
+      alert("인증이 필요합니다. 다시 로그인해주세요.");
+      return;
     }
+    await downloadBuildZip(Number(projectId), token);
   };
 
   const handleDialogConfirm = () => {
