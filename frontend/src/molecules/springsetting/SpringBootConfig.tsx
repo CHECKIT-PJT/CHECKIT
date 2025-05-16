@@ -5,7 +5,6 @@ import React from "react";
 interface SpringBootVersion {
   version: string;
   releaseDate: string;
-  springVersion: string;
   javaCompatibility: string;
 }
 
