@@ -12,4 +12,7 @@ public class SequenceDiagramResponse {
 
 	@JsonProperty("diagram_url")
 	private String diagramUrl;
+
+	@JsonProperty("category")
+	private String category;
 }

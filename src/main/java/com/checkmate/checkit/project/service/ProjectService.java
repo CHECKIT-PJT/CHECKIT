@@ -513,4 +513,18 @@ public class ProjectService {
 		Integer projectId) {
 		return projectMemberRepository.findMembersWithEmailByProjectId(projectId);
 	}
+
+	/**
+	 * 프로젝트 이름 조회
+	 * @param projectId : 프로젝트 ID
+	 * @return String : 프로젝트 이름
+	 */
+	@Transactional(readOnly = true)
+	public String getProjectName(Integer projectId) {
+		// 프로젝트 ID로 ProjectEntity 조회
+		ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+
+		return project.getProjectName();
+	}
 }
