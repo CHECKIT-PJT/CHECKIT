@@ -194,4 +194,9 @@ public class ApiSpecService {
 
         apiSpecRepository.delete(spec);
     }
+
+    @Transactional
+    public List<String> getApiCategories(int projectId){
+        return apiSpecRepository.findDistinctCategoriesByProjectId(projectId);
+    }
 }

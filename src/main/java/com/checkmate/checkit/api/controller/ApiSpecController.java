@@ -32,6 +32,11 @@ public class ApiSpecController {
         return ResponseEntity.ok(JSONResponse.onSuccess(apiSpecService.getApiSpecsByProjectId(projectId)));
     }
 
+    @GetMapping("/{projectId}/category")
+    public ResponseEntity<JSONResponse<List<String>>> getApiCategory(@PathVariable int projectId, @RequestHeader("Authorization") String authorization){
+        return ResponseEntity.ok(JSONResponse.onSuccess(apiSpecService.getApiCategories(projectId)));
+    }
+
     @GetMapping("/{projectId}/{apiSpecId}")
     public ResponseEntity<JSONResponse<ApiSpecResponse>> getApiSpec(@PathVariable int projectId, @PathVariable Long apiSpecId,@RequestHeader("Authorization") String authorization) {
         return ResponseEntity.ok(JSONResponse.onSuccess(apiSpecService.getApiSpecsByProjectIdandApiScepId(projectId, apiSpecId)));
