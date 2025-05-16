@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SequenceDiagramRepository extends JpaRepository<SequenceDiagramEntity, Integer> {
-	Optional<SequenceDiagramEntity> findByProjectIdAndPlantUmlCodeIsNotNull(Integer projectId);
+	Optional<SequenceDiagramEntity> findByProjectIdAndPlantUmlCodeIsNotNullAndCategory(Integer projectId,
+		String category);
+
 	boolean existsByProjectIdAndPlantUmlCodeIsNotNull(Integer projectId);
 }

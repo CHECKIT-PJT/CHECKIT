@@ -78,11 +78,11 @@ public class SequenceDiagramService {
 	 * @return 시퀀스 다이어그램 응답 객체
 	 */
 	@Transactional(readOnly = true)
-	public SequenceDiagramResponse getSequenceDiagram(String token, Integer projectId) {
+	public SequenceDiagramResponse getSequenceDiagram(String token, Integer projectId, String category) {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 		projectService.validateUserAndProject(loginUserId, projectId);
 
-		return sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNull(projectId)
+		return sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNullAndCategory(projectId, category)
 			.map(sequenceDiagram -> new SequenceDiagramResponse(sequenceDiagram.getPlantUmlCode(),
 				sequenceDiagram.getImageUrl(), sequenceDiagram.getCategory()))
 			.orElseThrow(() -> new CommonException(ErrorCode.SEQUENCE_DIAGRAM_NOT_FOUND));
@@ -101,7 +101,8 @@ public class SequenceDiagramService {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 		projectService.validateUserAndProject(loginUserId, projectId);
 
-		sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNull(projectId).ifPresentOrElse(
+		sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNullAndCategory(projectId,
+			sequenceDiagramUpdateRequest.category()).ifPresentOrElse(
 			sequenceDiagram -> {
 				sequenceDiagram.updatePlantUmlCode(sequenceDiagramUpdateRequest.content(),
 					sequenceDiagramUpdateRequest.diagramUrl(),
@@ -120,17 +121,18 @@ public class SequenceDiagramService {
 	 * @param projectId 프로젝트 ID
 	 */
 	@Transactional
-	public void deleteSequenceDiagram(String token, Integer projectId) {
+	public void deleteSequenceDiagram(String token, Integer projectId, String category) {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 		projectService.validateUserAndProject(loginUserId, projectId);
 
-		sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNull(projectId).ifPresentOrElse(
-			sequenceDiagram -> {
-				sequenceDiagram.deletePlantUmlCode();
-			},
-			() -> {
-				throw new CommonException(ErrorCode.SEQUENCE_DIAGRAM_NOT_FOUND);
-			}
-		);
+		sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNullAndCategory(projectId, category)
+			.ifPresentOrElse(
+				sequenceDiagram -> {
+					sequenceDiagram.deletePlantUmlCode();
+				},
+				() -> {
+					throw new CommonException(ErrorCode.SEQUENCE_DIAGRAM_NOT_FOUND);
+				}
+			);
 	}
 }

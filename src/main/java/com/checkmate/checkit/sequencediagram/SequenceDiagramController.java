@@ -60,10 +60,11 @@ public class SequenceDiagramController {
 	@GetMapping("/{projectId}/sequence/download/code")
 	public ResponseEntity<Resource> downloadSequenceDiagramCode(
 		@RequestHeader("Authorization") String authorization,
-		@PathVariable Integer projectId) {
+		@PathVariable Integer projectId,
+		@RequestParam String category) {
 
 		String token = authorization.substring(7);
-		String content = sequenceDiagramService.getSequenceDiagram(token, projectId).getContent();
+		String content = sequenceDiagramService.getSequenceDiagram(token, projectId, category).getContent();
 
 		ByteArrayResource resource = new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
 		return ResponseEntity.ok()
@@ -76,10 +77,11 @@ public class SequenceDiagramController {
 	@GetMapping("/{projectId}/sequence/download/image")
 	public ResponseEntity<Resource> downloadSequenceDiagramImage(
 		@RequestHeader("Authorization") String authorization,
-		@PathVariable Integer projectId) {
+		@PathVariable Integer projectId,
+		@RequestParam String category) {
 
 		String token = authorization.substring(7);
-		String imageUrl = sequenceDiagramService.getSequenceDiagram(token, projectId).getDiagramUrl();
+		String imageUrl = sequenceDiagramService.getSequenceDiagram(token, projectId, category).getDiagramUrl();
 
 		try (var in = new java.net.URL(imageUrl).openStream()) {
 			byte[] imageBytes = in.readAllBytes();
@@ -97,10 +99,12 @@ public class SequenceDiagramController {
 	@GetMapping("/{projectId}/sequence")
 	public ResponseEntity<JSONResponse<SequenceDiagramResponse>> getSequenceDiagram(
 		@RequestHeader("Authorization") String authorization,
-		@PathVariable Integer projectId) {
+		@PathVariable Integer projectId,
+		@RequestParam String category) {
 
 		String token = authorization.substring(7);
-		SequenceDiagramResponse sequenceDiagramResponse = sequenceDiagramService.getSequenceDiagram(token, projectId);
+		SequenceDiagramResponse sequenceDiagramResponse = sequenceDiagramService.getSequenceDiagram(token, projectId,
+			category);
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, sequenceDiagramResponse));
 	}
 
@@ -120,10 +124,11 @@ public class SequenceDiagramController {
 	@DeleteMapping("/{projectId}/sequence")
 	public ResponseEntity<JSONResponse<Void>> deleteSequenceDiagram(
 		@RequestHeader("Authorization") String authorization,
-		@PathVariable Integer projectId) {
+		@PathVariable Integer projectId,
+		@RequestParam String category) {
 
 		String token = authorization.substring(7);
-		sequenceDiagramService.deleteSequenceDiagram(token, projectId);
+		sequenceDiagramService.deleteSequenceDiagram(token, projectId, category);
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 }
