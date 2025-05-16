@@ -68,6 +68,7 @@ public enum ErrorCode {
 	COMMIT_CONVENTION_NOT_FOUND(404, NOT_FOUND, "Commit 규칙을 찾을 수 없습니다."),
 	FAILED_TO_CREATE_REPOSITORY(500, INTERNAL_SERVER_ERROR, "레포지토리 생성에 실패했습니다."),
 	FAILED_TO_PUSH_REPOSITORY(500, INTERNAL_SERVER_ERROR, "레포지토리 푸시에 실패했습니다."),
+	FAILED_TO_PULL_REPOSITORY(500, INTERNAL_SERVER_ERROR, "레포지토리 풀에 실패했습니다."),
 
 	// 도커 관련 에러
 	INVALID_DATABASE_TYPE(400, BAD_REQUEST, "유효하지 않은 데이터베이스 타입입니다."),
@@ -82,9 +83,8 @@ public enum ErrorCode {
 	SEQUENCE_DIAGRAM_ALREADY_EXISTS(409, CONFLICT, "이미 해당 API에 Sequence가 존재합니다."),
 
 	// Jira 관련 에러
-	JIRA_PROJECT_NOT_FOUND(404, NOT_FOUND, "Jira에 연동된 프로젝트를 찾을 수 없습니다.");
-
-
+	JIRA_PROJECT_NOT_FOUND(404, NOT_FOUND, "Jira에 연동된 프로젝트를 찾을 수 없습니다."),
+	;
 
 	private final int code;
 	private final HttpStatus httpStatus;

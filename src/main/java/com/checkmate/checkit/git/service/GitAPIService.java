@@ -1,7 +1,10 @@
 package com.checkmate.checkit.git.service;
 
+import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jgit.api.Git;
@@ -10,17 +13,21 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.checkmate.checkit.auth.entity.OAuthToken;
 import com.checkmate.checkit.auth.repository.OAuthTokenRepository;
 import com.checkmate.checkit.git.dto.request.GitPushRequest;
+import com.checkmate.checkit.git.dto.response.GitFileNode;
+import com.checkmate.checkit.git.dto.response.GitPullResponse;
 import com.checkmate.checkit.git.dto.response.GitPushResponse;
 import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.common.enums.AuthProvider;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.config.properties.OAuthProperties;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.service.ProjectService;
 import com.checkmate.checkit.projectbuilder.service.ProjectBuilderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +36,14 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class GitPushService {
+public class GitAPIService {
 
 	private final OAuthProperties oAuthProperties;
 	private final OAuthTokenRepository oAuthTokenRepository;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final ProjectBuilderService projectBuilderService;
+	private final ProjectService projectService;
+	private final FileExplorerService fileExplorerService;
 	private final WebClient webClient = WebClient.builder()
 		.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 		.build();
@@ -171,5 +180,54 @@ public class GitPushService {
 			log.error("푸시 실패", e);
 			throw new CommonException(ErrorCode.FAILED_TO_PUSH_REPOSITORY);
 		}
+	}
+
+	/**
+	 * Git Repository를 Pull하는 메서드
+	 * @param token : OAuth Access Token
+	 * @param projectId : Project ID
+	 * @return : Git Pull Response
+	 */
+	@Transactional(readOnly = true)
+	public GitPullResponse pullRepository(String token, Integer projectId) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+		String userName = jwtTokenProvider.getUserNameFromToken(token);
+
+		String accessToken = oAuthTokenRepository.findByUserIdAndServiceProvider(userId, AuthProvider.GITLAB)
+			.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
+			.getAccessToken();
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// Git Repository URL
+		String projectName = projectService.getProjectName(projectId);
+		String remoteUrl = "https://oauth2:" + accessToken + "@lab.ssafy.com/" + userName + "/" + projectName + ".git";
+
+		// 작업 디렉토리 지정
+		Path localPath = Paths.get("/tmp/git", userId.toString(), projectName);
+		File localRepoDir = localPath.toFile();
+
+		Git git;
+		try {
+			if (!localRepoDir.exists()) {
+				// 최초 clone
+				git = Git.cloneRepository()
+					.setURI(remoteUrl)
+					.setDirectory(localRepoDir)
+					.call();
+			} else {
+				// 이후 pull
+				git = Git.open(localRepoDir);
+				git.pull().call();
+			}
+		} catch (Exception e) {
+			throw new CommonException(ErrorCode.FAILED_TO_PULL_REPOSITORY);
+		}
+
+		// 이후 디렉토리 탐색 및 파일 리스트 구성
+		List<GitFileNode> fileNodes = fileExplorerService.scanDirectory(localRepoDir);
+
+		return new GitPullResponse(projectName, "main", fileNodes);
 	}
 }

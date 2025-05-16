@@ -24,7 +24,9 @@ import com.checkmate.checkit.git.dto.request.GitPushRequest;
 import com.checkmate.checkit.git.dto.response.BranchStrategyResponse;
 import com.checkmate.checkit.git.dto.response.CommitConventionResponse;
 import com.checkmate.checkit.git.dto.response.GitIgnoreResponse;
+import com.checkmate.checkit.git.dto.response.GitPullResponse;
 import com.checkmate.checkit.git.dto.response.GitPushResponse;
+import com.checkmate.checkit.git.service.GitAPIService;
 import com.checkmate.checkit.git.service.GitSettingService;
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
@@ -36,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 public class GitSettingController {
 
 	private final GitSettingService gitSettingService;
+	private final GitAPIService gitAPIService;
 
 	// GitIgnore 생성
 	@PostMapping("/gitignore/{projectId}")
@@ -247,4 +250,17 @@ public class GitSettingController {
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, gitPushResponse));
 	}
+
+	@GetMapping("/pull/{projectId}")
+	public ResponseEntity<JSONResponse<GitPullResponse>> pullRepository(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		GitPullResponse gitPullResponse = gitAPIService.pullRepository(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, gitPullResponse));
+	}
+
 }

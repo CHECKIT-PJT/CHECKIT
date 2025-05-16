@@ -31,7 +31,7 @@ public class GitSettingService {
 	private final GitSettingRepository gitSettingRepository;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final ProjectService projectService;
-	private final GitPushService gitPushService;
+	private final GitAPIService gitPushService;
 
 	/**
 	 * GitIgnore 생성
