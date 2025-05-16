@@ -11,6 +11,8 @@ import {
 } from 'react-icons/fa6';
 import { FaEquals as FaEqualsOld } from 'react-icons/fa';
 import ActiveUsers from '../apicomponent/ActiveUsers';
+import RemoteCursor from '../cursor/RemoteCursor';
+import type { RemoteCursorData } from '../../types/cursor';
 
 interface User {
   id: string;
@@ -24,6 +26,8 @@ interface FuncDetailModalProps {
   onSave: (func: FuncDetail) => void;
   onDelete?: () => void;
   activeUsers: User[];
+  onMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  remoteCursors: { [key: string]: RemoteCursorData };
 }
 
 const blankFuncDetail: FuncDetail = {
@@ -51,6 +55,8 @@ const FuncDetailModal = ({
   onSave,
   onDelete,
   activeUsers,
+  onMouseMove,
+  remoteCursors,
 }: FuncDetailModalProps) => {
   const { currentProject } = useProjectStore();
   const members = currentProject?.projectMembers || [];
@@ -75,7 +81,28 @@ const FuncDetailModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden">
+      <div 
+        className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden relative"
+        onMouseMove={onMouseMove}
+      >
+        <div className="fixed pointer-events-none" style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: 'hidden'
+        }}>
+          {Object.values(remoteCursors).map(cursor => (
+            <RemoteCursor
+              key={cursor.userId}
+              x={cursor.x}
+              y={cursor.y}
+              username={cursor.username}
+              color={cursor.color}
+            />
+          ))}
+        </div>
         <div className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-blue-700">

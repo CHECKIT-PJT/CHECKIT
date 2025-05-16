@@ -64,8 +64,8 @@ const ProjectDetail = () => {
   return (
     <div className="flex flex-1">
       <div className="w-1/5 py-2 pr-4 border-r border-gray-200 flex flex-col ">
-        <div className="flex flex-col gap-2 mb-2 mt-4">
-          <h3 className="font-bold text-lg">팀 관리</h3>
+        <div className="flex flex-col gap-4 mb-2 mt-4">
+          <h3 className="font-bold text-lg ">팀 관리</h3>
           <JiraButton />
           <MoveGitlabButton />
         </div>

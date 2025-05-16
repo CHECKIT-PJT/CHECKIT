@@ -8,6 +8,7 @@ import {
 } from '../../api/jiraAPI';
 import { toast } from 'react-toastify';
 import jiraLogo from '../../assets/jira-1.svg';
+import { IoArrowForward } from 'react-icons/io5';
 
 interface JiraButtonProps {
   onClick?: () => void;
@@ -97,9 +98,10 @@ const JiraButton = ({ onClick }: JiraButtonProps) => {
     <>
       <button
         onClick={handleOpenModal}
-        className={`flex justify-center items-center gap-2 px-4 py-2 text-base text-primary-600 border border-transparent rounded-lg hover:bg-white hover:border-blue-500 transition-colors`}
+        className={`flex justify-left items-center gap-2 px-4 py-2 text-base text-primary-600 shadow border-2 border-gray-50 border-transparent rounded-lg hover:bg-white hover:border-blue-500 transition-colors`}
       >
-        <img src={jiraLogo} className="w-4 h-4" />
+        <IoArrowForward className="mr-4" />
+        <img src={jiraLogo} className="w-4 h-4 mr-1" />
         연동하기
       </button>
       {showModal && (
