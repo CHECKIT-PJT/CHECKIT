@@ -10,5 +10,5 @@ public interface SequenceDiagramRepository extends JpaRepository<SequenceDiagram
 	Optional<SequenceDiagramEntity> findByProjectIdAndPlantUmlCodeIsNotNullAndCategory(Integer projectId,
 		String category);
 
-	boolean existsByProjectIdAndPlantUmlCodeIsNotNull(Integer projectId);
+	boolean existsByProjectIdAndPlantUmlCodeIsNotNullAndCategory(Integer projectId, String category);
 }

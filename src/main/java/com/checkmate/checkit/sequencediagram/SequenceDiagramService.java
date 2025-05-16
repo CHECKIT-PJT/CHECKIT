@@ -55,7 +55,8 @@ public class SequenceDiagramService {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
 		projectService.validateUserAndProject(userId, projectId);
 
-		boolean exists = sequenceDiagramRepository.existsByProjectIdAndPlantUmlCodeIsNotNull(projectId);
+		boolean exists = sequenceDiagramRepository.existsByProjectIdAndPlantUmlCodeIsNotNullAndCategory(projectId,
+			sequenceDiagramCreateRequest.category());
 		if (exists) {
 			throw new CommonException(ErrorCode.SEQUENCE_DIAGRAM_ALREADY_EXISTS);
 		}
