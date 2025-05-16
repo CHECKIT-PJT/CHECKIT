@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.checkmate.checkit.git.dto.request.BranchStrategyCreateRequest;
 import com.checkmate.checkit.git.dto.request.BranchStrategyUpdateRequest;
+import com.checkmate.checkit.git.dto.request.CommitAndPushRequest;
 import com.checkmate.checkit.git.dto.request.CommitConventionCreateRequest;
 import com.checkmate.checkit.git.dto.request.CommitConventionUpdateRequest;
 import com.checkmate.checkit.git.dto.request.GitIgnoreCreateRequest;
@@ -263,4 +264,16 @@ public class GitSettingController {
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, gitPullResponse));
 	}
 
+	@PostMapping("/push/{projectId}")
+	public ResponseEntity<JSONResponse<Void>> commitAndPushRepository(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId,
+		@RequestBody CommitAndPushRequest commitAndPushRequest) {
+
+		String token = authorization.substring(7);
+
+		gitAPIService.commitAndPushRepository(token, projectId, commitAndPushRequest);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
+	}
 }

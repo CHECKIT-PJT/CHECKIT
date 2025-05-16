@@ -5,9 +5,16 @@ import lombok.Getter;
 
 @Getter
 public class CommonException extends RuntimeException {
-    private final ErrorCode errorCode;
+	private final ErrorCode errorCode;
+	private final String detail;
 
-    public CommonException(ErrorCode errorCode) {
-        this.errorCode = errorCode;
-    }
+	public CommonException(ErrorCode errorCode) {
+		this.errorCode = errorCode;
+		this.detail = null;
+	}
+
+	public CommonException(ErrorCode errorCode, String detail) {
+		this.errorCode = errorCode;
+		this.detail = detail;
+	}
 }

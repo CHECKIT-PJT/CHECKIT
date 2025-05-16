@@ -1,6 +1,8 @@
 package com.checkmate.checkit.git.service;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,10 +20,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.checkmate.checkit.auth.entity.OAuthToken;
 import com.checkmate.checkit.auth.repository.OAuthTokenRepository;
+import com.checkmate.checkit.git.dto.request.CommitAndPushRequest;
 import com.checkmate.checkit.git.dto.request.GitPushRequest;
 import com.checkmate.checkit.git.dto.response.GitFileNode;
 import com.checkmate.checkit.git.dto.response.GitPullResponse;
 import com.checkmate.checkit.git.dto.response.GitPushResponse;
+import com.checkmate.checkit.git.repository.GitSettingRepository;
 import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.common.enums.AuthProvider;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
@@ -44,6 +48,7 @@ public class GitAPIService {
 	private final ProjectBuilderService projectBuilderService;
 	private final ProjectService projectService;
 	private final FileExplorerService fileExplorerService;
+	private final GitSettingRepository gitSettingRepository;
 	private final WebClient webClient = WebClient.builder()
 		.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 		.build();
@@ -119,16 +124,14 @@ public class GitAPIService {
 	 * @param gitPushRequest : Git Push Request
 	 * @return : Git Repository URL
 	 */
-	private Mono<Map> createGitProject(String accessToken, String authProvider,
-		GitPushRequest gitPushRequest) {
+	private Mono<Map> createGitProject(String accessToken, String authProvider, GitPushRequest gitPushRequest) {
 
 		String fullUri = oAuthProperties.getProvider(authProvider).getApiUri() + "/projects/";
 
 		return webClient.post()
 			.uri(URI.create(fullUri))
 			.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-			.bodyValue(Map.of("name", gitPushRequest.repoName(), "visibility",
-				gitPushRequest.visibility()))
+			.bodyValue(Map.of("name", gitPushRequest.repoName(), "visibility", gitPushRequest.visibility()))
 			.retrieve()
 			.bodyToMono(Map.class)
 			.onErrorMap(error -> {
@@ -153,9 +156,7 @@ public class GitAPIService {
 			Path codeDir = projectBuilderService.buildProject(projectId);
 
 			// 2. Git 저장소 초기화
-			Git git = Git.init()
-				.setDirectory(codeDir.toFile())
-				.call();
+			Git git = Git.init().setDirectory(codeDir.toFile()).call();
 
 			// 3. Git 커밋
 			git.add().addFilepattern(".").call();
@@ -164,10 +165,7 @@ public class GitAPIService {
 			// 4. remote 설정
 			String authenticatedUrl = repositoryUrl.replace("https://", "https://oauth2:" + accessToken + "@");
 
-			git.remoteAdd()
-				.setName("origin")
-				.setUri(new URIish(authenticatedUrl))
-				.call();
+			git.remoteAdd().setName("origin").setUri(new URIish(authenticatedUrl)).call();
 
 			// 5. push
 			git.push()
@@ -188,7 +186,7 @@ public class GitAPIService {
 	 * @param projectId : Project ID
 	 * @return : Git Pull Response
 	 */
-	@Transactional(readOnly = true)
+	@Transactional
 	public GitPullResponse pullRepository(String token, Integer projectId) {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
 		String userName = jwtTokenProvider.getUserNameFromToken(token);
@@ -212,10 +210,7 @@ public class GitAPIService {
 		try {
 			if (!localRepoDir.exists()) {
 				// 최초 clone
-				git = Git.cloneRepository()
-					.setURI(remoteUrl)
-					.setDirectory(localRepoDir)
-					.call();
+				git = Git.cloneRepository().setURI(remoteUrl).setDirectory(localRepoDir).call();
 			} else {
 				// 이후 pull
 				git = Git.open(localRepoDir);
@@ -229,5 +224,83 @@ public class GitAPIService {
 		List<GitFileNode> fileNodes = fileExplorerService.scanDirectory(localRepoDir);
 
 		return new GitPullResponse(projectName, "main", fileNodes);
+	}
+
+	/**
+	 * Git Repository를 commit하고 push하는 메서드
+	 * @param token : OAuth Access Token
+	 * @param projectId : Project ID
+	 */
+	@Transactional
+	public void commitAndPushRepository(String token, Integer projectId, CommitAndPushRequest commitAndPushRequest) {
+		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
+
+		// commit convention 가져오기
+		String commitConvention = gitSettingRepository.findByProjectId(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.GIT_SETTING_NOT_FOUND))
+			.getCommitConventionReg();
+
+		// 커밋 메시지 유효성 검사 (commit-msg 역할)
+		validateCommitMessage(commitAndPushRequest.message(), commitConvention);
+
+		// Git 저장소 위치 설정
+		String projectName = projectService.getProjectName(projectId);
+		String accessToken = oAuthTokenRepository.findByUserIdAndServiceProvider(userId, AuthProvider.GITLAB)
+			.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
+			.getAccessToken();
+		File repoDir = Paths.get("/tmp/git", userId.toString(), projectName).toFile();
+
+		// 변경 파일을 로컬 디렉토리에 덮어쓰기
+		for (GitFileNode file : commitAndPushRequest.changedFiles()) {
+			File targetFile = new File(repoDir, file.getPath());
+
+			// 디렉토리 없으면 생성
+			targetFile.getParentFile().mkdirs();
+
+			try (FileWriter writer = new FileWriter(targetFile)) {
+				writer.write(file.getContent());
+			} catch (IOException e) {
+				throw new RuntimeException("파일 쓰기 실패: " + file.getPath(), e);
+			}
+		}
+
+		try (Git git = Git.open(repoDir)) {
+			// 변경된 파일 add
+			for (GitFileNode file : commitAndPushRequest.changedFiles()) {
+				git.add().addFilepattern(file.getPath()).call();
+			}
+
+			// 커밋
+			git.commit().setMessage(commitAndPushRequest.message()).call();
+
+			// push
+			git.push()
+				.setRemote("origin")
+				.setCredentialsProvider(new UsernamePasswordCredentialsProvider("oauth2", accessToken))
+				.call();
+
+		} catch (Exception e) {
+			throw new CommonException(ErrorCode.FAILED_TO_COMMIT_AND_PUSH_REPOSITORY);
+		}
+	}
+
+	/**
+	 * 커밋 메시지 유효성 검사
+	 * @param message : 커밋 메시지
+	 * @param regex : 정규 표현식
+	 */
+	private void validateCommitMessage(String message, String regex) {
+
+		if (message == null || message.isBlank()) {
+			throw new CommonException(ErrorCode.INVALID_COMMIT_MESSAGE);
+		}
+
+		if (!message.matches(regex)) {
+			throw new CommonException(ErrorCode.INVALID_COMMIT_CONVENTION,
+				"커밋 메시지가 규칙에 맞지 않습니다.\n" + "규칙: " + regex + "\n" + "현재 커밋 메시지: " + message);
+		}
 	}
 }
