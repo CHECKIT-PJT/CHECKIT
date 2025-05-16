@@ -1,16 +1,19 @@
-import axios from "axios";
+import axiosInstance from "./axiosInstance";
 
 export const downloadBuildZip = async (
   projectId: number,
   accessToken: string
 ) => {
   try {
-    const response = await axios.get(`/api/build/${projectId}/download`, {
-      responseType: "blob",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const response = await axiosInstance.get(
+      `/api/build/${projectId}/download`,
+      {
+        responseType: "blob",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     // 파일명 추출
     const contentDisposition = response.headers["content-disposition"];
