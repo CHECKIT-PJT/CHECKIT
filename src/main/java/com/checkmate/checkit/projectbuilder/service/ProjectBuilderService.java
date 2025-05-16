@@ -85,7 +85,7 @@ public class ProjectBuilderService {
 		codeSaveService.save(projectId, springName, basePackage, serviceFiles);
 		codeSaveService.save(projectId, springName, basePackage, controllerFiles);
 
-		return codeSaveService.getProjectPath(projectId);
+		return Path.of(codeSaveService.getProjectPath(projectId) + "/" + springName);
 	}
 
 	public SpringSettingsDtoResponse getSpringSettings(int projectId) {

@@ -20,7 +20,9 @@ import com.checkmate.checkit.springsettings.repository.DependencyRepository;
 import com.checkmate.checkit.springsettings.repository.SpringSettingsRepository;
 import com.checkmate.checkit.springsettings.util.DependencyProvider;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class SpringSettingsService {
 
@@ -61,6 +63,9 @@ public class SpringSettingsService {
 	}
 
 	public SpringSettingsDtoResponse getSpringSettings(Integer projectId) {
+
+		log.info("Getting Spring settings for {}", projectId);
+
 		SpringSettingsEntity entity = springSettingsRepository.findByProjectEntityId(projectId)
 			.orElseThrow(() -> new CommonException(ErrorCode.SPRING_SETTINGS_NOT_FOUND));
 
