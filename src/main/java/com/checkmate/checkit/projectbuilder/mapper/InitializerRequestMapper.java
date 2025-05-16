@@ -5,7 +5,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.checkmate.checkit.projectbuilder.dto.InitializerRequest;
-import com.checkmate.checkit.projectbuilder.mapper.DependencyNameIdMap;
 import com.checkmate.checkit.springsettings.dto.SpringSettingsDtoResponse;
 import com.checkmate.checkit.springsettings.entity.SpringSettingsEntity.SpringProjectType;
 
@@ -49,6 +48,12 @@ public class InitializerRequestMapper {
 	 */
 	private static String convertBootVersion(int versionCode) {
 		return switch (versionCode) {
+			case 400 -> "4.0.0";
+			case 350 -> "3.5.0";
+			case 346 -> "3.4.6";
+			case 345 -> "3.4.5";
+			case 3312 -> "3.3.12";
+			case 3311 -> "3.3.11";
 			case 306 -> "3.0.6";
 			case 305 -> "3.0.5";
 			case 2710 -> "2.7.10";

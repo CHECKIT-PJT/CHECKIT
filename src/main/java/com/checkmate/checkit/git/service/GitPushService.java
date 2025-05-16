@@ -1,10 +1,8 @@
 package com.checkmate.checkit.git.service;
 
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.UUID;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.transport.URIish;
@@ -19,9 +17,11 @@ import com.checkmate.checkit.auth.repository.OAuthTokenRepository;
 import com.checkmate.checkit.git.dto.request.GitPushRequest;
 import com.checkmate.checkit.git.dto.response.GitPushResponse;
 import com.checkmate.checkit.global.code.ErrorCode;
+import com.checkmate.checkit.global.common.enums.AuthProvider;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.config.properties.OAuthProperties;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.projectbuilder.service.ProjectBuilderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -34,6 +34,7 @@ public class GitPushService {
 	private final OAuthProperties oAuthProperties;
 	private final OAuthTokenRepository oAuthTokenRepository;
 	private final JwtTokenProvider jwtTokenProvider;
+	private final ProjectBuilderService projectBuilderService;
 	private final WebClient webClient = WebClient.builder()
 		.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 		.build();
@@ -51,7 +52,7 @@ public class GitPushService {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(jwtAccessToken);
 		String userName = jwtTokenProvider.getUserNameFromToken(jwtAccessToken);
 
-		OAuthToken oAuthToken = oAuthTokenRepository.findByUserId(userId)
+		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(userId, AuthProvider.GITLAB)
 			.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
 
 		String accessToken = oAuthToken.getAccessToken();
@@ -59,9 +60,9 @@ public class GitPushService {
 
 		// Git API를 사용하여 저장소가 존재하는지 확인 후, 없으면 새로 생성
 		String repositoryUrl = checkAndCreateGitRepository(userName, accessToken, authProvider, gitPushRequest);
+		log.info("Git repository url: {}", repositoryUrl);
 
-		//TODO: Git 저장소에 푸시
-		//코드 생성 및 푸시 구현
+		// 코드 생성 및 푸시 구현
 		generateCodeAndPushToGit(accessToken, projectId, gitPushRequest, repositoryUrl);
 
 		return new GitPushResponse(repositoryUrl);
@@ -138,24 +139,20 @@ public class GitPushService {
 		String repositoryUrl) {
 
 		try {
-			// 1. 임시 디렉토리 생성
-			Path tempDir = Files.createTempDirectory("repo-" + UUID.randomUUID());
 
-			// 2. 코드 파일 생성
-			//TODO: 코드 생성 로직 추가
-			String content = "# Repository\n\nCreated by CheckIt Auto Push.";
-			Files.writeString(tempDir.resolve("README.md"), content);
+			// 1. 코드 생성
+			Path codeDir = projectBuilderService.buildProject(projectId);
 
-			// 3. Git 저장소 초기화
+			// 2. Git 저장소 초기화
 			Git git = Git.init()
-				.setDirectory(tempDir.toFile())
+				.setDirectory(codeDir.toFile())
 				.call();
 
-			// 4. Git 커밋
+			// 3. Git 커밋
 			git.add().addFilepattern(".").call();
 			git.commit().setMessage(gitPushRequest.message()).call();
 
-			// 5. remote 설정
+			// 4. remote 설정
 			String authenticatedUrl = repositoryUrl.replace("https://", "https://oauth2:" + accessToken + "@");
 
 			git.remoteAdd()
@@ -163,9 +160,9 @@ public class GitPushService {
 				.setUri(new URIish(authenticatedUrl))
 				.call();
 
-			// 6. push
+			// 5. push
 			git.push()
-				.setRemote("origin")
+				.setRemote(repositoryUrl)
 				.setCredentialsProvider(new UsernamePasswordCredentialsProvider("oauth2", accessToken))
 				.call();
 
