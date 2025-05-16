@@ -1,6 +1,6 @@
-import { useState, useEffect, ChangeEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { convertMarkdownToHtml } from "../utils/markdown";
+import { useState, useEffect, ChangeEvent } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { convertMarkdownToHtml } from '../utils/markdown';
 import {
   FaSave,
   FaCopy,
@@ -8,18 +8,18 @@ import {
   FaChevronDown,
   FaFile,
   FaPlus,
-} from "react-icons/fa";
-import { IoArrowBack } from "react-icons/io5";
+} from 'react-icons/fa';
+import { IoArrowBack } from 'react-icons/io5';
 import {
   generateReadme,
   saveReadme,
   getReadme,
   updateReadme,
-} from "../api/readmeAPI";
+} from '../api/readmeAPI';
 
 const tailwindMarkdownStyles = {
   wrapper:
-    "prose prose-sm sm:prose lg:prose-lg dark:prose-invert max-w-none break-words",
+    'prose prose-sm sm:prose lg:prose-lg dark:prose-invert max-w-none break-words',
 };
 
 const MarkdownEditorPage: React.FC = () => {
@@ -27,9 +27,9 @@ const MarkdownEditorPage: React.FC = () => {
   const pid = Number(projectId);
   const navigate = useNavigate();
 
-  const [markdown, setMarkdown] = useState("");
-  const [fileName, setFileName] = useState("README.md");
-  const [html, setHtml] = useState("");
+  const [markdown, setMarkdown] = useState('');
+  const [fileName, setFileName] = useState('README.md');
+  const [html, setHtml] = useState('');
   const [showFileNameInput, setShowFileNameInput] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [readmeExists, setReadmeExists] = useState(false);
@@ -48,10 +48,10 @@ const MarkdownEditorPage: React.FC = () => {
           setMarkdown(content);
           setReadmeExists(true);
         } else {
-          console.warn("README가 비어있습니다.");
+          console.warn('README가 비어있습니다.');
         }
       } catch (err) {
-        console.warn("README 불러오기 실패:", err);
+        console.warn('README 불러오기 실패:', err);
         setReadmeExists(false);
       }
     };
@@ -63,10 +63,10 @@ const MarkdownEditorPage: React.FC = () => {
     try {
       const content = await generateReadme(pid);
       setMarkdown(content);
-      showToast("README가 성공적으로 생성되었습니다!");
+      showToast('README가 성공적으로 생성되었습니다!');
     } catch (err) {
-      console.error("README 생성 실패:", err);
-      showToast("README 생성 중 오류가 발생했습니다.");
+      console.error('README 생성 실패:', err);
+      showToast('README 생성 중 오류가 발생했습니다.');
     }
   };
 
@@ -74,15 +74,15 @@ const MarkdownEditorPage: React.FC = () => {
     try {
       if (readmeExists) {
         await updateReadme(pid, markdown);
-        showToast("README가 수정되었습니다!");
+        showToast('README가 수정되었습니다!');
       } else {
         await saveReadme(pid, markdown);
         setReadmeExists(true);
-        showToast("README가 생성되었습니다!");
+        showToast('README가 생성되었습니다!');
       }
     } catch (err) {
-      console.error("README 저장/수정 실패:", err);
-      showToast("README 저장 중 오류가 발생했습니다.");
+      console.error('README 저장/수정 실패:', err);
+      showToast('README 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -91,27 +91,27 @@ const MarkdownEditorPage: React.FC = () => {
   };
 
   const showToast = (message: string) => {
-    const toast = document.getElementById("toast");
+    const toast = document.getElementById('toast');
     if (toast) {
       toast.textContent = message;
-      toast.classList.remove("opacity-0", "translate-y-2");
-      toast.classList.add("opacity-100", "translate-y-0");
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
       setTimeout(() => {
-        toast.classList.remove("opacity-100", "translate-y-0");
-        toast.classList.add("opacity-0", "translate-y-2");
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-2');
       }, 3000);
     }
   };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(markdown).then(() => {
-      showToast("클립보드에 복사되었습니다!");
+      showToast('클립보드에 복사되었습니다!');
     });
   };
 
   const clearEditor = () => {
-    if (window.confirm("에디터 내용을 모두 지우시겠습니까?")) {
-      setMarkdown("");
+    if (window.confirm('에디터 내용을 모두 지우시겠습니까?')) {
+      setMarkdown('');
     }
   };
 
@@ -137,7 +137,7 @@ const MarkdownEditorPage: React.FC = () => {
 
   const getDocumentTitle = () => {
     const match = markdown.match(/^#\s+(.*)$/m);
-    return match ? match[1] : "제목 없음";
+    return match ? match[1] : '제목 없음';
   };
 
   return (
@@ -202,11 +202,11 @@ const MarkdownEditorPage: React.FC = () => {
             <button
               onClick={handleSaveOrUpdateReadme}
               className="flex items-center gap-1 px-3 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-opacity-50"
-              title={readmeExists ? "README 수정" : "README 생성"}
+              title={readmeExists ? 'README 수정' : 'README 생성'}
             >
               <FaSave size={16} />
               <span className="hidden sm:inline">
-                {readmeExists ? "수정" : "생성"}
+                {readmeExists ? '수정' : '저장'}
               </span>
             </button>
 

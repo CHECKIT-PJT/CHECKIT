@@ -59,7 +59,7 @@ export const useGetApiDetail = (projectId: number, id: number) => {
 
         if (response.data && response.data.result) {
           const apiDetail = response.data.result.find(
-            (api: any) => api.id === id
+            (api: any) => api.id === id,
           );
 
           if (apiDetail) {
@@ -103,7 +103,7 @@ export const useCreateApiSpec = () => {
       try {
         const response = await axiosInstance.post(
           `/api/api-spec/${projectId}`,
-          apiSpec
+          apiSpec,
         );
 
         console.log('Response:', response.data);
@@ -154,7 +154,7 @@ export const useDeleteApiSpec = () => {
       setLoading(true);
       try {
         const response = await axiosInstance.delete(
-          `/api/api-spec/${projectId}/${apiSpecId}`
+          `/api/api-spec/${projectId}/${apiSpecId}`,
         );
 
         return response.data;
@@ -179,5 +179,39 @@ export const useDeleteApiSpec = () => {
       // 스토어에서 삭제
       deleteApiSpec(apiSpecId);
     },
+  });
+};
+
+// API 명세서 카테고리 목록 조회
+export const useGetApiCategories = (projectId: number) => {
+  const { setLoading, setError } = useApiStore();
+
+  return useQuery({
+    queryKey: ['apiCategories', projectId],
+    queryFn: async () => {
+      setLoading(true);
+      try {
+        const response = await axiosInstance.get(
+          `/api/api-spec/${projectId}/category`,
+        );
+
+        // 성공 시 문자열 배열 반환
+        if (response.data?.result) {
+          return response.data.result as string[];
+        }
+
+        throw new Error('카테고리 데이터를 찾을 수 없습니다.');
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          '카테고리 조회 중 오류가 발생했습니다.';
+        setError(errorMessage);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    enabled: !!projectId,
   });
 };
