@@ -202,7 +202,7 @@ const DevelopApi = () => {
       const rect = modalElement.getBoundingClientRect();
       const scrollTop = modalElement.scrollTop;
       const scrollLeft = modalElement.scrollLeft;
-
+      
       // 스크롤 위치를 고려한 상대적 좌표 계산
       const x = e.clientX - rect.left + scrollLeft;
       const y = e.clientY - rect.top + scrollTop;
@@ -578,13 +578,15 @@ const DevelopApi = () => {
 
       // 새로운 API에 입장
       const newResourceId = `${RESOURCE_TYPES.API_SPEC}-${fullApi.id}`;
-      stompClientRef.current?.publish({
-        destination: '/pub/presence',
-        body: JSON.stringify({
-          resourceId: newResourceId,
-          action: PRESENCE_ACTIONS.ENTER,
-        }),
-      });
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.publish({
+          destination: '/pub/presence',
+          body: JSON.stringify({
+            resourceId: newResourceId,
+            action: PRESENCE_ACTIONS.ENTER,
+          }),
+        });
+      }
 
       // 새로운 API의 presence 구독 설정
       const presenceSubscription: StompSubscription | null =
