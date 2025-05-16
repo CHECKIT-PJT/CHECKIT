@@ -1,60 +1,41 @@
-import axiosInstance from "./axiosInstance";
-
-const getAuthHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-});
+import axiosInstance from './axiosInstance';
 
 export const generateReadme = async (projectId: number): Promise<string> => {
   const response = await axiosInstance.post(
     `/api/project/${projectId}/readme/generate`,
-    {},
-    { headers: getAuthHeader() }
   );
-  return response.data.data?.readme ?? "";
+  return response.data.data?.readme ?? '';
 };
 
 export const saveReadme = async (projectId: number, content: string) => {
-  await axiosInstance.post(
-    `/api/project/${projectId}/readme`,
-    { content },
-    { headers: getAuthHeader() }
-  );
+  await axiosInstance.post(`/api/project/${projectId}/readme`, { content });
 };
 
 export const getReadme = async (projectId: number): Promise<string> => {
-  const response = await axiosInstance.get(`/api/project/${projectId}/readme`, {
-    headers: getAuthHeader(),
-  });
-  return response.data.data?.readme ?? "";
+  const response = await axiosInstance.get(`/api/project/${projectId}/readme`);
+  return response.data.data?.readme ?? '';
 };
 
 export const updateReadme = async (projectId: number, content: string) => {
-  await axiosInstance.put(
-    `/api/project/${projectId}/readme`,
-    { content },
-    { headers: getAuthHeader() }
-  );
+  await axiosInstance.put(`/api/project/${projectId}/readme`, { content });
 };
 
 export const deleteReadme = async (projectId: number) => {
-  await axiosInstance.delete(`/api/project/${projectId}/readme`, {
-    headers: getAuthHeader(),
-  });
+  await axiosInstance.delete(`/api/project/${projectId}/readme`, {});
 };
 
 export const downloadReadme = async (projectId: number) => {
   const response = await axiosInstance.get(
     `/api/project/${projectId}/readme/download`,
     {
-      headers: getAuthHeader(),
-      responseType: "blob",
-    }
+      responseType: 'blob',
+    },
   );
 
   const url = window.URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement("a");
+  const link = document.createElement('a');
   link.href = url;
-  link.setAttribute("download", "README.md");
+  link.setAttribute('download', 'README.md');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
