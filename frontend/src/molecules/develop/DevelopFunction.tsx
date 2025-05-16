@@ -385,9 +385,11 @@ const DevelopFunc = () => {
             try {
               const data = JSON.parse(message.body);
               const currentUsers = data.users;
-              
+
+              // presence 메시지를 통해 현재 활성 사용자 확인 및 커서 관리
               setRemoteCursors(prev => {
                 const newCursors = { ...prev };
+                // 현재 활성 사용자가 아닌 커서 제거
                 Object.keys(newCursors).forEach(userId => {
                   if (!currentUsers.includes(userId)) {
                     delete newCursors[userId];
@@ -660,6 +662,17 @@ const DevelopFunc = () => {
             
             // 모달 활성 사용자 업데이트
             setModalActiveUsers(users);
+
+            // 현재 활성 사용자가 아닌 커서 제거
+            setModalRemoteCursors(prev => {
+              const newCursors = { ...prev };
+              Object.keys(newCursors).forEach(userId => {
+                if (!data.users.includes(userId)) {
+                  delete newCursors[userId];
+                }
+              });
+              return newCursors;
+            });
             
             // 기능 명세별 활성 사용자 목록 업데이트
             setActiveUsersByFunc(prev => ({
@@ -801,9 +814,9 @@ const DevelopFunc = () => {
             activeUsersByFunc={activeUsersByFunc}
           />
         </div>
-        {modalOpen && selectedFunc && (
+        {modalOpen && (
           <FuncDetailModal
-            func={convertToFuncDetail(selectedFunc)}
+            func={selectedFunc ? convertToFuncDetail(selectedFunc) : null}
             onClose={handleModalClose}
             onSave={handleSave}
             onDelete={handleDelete}
