@@ -10,7 +10,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-100 to-blue-100 flex justify-center items-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 w-full max-w-md transition-transform duration-300 hover:translate-y-[-5px]">
+      <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 w-full max-w-md transition-transform duration-300">
         <div className="flex flex-col items-center">
           {/* <img src={Logo} alt="로고" className="mb-8" /> */}
           <h1 className="text-2xl font-semibold text-gray-800 mb-8">

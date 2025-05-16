@@ -15,20 +15,17 @@
 }
 
 @font-face {
-  font-family: 'custom-font2';
-  src:
-    url('//fastly.jsdelivr.net/korean-webfonts/1/corps/lottemart/LotteMartDream/LotteMartDreamMedium.woff2')
-      format('woff2'),
-    url('//fastly.jsdelivr.net/korean-webfonts/1/corps/lottemart/LotteMartDream/LotteMartDreamMedium.woff')
-      format('woff');
-  font-weight: 400;
+  font-family: 'custom-font';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-07@1.0/IBMPlexSansKR-Regular.woff')
+    format('woff');
+  font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'custom-font';
-  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-07@1.0/IBMPlexSansKR-Regular.woff')
-    format('woff');
+  font-family: 'TmoneyRoundWindExtraBold';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/Ycomputer-Regular.woff2')
+    format('woff2');
   font-weight: normal;
   font-style: normal;
 }
