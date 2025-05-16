@@ -8,10 +8,11 @@ import com.checkmate.checkit.global.common.infra.ai.AiClientService;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.config.properties.AiProperties;
 import com.checkmate.checkit.global.exception.CommonException;
-import com.checkmate.checkit.sequencediagram.dto.GenerateSequenceDiagramRequest;
-import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramUpdateRequest;
-import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramResponse;
 import com.checkmate.checkit.project.service.ProjectService;
+import com.checkmate.checkit.sequencediagram.dto.GenerateSequenceDiagramRequest;
+import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramCreateRequest;
+import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramResponse;
+import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramUpdateRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -46,10 +47,11 @@ public class SequenceDiagramService {
 	 *
 	 * @param token JWT 인증 토큰
 	 * @param projectId 프로젝트 ID
-	 * @param content 저장할 PlantUML 코드
+	 * @param sequenceDiagramCreateRequest 시퀀스 다이어그램요청 DTO
 	 */
 	@Transactional
-	public void saveSequenceDiagram(String token, Integer projectId, String content, String diagramUrl) {
+	public void saveSequenceDiagram(String token, Integer projectId,
+		SequenceDiagramCreateRequest sequenceDiagramCreateRequest) {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
 		projectService.validateUserAndProject(userId, projectId);
 
@@ -60,8 +62,9 @@ public class SequenceDiagramService {
 
 		SequenceDiagramEntity newEntity = SequenceDiagramEntity.builder()
 			.projectId(projectId)
-			.plantUmlCode(content)
-			.imageUrl(diagramUrl)
+			.plantUmlCode(sequenceDiagramCreateRequest.content())
+			.imageUrl(sequenceDiagramCreateRequest.diagramUrl())
+			.category(sequenceDiagramCreateRequest.category())
 			.build();
 
 		sequenceDiagramRepository.save(newEntity);
@@ -80,7 +83,8 @@ public class SequenceDiagramService {
 		projectService.validateUserAndProject(loginUserId, projectId);
 
 		return sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNull(projectId)
-			.map(sequenceDiagram -> new SequenceDiagramResponse(sequenceDiagram.getPlantUmlCode(), sequenceDiagram.getImageUrl()))
+			.map(sequenceDiagram -> new SequenceDiagramResponse(sequenceDiagram.getPlantUmlCode(),
+				sequenceDiagram.getImageUrl(), sequenceDiagram.getCategory()))
 			.orElseThrow(() -> new CommonException(ErrorCode.SEQUENCE_DIAGRAM_NOT_FOUND));
 	}
 
@@ -92,13 +96,16 @@ public class SequenceDiagramService {
 	 * @param sequenceDiagramUpdateRequest 시퀀스 다이어그램 요청 DTO
 	 */
 	@Transactional
-	public void updateSequenceDiagram(String token, Integer projectId, SequenceDiagramUpdateRequest sequenceDiagramUpdateRequest) {
+	public void updateSequenceDiagram(String token, Integer projectId,
+		SequenceDiagramUpdateRequest sequenceDiagramUpdateRequest) {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 		projectService.validateUserAndProject(loginUserId, projectId);
 
 		sequenceDiagramRepository.findByProjectIdAndPlantUmlCodeIsNotNull(projectId).ifPresentOrElse(
 			sequenceDiagram -> {
-				sequenceDiagram.updatePlantUmlCode(sequenceDiagramUpdateRequest.content(), sequenceDiagramUpdateRequest.diagramUrl());
+				sequenceDiagram.updatePlantUmlCode(sequenceDiagramUpdateRequest.content(),
+					sequenceDiagramUpdateRequest.diagramUrl(),
+					sequenceDiagramUpdateRequest.category());
 			},
 			() -> {
 				throw new CommonException(ErrorCode.SEQUENCE_DIAGRAM_NOT_FOUND);

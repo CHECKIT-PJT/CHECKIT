@@ -7,6 +7,9 @@ public record SequenceDiagramUpdateRequest(
 	String content,
 
 	@NotBlank(message = "imgUrl 내용은 비어 있을 수 없습니다.")
-	String diagramUrl
+	String diagramUrl,
+
+	@NotBlank(message = "카테고리 내용은 비어 있을 수 없습니다.")
+	String category
 ) {
 }

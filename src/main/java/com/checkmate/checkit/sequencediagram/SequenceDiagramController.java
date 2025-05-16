@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.checkmate.checkit.global.code.SuccessCode;
 import com.checkmate.checkit.global.response.JSONResponse;
 import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramCreateRequest;
-import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramUpdateRequest;
 import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramResponse;
+import com.checkmate.checkit.sequencediagram.dto.SequenceDiagramUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +43,7 @@ public class SequenceDiagramController {
 		SequenceDiagramResponse result = sequenceDiagramService.generateSequenceDiagram(token, projectId, category);
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, result));
 	}
+
 	// Sequence Diagram 저장
 	@PostMapping("/{projectId}/sequence")
 	public ResponseEntity<JSONResponse<Void>> createSequenceDiagram(
@@ -51,7 +52,7 @@ public class SequenceDiagramController {
 		@RequestBody @Valid SequenceDiagramCreateRequest request) {
 
 		String token = authorization.substring(7);
-		sequenceDiagramService.saveSequenceDiagram(token, projectId, request.content(), request.diagramUrl());
+		sequenceDiagramService.saveSequenceDiagram(token, projectId, request);
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS));
 	}
 
@@ -108,7 +109,7 @@ public class SequenceDiagramController {
 	public ResponseEntity<JSONResponse<Void>> updateSequenceDiagram(
 		@RequestHeader("Authorization") String authorization,
 		@PathVariable Integer projectId,
-		@RequestBody @Valid  SequenceDiagramUpdateRequest request) {
+		@RequestBody @Valid SequenceDiagramUpdateRequest request) {
 
 		String token = authorization.substring(7);
 		sequenceDiagramService.updateSequenceDiagram(token, projectId, request);

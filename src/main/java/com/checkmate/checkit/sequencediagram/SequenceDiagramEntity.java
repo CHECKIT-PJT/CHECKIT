@@ -29,13 +29,16 @@ public class SequenceDiagramEntity {
 	@Column(name = "plant_uml_code", columnDefinition = "TEXT")
 	private String plantUmlCode;
 
-
 	@Column(name = "image_url", columnDefinition = "TEXT")
 	private String imageUrl;
 
-	public void updatePlantUmlCode(String plantUmlCode, String imageUrl) {
+	@Column(name = "category", length = 50, nullable = false)
+	private String category;
+
+	public void updatePlantUmlCode(String plantUmlCode, String imageUrl, String category) {
 		this.plantUmlCode = plantUmlCode;
 		this.imageUrl = imageUrl;
+		this.category = category;
 	}
 
 	public void deletePlantUmlCode() {
