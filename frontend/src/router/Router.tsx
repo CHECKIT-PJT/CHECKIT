@@ -23,6 +23,7 @@ import SequenceDiagramPage from '../pages/SequenceDiagramPage';
 import MarkdownEditorPage from '../pages/MarkdownEditorPage';
 import JiraAuthCallback from '../pages/JiraAuthCallBack';
 import NotFoundPage from '../pages/NotFoundPage';
+import IdeEditorPage from '../pages/IdeEditorPage';
 
 const Router = () => {
   // 로그인 체크
@@ -39,6 +40,7 @@ const Router = () => {
       <Route path="/jira/callback" element={<JiraAuthCallback />} />
       <Route path="/invite" element={<InvitePage />} />
       <Route path="*" element={<NotFoundPage />} />
+      <Route path="/ide" element={<IdeEditorPage />} />
 
       {/* 로그인 페이지 */}
       <Route element={<ProtectedRoute />}>

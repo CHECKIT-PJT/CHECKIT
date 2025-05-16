@@ -1,6 +1,12 @@
-import { FaDatabase, FaCode, FaFileAlt } from 'react-icons/fa';
+import {
+  FaDatabase,
+  FaCode,
+  FaFileAlt,
+  FaProjectDiagram,
+} from 'react-icons/fa';
 import ChapterCardLong from '../../components/chapter/ChapterCardLong';
 import { useNavigate } from 'react-router-dom';
+import { VscGithubAlt } from 'react-icons/vsc';
 
 interface InputSelectProps {
   className?: string;
@@ -38,6 +44,20 @@ const InputSelect = ({
         icon={<FaFileAlt size={18} />}
         bgColor="hover:bg-blue-200 hover:bg-opacity-40"
         onClick={() => navigate('develop/function')}
+      />
+      <ChapterCardLong
+        title="시퀀스 다이어그램"
+        subtitle="AI와 시스템 흐름 및 상호작용 설계"
+        icon={<FaProjectDiagram size={18} />}
+        bgColor="hover:bg-blue-400 hover:bg-opacity-40"
+        onClick={() => navigate('doc/sequence')}
+      />
+      <ChapterCardLong
+        title="README.md"
+        subtitle="AI를 통해 프로젝트 개요 및 사용법 작성"
+        icon={<VscGithubAlt size={18} />}
+        bgColor="hover:bg-blue-400 hover:bg-opacity-40"
+        onClick={() => navigate('doc/readme')}
       />
     </div>
   );

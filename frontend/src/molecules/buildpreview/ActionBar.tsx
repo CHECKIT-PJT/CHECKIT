@@ -1,4 +1,4 @@
-import Button from "../../components/buildpreview/Button";
+import { MdOutlineDownloading } from 'react-icons/md';
 
 interface ActionBarProps {
   onDownload: () => void;
@@ -7,12 +7,18 @@ interface ActionBarProps {
 /**
  * 액션 버튼 모음 컴포넌트
  */
-const ActionBar: React.FC<ActionBarProps> = ({ onDownload }) => {
+const ActionBar = ({ onDownload }: ActionBarProps) => {
   return (
-    <div className="border-t p-3 bg-gray-50 border-gray-200">
-      <Button variant="primary" onClick={onDownload} className="mr-2">
+    <div className="p-3 border-gray-200">
+      <button
+        onClick={onDownload}
+        className={
+          'flex items-center gap-2 px-4 py-2 rounded-md text-sm transition bg-teal-800 hover:bg-teal-700 text-white'
+        }
+      >
+        <MdOutlineDownloading className="h-5 w-5" />
         전체 프로젝트 다운로드
-      </Button>
+      </button>
     </div>
   );
 };
