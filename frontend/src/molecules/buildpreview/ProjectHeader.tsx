@@ -22,7 +22,7 @@ const ProjectHeader = ({
   };
 
   return (
-    <header className=" px-4 pt-2 pb-4 border-b border-gray-200">
+    <header className=" pl-4 pt-2 pb-4 border-b border-gray-400">
       <div className="flex items-start justify-between">
         <div className="flex items-start">
           <button onClick={onClickBack} className="p-1 pr-3">
@@ -32,12 +32,9 @@ const ProjectHeader = ({
             <p className="text-xl font-bold mt-2">
               프로젝트 파일 구조 미리보기
             </p>
-            <p className="text-sm opacity-80">
-              생성된 프로젝트 구조와 파일 내용을 확인하세요
-            </p>
           </div>
         </div>
-        <div className="flex gap-2 ">
+        <div className="flex gap-4 ">
           <ActionBar onDownload={onDownload} />
           <RepoCreate onCreate={onCreate} />
         </div>
