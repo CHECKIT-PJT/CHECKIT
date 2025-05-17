@@ -41,7 +41,10 @@ const SequenceDiagramPage: React.FC = () => {
 
   const handleLoadDiagram = async () => {
     try {
-      const response = await getSequenceDiagram(parsedProjectId);
+      const response = await getSequenceDiagram(
+        parsedProjectId,
+        activeCategory,
+      );
       const existing = response.data.result;
 
       if (existing && existing.plantuml_code) {
@@ -86,7 +89,10 @@ const SequenceDiagramPage: React.FC = () => {
     if (!parsedProjectId) return;
 
     try {
-      const response = await getSequenceDiagram(parsedProjectId);
+      const response = await getSequenceDiagram(
+        parsedProjectId,
+        activeCategory,
+      );
       const existing = response.data.result;
 
       if (existing && existing.plantuml_code) {
@@ -94,6 +100,7 @@ const SequenceDiagramPage: React.FC = () => {
         await updateSequenceDiagram(parsedProjectId, {
           content: code,
           diagramUrl,
+          category: activeCategory,
         });
         alert('시퀀스 다이어그램이 수정되었습니다!');
       } else {
@@ -101,6 +108,7 @@ const SequenceDiagramPage: React.FC = () => {
         await saveSequenceDiagram(parsedProjectId, {
           content: code,
           diagramUrl,
+          category: activeCategory,
         });
         alert('시퀀스 다이어그램이 저장되었습니다!');
       }
@@ -111,6 +119,7 @@ const SequenceDiagramPage: React.FC = () => {
           await saveSequenceDiagram(parsedProjectId, {
             content: code,
             diagramUrl,
+            category: activeCategory,
           });
           alert('시퀀스 다이어그램이 저장되었습니다!');
         } catch (e) {
