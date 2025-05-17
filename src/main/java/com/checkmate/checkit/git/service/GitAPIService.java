@@ -214,9 +214,13 @@ public class GitAPIService {
 			} else {
 				// 이후 pull
 				git = Git.open(localRepoDir);
-				git.pull().call();
+				git.pull()
+					.setRemote("origin")
+					.setCredentialsProvider(new UsernamePasswordCredentialsProvider("oauth2", accessToken))
+					.call();
 			}
 		} catch (Exception e) {
+			log.info("Git Repository Pull 실패", e);
 			throw new CommonException(ErrorCode.FAILED_TO_PULL_REPOSITORY);
 		}
 
