@@ -267,25 +267,28 @@ const ApiDetailModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div 
-        className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden relative"
+      <div
+        className="bg-white rounded-2xl w-3/4 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden relative"
         onMouseMove={onMouseMove}
       >
         {/* 원격 커서 렌더링 */}
-        <div className="fixed pointer-events-none" style={{ 
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflow: 'hidden',
-          transform: 'translate(0, 0)'
-        }}>
+        <div
+          className="fixed pointer-events-none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            overflow: 'hidden',
+            transform: 'translate(0, 0)',
+          }}
+        >
           {Object.values(remoteCursors).map(cursor => {
             // 스크롤 위치에 따른 커서 위치 조정
             const adjustedY = cursor.y;
             const adjustedX = cursor.x;
-            
+
             return (
               <RemoteCursor
                 key={cursor.userId}

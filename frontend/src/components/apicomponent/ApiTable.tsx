@@ -14,7 +14,12 @@ interface ApiTableProps {
   activeUsersByApi: { [key: string]: User[] };
 }
 
-const ApiTable = ({ data, onRowClick, selectedDomain, activeUsersByApi }: ApiTableProps) => {
+const ApiTable = ({
+  data,
+  onRowClick,
+  selectedDomain,
+  activeUsersByApi,
+}: ApiTableProps) => {
   const filteredData =
     selectedDomain === 'ALL'
       ? data
@@ -40,11 +45,11 @@ const ApiTable = ({ data, onRowClick, selectedDomain, activeUsersByApi }: ApiTab
             className="cursor-pointer bg-white border-b border-gray-200 hover:bg-slate-50 transition"
             onClick={() => onRowClick(api)}
           >
-            <td className="py-4 px-2 text-center text-sm">{api.apiSpecId}</td>
+            <td className="py-4 px-2 text-center text-sm">{index + 1}</td>
             <td className="py-4 px-2 flex justify-center">
-              <ActiveUsers 
-                users={activeUsersByApi[api.apiSpecId?.toString() || ''] || []} 
-                size="small" 
+              <ActiveUsers
+                users={activeUsersByApi[api.apiSpecId?.toString() || ''] || []}
+                size="small"
               />
             </td>
             <td className="py-4 px-2 text-sm">{api.apiName}</td>
@@ -71,7 +76,9 @@ const ApiTable = ({ data, onRowClick, selectedDomain, activeUsersByApi }: ApiTab
                 {api.category.toUpperCase()}
               </span>
             </td>
-            <td className="py-4 px-2 text-sm text-gray-600">{api.description}</td>
+            <td className="py-4 px-2 text-sm text-gray-600">
+              {api.description}
+            </td>
           </tr>
         ))}
       </tbody>

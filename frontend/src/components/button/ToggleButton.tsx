@@ -52,7 +52,7 @@ const ToggleButton = () => {
     <div className="relative" ref={buttonRef}>
       <button
         onClick={toggleShortcuts}
-        className="flex items-center text-xs justify-center bg-blue-800 hover:bg-blue-700 text-white font-bold p-2 rounded-full shadow-md transition-all duration-200 z-50"
+        className="flex items-center text-xs justify-center bg-gray-300 hover:bg-blue-400 text-white font-bold p-2 rounded-full shadow-md transition-all duration-200 z-50"
       >
         도움말
       </button>

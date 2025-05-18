@@ -39,6 +39,7 @@ const blankFuncDetail: FuncDetail = {
   description: '',
   successCase: '',
   failCase: '',
+  userName: '',
 };
 
 const priorityIcons = {
@@ -73,6 +74,8 @@ const FuncDetailModal = ({
 
   if (!form) return null;
 
+  console.log(members, 'members');
+
   const priorityOptions = ['HIGHEST', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
 
   const handleSave = () => {
@@ -81,18 +84,21 @@ const FuncDetailModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div 
-        className="bg-white rounded-2xl w-4/5 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden relative"
+      <div
+        className="bg-white rounded-2xl w-3/4 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden relative"
         onMouseMove={onMouseMove}
       >
-        <div className="fixed pointer-events-none" style={{ 
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflow: 'hidden'
-        }}>
+        <div
+          className="fixed pointer-events-none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            overflow: 'hidden',
+          }}
+        >
           {Object.values(remoteCursors).map(cursor => (
             <RemoteCursor
               key={cursor.userId}
@@ -176,11 +182,13 @@ const FuncDetailModal = ({
                 onChange={e => setForm({ ...form, assignee: e.target.value })}
               >
                 <option value="">담당자 선택</option>
-                {members.map(member => (
-                  <option key={member.id} value={member.id.toString()}>
-                    {member.nickname} (@ {member.userName})
-                  </option>
-                ))}
+                {members
+                  .filter(member => member.isApproved)
+                  .map(member => (
+                    <option key={member.id} value={member.id.toString()}>
+                      {member.nickname} (@ {member.userName})
+                    </option>
+                  ))}
               </select>
             </div>
 
