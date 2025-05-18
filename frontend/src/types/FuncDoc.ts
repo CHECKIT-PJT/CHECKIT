@@ -17,4 +17,6 @@ export interface FuncDetail {
   description: string;
   successCase: string;
   failCase: string;
+  userName: string;
 }
+

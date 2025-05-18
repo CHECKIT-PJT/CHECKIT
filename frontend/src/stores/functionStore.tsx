@@ -22,7 +22,7 @@ interface FunctionalSpecState {
 }
 
 interface FunctionalSpecActions {
-  setSpecs: (specs: FunctionalSpec[]) => void;
+  setSpecs: (specs: FunctionalSpec[] | ((prev: FunctionalSpec[]) => FunctionalSpec[])) => void;
   addSpec: (spec: FunctionalSpec) => void;
   updateSpec: (spec: FunctionalSpec) => void;
   deleteSpec: (id: number) => void;
@@ -45,7 +45,12 @@ const initialState: FunctionalSpecState = {
 const useFunctionalSpecStore = create<FunctionalSpecStore>(set => ({
   ...initialState,
 
-  setSpecs: specs => set({ specs }),
+  setSpecs: specsOrUpdater =>
+    set(state => ({
+      specs: typeof specsOrUpdater === 'function'
+        ? specsOrUpdater(state.specs)
+        : specsOrUpdater,
+    })),
   addSpec: spec => set(state => ({ specs: [...state.specs, spec] })),
   updateSpec: updated =>
     set(state => ({
