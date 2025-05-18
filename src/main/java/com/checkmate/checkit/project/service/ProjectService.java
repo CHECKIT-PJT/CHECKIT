@@ -21,12 +21,14 @@ import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
+import com.checkmate.checkit.project.dto.response.GitUrlResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
 import com.checkmate.checkit.project.dto.response.ProjectDetailResponse;
 import com.checkmate.checkit.project.dto.response.ProjectListResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberResponse;
 import com.checkmate.checkit.project.dto.response.ProjectMemberWithEmailResponse;
+import com.checkmate.checkit.project.dto.response.ProjectMemberWithExternalIdResponse;
 import com.checkmate.checkit.project.entity.ProjectEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberId;
@@ -78,8 +80,7 @@ public class ProjectService {
 
 		projectMemberRepository.save(projectMemberEntity);
 
-		return new ProjectCreateResponse(project.getId(),
-			project.getProjectName());
+		return new ProjectCreateResponse(project.getId(), project.getProjectName());
 	}
 
 	/**
@@ -96,16 +97,13 @@ public class ProjectService {
 			loginUserId);
 
 		// ProjectMember 목록에서 프로젝트 ID 추출
-		return projectMembers.stream()
-			.map(projectMember -> {
-				// 프로젝트 ID로 ProjectEntity 조회
-				ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(
-						projectMember.getId().getProjectId())
-					.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
-				return new ProjectListResponse(project.getId(), project.getProjectName(),
-					project.getCreatedAt().toString());
-			})
-			.toList();
+		return projectMembers.stream().map(projectMember -> {
+			// 프로젝트 ID로 ProjectEntity 조회
+			ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(projectMember.getId().getProjectId())
+				.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+			return new ProjectListResponse(project.getId(), project.getProjectName(),
+				project.getCreatedAt().toString());
+		}).toList();
 	}
 
 	/**
@@ -120,8 +118,8 @@ public class ProjectService {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-			loginUserId, projectId)) {
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(loginUserId,
+			projectId)) {
 			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
 		}
 
@@ -134,19 +132,16 @@ public class ProjectService {
 			projectId);
 
 		// ProjectMember 목록에서 멤버 ID와 역할 추출
-		List<ProjectMemberResponse> memberResponses = projectMembers.stream()
-			.map(projectMember -> {
-				Integer memberId = projectMember.getId().getUserId();
-				User user = userRepository.findById(memberId)
-					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
-				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
-					projectMember.getRole(), projectMember.isApproved());
-			})
-			.toList();
+		List<ProjectMemberResponse> memberResponses = projectMembers.stream().map(projectMember -> {
+			Integer memberId = projectMember.getId().getUserId();
+			User user = userRepository.findById(memberId)
+				.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
+			return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(), projectMember.getRole(),
+				projectMember.isApproved());
+		}).toList();
 
 		return new ProjectDetailResponse(project.getId(), project.getProjectName(), memberResponses,
-			project.getCreatedAt().toString(),
-			project.getUpdatedAt().toString());
+			project.getCreatedAt().toString(), project.getUpdatedAt().toString());
 	}
 
 	/**
@@ -161,8 +156,8 @@ public class ProjectService {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-			loginUserId, projectId)) {
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(loginUserId,
+			projectId)) {
 			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
 		}
 
@@ -186,8 +181,7 @@ public class ProjectService {
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
 		ProjectMemberEntity projectMember = projectMemberRepository.findById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-				loginUserId, projectId)
-			.orElseThrow(() -> new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS));
+			loginUserId, projectId).orElseThrow(() -> new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS));
 
 		// 프로젝트 소유주인 경우 예외 처리
 		if (projectMember.getRole() == ProjectMemberRole.OWNER) {
@@ -210,8 +204,7 @@ public class ProjectService {
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
 		ProjectMemberEntity projectMember = projectMemberRepository.findById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-				loginUserId, projectId)
-			.orElseThrow(() -> new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS));
+			loginUserId, projectId).orElseThrow(() -> new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS));
 
 		// 프로젝트 소유주인지 확인
 		if (projectMember.getRole() != ProjectMemberRole.OWNER) {
@@ -243,8 +236,8 @@ public class ProjectService {
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-			loginUserId, projectId)) {
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(loginUserId,
+			projectId)) {
 			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
 		}
 
@@ -252,16 +245,13 @@ public class ProjectService {
 		List<ProjectMemberEntity> projectMembers = projectMemberRepository.findById_ProjectIdAndIsDeletedFalse(
 			projectId);
 
-		return projectMembers.stream()
-			.map(projectMember -> {
-				Integer memberId = projectMember.getId().getUserId();
-				User user = userRepository.findById(memberId)
-					.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
-				return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(),
-					projectMember.getRole(),
-					projectMember.isApproved());
-			})
-			.toList();
+		return projectMembers.stream().map(projectMember -> {
+			Integer memberId = projectMember.getId().getUserId();
+			User user = userRepository.findById(memberId)
+				.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
+			return new ProjectMemberResponse(memberId, user.getUserName(), user.getNickname(), projectMember.getRole(),
+				projectMember.isApproved());
+		}).toList();
 	}
 
 	/**
@@ -283,8 +273,7 @@ public class ProjectService {
 
 		// 이메일로 초대 코드 전송
 		for (String email : emails) {
-			mailService.sendInviteEmail(email,
-				projectInviteUrl + "?inviteCode=" + inviteCode);
+			mailService.sendInviteEmail(email, projectInviteUrl + "?inviteCode=" + inviteCode);
 		}
 
 	}
@@ -315,8 +304,7 @@ public class ProjectService {
 	 * @param projectParticipateRequest : 프로젝트 초대 요청 DTO
 	 */
 	@Transactional
-	public void requestProjectParticipation(String token,
-		ProjectParticipateRequest projectParticipateRequest) {
+	public void requestProjectParticipation(String token, ProjectParticipateRequest projectParticipateRequest) {
 
 		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
 
@@ -331,8 +319,7 @@ public class ProjectService {
 		Integer projectId = Integer.parseInt(projectIdString);
 
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsDeletedFalse(
-			loginUserId, projectId)) {
+		if (projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsDeletedFalse(loginUserId, projectId)) {
 			throw new CommonException(ErrorCode.ALREADY_MEMBER);
 		}
 
@@ -368,8 +355,7 @@ public class ProjectService {
 		validateUserAndProject(loginUserId, projectId);
 
 		// 회원 ID와 프로젝트 ID로 ProjectMemberEntity 조회
-		ProjectMemberEntity projectMember = projectMemberRepository
-			.findById_UserIdAndId_ProjectIdAndIsApprovedFalseAndIsDeletedFalse(
+		ProjectMemberEntity projectMember = projectMemberRepository.findById_UserIdAndId_ProjectIdAndIsApprovedFalseAndIsDeletedFalse(
 				projectInvitationAcceptRequest.userId(), projectId)
 			.orElseThrow(() -> new CommonException(ErrorCode.INVALID_INVITE_MEMBER));
 
@@ -393,8 +379,7 @@ public class ProjectService {
 		validateUserAndProject(loginUserId, projectId);
 
 		// Docker Compose 생성 로직 구현
-		dockerComposeService.generateAndSaveDockerComposeFile(projectId,
-			dockerComposeCreateRequest);
+		dockerComposeService.generateAndSaveDockerComposeFile(projectId, dockerComposeCreateRequest);
 	}
 
 	/**
@@ -429,8 +414,7 @@ public class ProjectService {
 		validateUserAndProject(loginUserId, projectId);
 
 		// Docker Compose 수정
-		dockerComposeService.updateDockerComposeFile(projectId,
-			dockerComposeUpdateRequest);
+		dockerComposeService.updateDockerComposeFile(projectId, dockerComposeUpdateRequest);
 	}
 
 	/**
@@ -474,8 +458,8 @@ public class ProjectService {
 	@Transactional(readOnly = true)
 	public void validateUserAndProject(Integer loginUserId, Integer projectId) {
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-			loginUserId, projectId)) {
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(loginUserId,
+			projectId)) {
 			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
 		}
 
@@ -494,8 +478,8 @@ public class ProjectService {
 	@Transactional(readOnly = true)
 	public ProjectEntity validateAndGetProject(Integer loginUserId, Integer projectId) {
 		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
-		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(
-			loginUserId, projectId)) {
+		if (!projectMemberRepository.existsById_UserIdAndId_ProjectIdAndIsApprovedTrueAndIsDeletedFalse(loginUserId,
+			projectId)) {
 			throw new CommonException(ErrorCode.UNAUTHORIZED_PROJECT_ACCESS);
 		}
 
@@ -509,9 +493,17 @@ public class ProjectService {
 	 * @param projectId : 프로젝트 ID
 	 * @return List<ProjectMemberWithEmailResponse> : 프로젝트 멤버 이메일 응답 DTO 리스트
 	 */
-	public List<ProjectMemberWithEmailResponse> getProjectMembersWithEmail(
-		Integer projectId) {
+	public List<ProjectMemberWithEmailResponse> getProjectMembersWithEmail(Integer projectId) {
 		return projectMemberRepository.findMembersWithEmailByProjectId(projectId);
+	}
+
+	/**
+	 * 프로젝트 멤버 외부 ID 조회
+	 * @param projectId : 프로젝트 ID
+	 * @return List<ProjectMemberWithExternalIdResponse> : 프로젝트 멤버 외부 ID 응답 DTO 리스트
+	 */
+	public List<ProjectMemberWithExternalIdResponse> getProjectMembersWithExternalId(Integer projectId) {
+		return projectMemberRepository.findMembersWithExternalIdByProjectId(projectId);
 	}
 
 	/**
@@ -526,5 +518,50 @@ public class ProjectService {
 			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
 
 		return project.getProjectName();
+	}
+
+	/**
+	 * 프로젝트 Git URL 조회
+	 * @param projectId : 프로젝트 ID
+	 * @return String : Git URL
+	 */
+	public String getGitUrl(Integer projectId) {
+		// 프로젝트 ID로 ProjectEntity 조회 없으면 빈 값 반환
+		return projectRepository.findByIdAndIsDeletedFalse(projectId).map(ProjectEntity::getGitUrl).orElse("");
+	}
+
+	/**
+	 * 프로젝트 Git URL 저장
+	 * @param projectId : 프로젝트 ID
+	 * @param repositoryUrl : Git URL
+	 */
+	public void saveGitUrl(Integer projectId, String repositoryUrl) {
+		// 프로젝트 ID로 ProjectEntity 조회 없으면 예외 발생
+		ProjectEntity project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+			.orElseThrow(() -> new CommonException(ErrorCode.PROJECT_NOT_FOUND));
+
+		// Git URL 저장
+		project.updateGitUrl(repositoryUrl);
+
+		projectRepository.save(project);
+	}
+
+	/**
+	 * Git Repository URL 조회
+	 * @param token : JWT 토큰
+	 * @param projectId : 프로젝트 ID
+	 * @return GitUrlResponse : Git URL 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public GitUrlResponse getGitRepository(String token, Integer projectId) {
+		Integer loginUserId = jwtTokenProvider.getUserIdFromToken(token);
+
+		// 현재 로그인한 사용자가 프로젝트 소속인지 확인
+		validateUserAndProject(loginUserId, projectId);
+
+		// Git Repository URL 조회
+		String gitUrl = getGitUrl(projectId);
+
+		return new GitUrlResponse(gitUrl);
 	}
 }

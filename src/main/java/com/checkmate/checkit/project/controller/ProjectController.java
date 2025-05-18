@@ -27,6 +27,7 @@ import com.checkmate.checkit.project.dto.request.ProjectInvitationAcceptRequest;
 import com.checkmate.checkit.project.dto.request.ProjectParticipateRequest;
 import com.checkmate.checkit.project.dto.request.ProjectUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
+import com.checkmate.checkit.project.dto.response.GitUrlResponse;
 import com.checkmate.checkit.project.dto.response.InvitationLinkCreateResponse;
 import com.checkmate.checkit.project.dto.response.JiraLinkResponse;
 import com.checkmate.checkit.project.dto.response.ProjectCreateResponse;
@@ -259,9 +260,6 @@ public class ProjectController {
 			.body(dockerComposeFile);
 	}
 
-
-
-
 	// 프로젝트 Jira 등록
 	@PutMapping("/{projectId}/jira")
 	public ResponseEntity<JSONResponse<Void>> registerJira(
@@ -301,5 +299,18 @@ public class ProjectController {
 		JiraLinkResponse jiraLinkResponse = jiraProjectService.createJiraIssues(token, projectId);
 
 		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, jiraLinkResponse));
+	}
+
+	// Git Repository 조회
+	@GetMapping("/{projectId}/git")
+	public ResponseEntity<JSONResponse<GitUrlResponse>> getGitRepository(
+		@RequestHeader("Authorization") String authorization,
+		@PathVariable Integer projectId) {
+
+		String token = authorization.substring(7);
+
+		GitUrlResponse gitRepositoryUrl = projectService.getGitRepository(token, projectId);
+
+		return ResponseEntity.ok(JSONResponse.of(SuccessCode.REQUEST_SUCCESS, gitRepositoryUrl));
 	}
 }

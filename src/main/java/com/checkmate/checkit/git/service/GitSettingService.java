@@ -399,7 +399,7 @@ public class GitSettingService {
 	 * @param gitPushRequest GitPushRequest
 	 * @return GitPushResponse
 	 */
-	@Transactional(readOnly = true)
+	@Transactional
 	public GitPushResponse createAndPushRepository(String token, Integer projectId, GitPushRequest gitPushRequest) {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
 

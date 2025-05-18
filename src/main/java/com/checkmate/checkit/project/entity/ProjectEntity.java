@@ -23,11 +23,18 @@ public class ProjectEntity extends BaseEntity {
 	@Column(name = "project_name", nullable = false, length = 100)
 	private String projectName;
 
+	@Column(name = "git_url", length = 200)
+	private String gitUrl;
+
 	public ProjectEntity(String projectName) {
 		this.projectName = projectName;
 	}
 
 	public void updateProjectName(String projectName) {
 		this.projectName = projectName;
+	}
+
+	public void updateGitUrl(String repositoryUrl) {
+		this.gitUrl = repositoryUrl;
 	}
 }

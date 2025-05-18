@@ -25,12 +25,14 @@ import com.checkmate.checkit.git.dto.request.GitPushRequest;
 import com.checkmate.checkit.git.dto.response.GitFileNode;
 import com.checkmate.checkit.git.dto.response.GitPullResponse;
 import com.checkmate.checkit.git.dto.response.GitPushResponse;
+import com.checkmate.checkit.git.dto.response.GitRepositoryInfo;
 import com.checkmate.checkit.git.repository.GitSettingRepository;
 import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.common.enums.AuthProvider;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.config.properties.OAuthProperties;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.dto.response.ProjectMemberWithExternalIdResponse;
 import com.checkmate.checkit.project.service.ProjectService;
 import com.checkmate.checkit.projectbuilder.service.ProjectBuilderService;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +68,13 @@ public class GitAPIService {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(jwtAccessToken);
 		String userName = jwtTokenProvider.getUserNameFromToken(jwtAccessToken);
 
+		// 이미 Git Repository가 존재하는지 확인
+		String projectGitUrl = projectService.getGitUrl(projectId);
+		if (projectGitUrl != null && !projectGitUrl.isEmpty()) {
+			log.info("저장된 Git Repository Url: {}", projectGitUrl);
+			return new GitPushResponse(projectGitUrl);
+		}
+
 		OAuthToken oAuthToken = oAuthTokenRepository.findByUserIdAndServiceProvider(userId, AuthProvider.GITLAB)
 			.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND));
 
@@ -73,13 +82,20 @@ public class GitAPIService {
 		String authProvider = oAuthToken.getServiceProvider().toString().toLowerCase();
 
 		// Git API를 사용하여 저장소가 존재하는지 확인 후, 없으면 새로 생성
-		String repositoryUrl = checkAndCreateGitRepository(userName, accessToken, authProvider, gitPushRequest);
-		log.info("Git repository url: {}", repositoryUrl);
+		GitRepositoryInfo gitRepositoryInfo = checkAndCreateGitRepository(userName, accessToken, authProvider,
+			gitPushRequest);
+		log.info("Git repository url: {}", gitRepositoryInfo.getUrl());
 
-		// 코드 생성 및 푸시 구현
-		generateCodeAndPushToGit(accessToken, projectId, gitPushRequest, repositoryUrl);
+		// 코드 생성 및 푸시
+		generateCodeAndPushToGit(accessToken, projectId, gitPushRequest, gitRepositoryInfo.getUrl());
 
-		return new GitPushResponse(repositoryUrl);
+		// Git Repository URL 저장
+		projectService.saveGitUrl(projectId, gitRepositoryInfo.getUrl());
+
+		// 팀원 초대
+		inviteTeamMembersToGitRepository(accessToken, projectId, userId, gitRepositoryInfo.getGitlabProjectId());
+
+		return new GitPushResponse(gitRepositoryInfo.getUrl());
 	}
 
 	/**
@@ -90,7 +106,7 @@ public class GitAPIService {
 	 * @param gitPushRequest : Git Push Request
 	 * @return : Git Repository URL
 	 */
-	private String checkAndCreateGitRepository(String userName, String accessToken, String authProvider,
+	private GitRepositoryInfo checkAndCreateGitRepository(String userName, String accessToken, String authProvider,
 		GitPushRequest gitPushRequest) {
 
 		String encodedPath = userName + "%2F" + gitPushRequest.repoName();
@@ -111,8 +127,10 @@ public class GitAPIService {
 		// 2. 결과에서 Git 저장소 URL을 가져옴
 		return getRepoMono.map(response -> {
 			Object url = response.get("http_url_to_repo");
-			if (url instanceof String)
-				return (String)url;
+			Object id = response.get("id");
+			if (url instanceof String && id instanceof Integer) {
+				return new GitRepositoryInfo((String)url, (Integer)id);
+			}
 			throw new CommonException(ErrorCode.FAILED_TO_CREATE_REPOSITORY);
 		}).block();
 	}
@@ -138,6 +156,58 @@ public class GitAPIService {
 				log.error("Git repository 생성 실패: {}", error.getMessage());
 				return new CommonException(ErrorCode.FAILED_TO_CREATE_REPOSITORY);
 			});
+	}
+
+	/**
+	 * Git Repository에 팀원 초대하는 메서드
+	 * @param accessToken : OAuth Access Token
+	 * @param projectId : Project ID
+	 */
+	public void inviteTeamMembersToGitRepository(String accessToken, int projectId, Integer loginUserId,
+		int gitlabProjectId) {
+		List<ProjectMemberWithExternalIdResponse> memberEmails = projectService.getProjectMembersWithExternalId(
+			projectId);
+		for (ProjectMemberWithExternalIdResponse projectMember : memberEmails) {
+			String externalId = projectMember.getExternalId();
+
+			// 로그인한 사용자는 초대하지 않음
+			if (projectMember.getUserId().equals(loginUserId)) {
+				log.info("로그인한 사용자 초대 제외: {}", externalId);
+				continue;
+			}
+
+			try {
+				// 1. GitLab user_id 조회
+				int userId = Integer.parseInt(externalId);
+
+				// 2. 프로젝트에 멤버로 추가
+				addMemberToGitlabProject(userId, accessToken, gitlabProjectId);
+				log.info("GitLab 사용자 초대 완료: {} (ID: {})", projectMember.getUserId(), userId);
+
+			} catch (Exception e) {
+				log.error("GitLab 사용자 초대 실패 - email: {}, reason: {}", projectMember.getUserId(), e.getMessage(), e);
+			}
+		}
+	}
+
+	/**
+	 * GitLab 프로젝트에 사용자를 멤버로 추가하는 메서드
+	 * @param userId : GitLab 사용자 ID
+	 * @param accessToken : OAuth Access Token
+	 * @param gitlabProjectId : GitLab프로젝트 ID
+	 */
+	private void addMemberToGitlabProject(int userId, String accessToken, int gitlabProjectId) {
+		webClient.post()
+			.uri("https://lab.ssafy.com/api/v4/projects/" + gitlabProjectId + "/members")
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+			.contentType(MediaType.APPLICATION_JSON)
+			.bodyValue(Map.of(
+				"user_id", userId,
+				"access_level", 30 // Developer
+			))
+			.retrieve()
+			.bodyToMono(Void.class)
+			.block();  // 동기 호출
 	}
 
 	/**
@@ -189,21 +259,28 @@ public class GitAPIService {
 	@Transactional
 	public GitPullResponse pullRepository(String token, Integer projectId) {
 		Integer userId = jwtTokenProvider.getUserIdFromToken(token);
-		String userName = jwtTokenProvider.getUserNameFromToken(token);
+
+		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
+		projectService.validateUserAndProject(userId, projectId);
 
 		String accessToken = oAuthTokenRepository.findByUserIdAndServiceProvider(userId, AuthProvider.GITLAB)
 			.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
 			.getAccessToken();
 
-		// 로그인한 회원이 프로젝트에 참여하고 있는지 확인
-		projectService.validateUserAndProject(userId, projectId);
+		// 저장된 Git Repository URL 가져오기
+		String savedGitUrl = projectService.getGitUrl(projectId);
+		if (savedGitUrl == null || savedGitUrl.isEmpty()) {
+			throw new CommonException(ErrorCode.GIT_REPOSITORY_NOT_FOUND);
+		}
 
-		// Git Repository URL
+		// accessToken 삽입
+		String remoteUrl = savedGitUrl.replace("https://", "https://oauth2:" + accessToken + "@");
+
+		// 프로젝트 이름 가져오기
 		String projectName = projectService.getProjectName(projectId);
-		String remoteUrl = "https://oauth2:" + accessToken + "@lab.ssafy.com/" + userName + "/" + projectName + ".git";
 
 		// 작업 디렉토리 지정
-		Path localPath = Paths.get("/tmp/git", userId.toString(), projectName);
+		Path localPath = Paths.get("/tmp/git", projectId.toString(), projectName);
 		File localRepoDir = localPath.toFile();
 
 		Git git;
@@ -255,7 +332,7 @@ public class GitAPIService {
 		String accessToken = oAuthTokenRepository.findByUserIdAndServiceProvider(userId, AuthProvider.GITLAB)
 			.orElseThrow(() -> new CommonException(ErrorCode.USER_NOT_FOUND))
 			.getAccessToken();
-		File repoDir = Paths.get("/tmp/git", userId.toString(), projectName).toFile();
+		File repoDir = Paths.get("/tmp/git", projectId.toString(), projectName).toFile();
 
 		// 변경 파일을 로컬 디렉토리에 덮어쓰기
 		for (GitFileNode file : commitAndPushRequest.changedFiles()) {
