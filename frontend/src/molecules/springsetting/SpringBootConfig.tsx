@@ -1,6 +1,6 @@
-import { FiExternalLink, FiInfo, FiX } from "react-icons/fi";
-import Select from "../../components/springsetting/Select";
-import React from "react";
+import { FiExternalLink, FiInfo, FiX } from 'react-icons/fi';
+import Select from '../../components/springsetting/Select';
+import React from 'react';
 
 interface SpringBootVersion {
   version: string;
@@ -39,7 +39,7 @@ const SpringBootConfig: React.FC<SpringBootConfigProps> = ({
 
   // 현재 선택된 Spring Boot 버전
   const currentVersion = springBootVersions.find(
-    (v) => v.version === springBootVersion
+    (v) => v.version === springBootVersion,
   );
 
   // Spring Boot 버전 옵션
@@ -50,29 +50,29 @@ const SpringBootConfig: React.FC<SpringBootConfigProps> = ({
 
   // 프로젝트 유형 옵션
   const projectTypeOptions = [
-    { value: "Maven Project", label: "Maven Project" },
-    { value: "Gradle Project", label: "Gradle Project" },
+    { value: 'GRADLE_KOTLIN', label: 'Gradle (Kotlin)' },
+    { value: 'MAVEN', label: 'Maven' },
+    { value: 'GRADLE_GROOVY', label: 'Gradle (Groovy)' },
   ];
 
   // 언어 옵션
   const languageOptions = [
-    { value: "Java", label: "Java" },
-    { value: "Kotlin", label: "Kotlin" },
-    { value: "Groovy", label: "Groovy" },
+    { value: 'Java', label: 'Java' },
+    { value: 'Kotlin', label: 'Kotlin' },
   ];
 
   // 패키징 옵션
   const packagingOptions = [
-    { value: "Jar", label: "Jar" },
-    { value: "War", label: "War" },
+    { value: 'Jar', label: 'Jar' },
+    { value: 'War', label: 'War' },
   ];
 
   // Java 버전 옵션
   const javaVersionOptions = [
-    { value: "8", label: "Java 8" },
-    { value: "11", label: "Java 11" },
-    { value: "17", label: "Java 17" },
-    { value: "21", label: "Java 21" },
+    { value: '8', label: 'Java 8' },
+    { value: '11', label: 'Java 11' },
+    { value: '17', label: 'Java 17' },
+    { value: '21', label: 'Java 21' },
   ];
 
   return (

@@ -43,7 +43,7 @@ const SpringSettingsPage = () => {
     SpringBootVersion[]
   >([]);
   const [springBootVersion, setSpringBootVersion] = useState<string>('');
-  const [projectType, setProjectType] = useState('Maven Project');
+  const [projectType, setProjectType] = useState('MAVEN');
   const [language, setLanguage] = useState('Java');
   const [packaging, setPackaging] = useState('Jar');
   const [javaVersion, setJavaVersion] = useState('17');
@@ -51,7 +51,7 @@ const SpringSettingsPage = () => {
   const [groupId, setGroupId] = useState('com.example');
   const [artifactId, setArtifactId] = useState('demo');
   const [description, setDescription] = useState(
-    'Spring Boot 기반 백엔드 프로젝트'
+    'Spring Boot 기반 백엔드 프로젝트',
   );
   const [projectName, setProjectName] = useState('demo');
   const [packageName, setPackageName] = useState('com.example.demo');
@@ -75,7 +75,7 @@ const SpringSettingsPage = () => {
   }, []);
 
   const resetSettings = () => {
-    setProjectType('Maven Project');
+    setProjectType('MAVEN');
     setLanguage('Java');
     setPackaging('Jar');
     setJavaVersion('17');
@@ -84,7 +84,7 @@ const SpringSettingsPage = () => {
     setDescription('');
     setProjectName('');
     setPackageName('');
-    setDependencies(prev => prev.map(d => ({ ...d, selected: false })));
+    setDependencies((prev) => prev.map((d) => ({ ...d, selected: false })));
     setSettingsExist(false);
   };
 
@@ -111,7 +111,7 @@ const SpringSettingsPage = () => {
         try {
           settingsResponse = await getSpringSettings(
             Number(projectId),
-            accessToken
+            accessToken,
           );
         } catch (error) {
           if (
@@ -155,19 +155,23 @@ const SpringSettingsPage = () => {
       return '3.0.6';
     };
 
-    const projectTypeMap = { MAVEN: 'Maven Project', GRADLE: 'Gradle Project' };
+    const projectTypeMap = {
+      MAVEN: 'MAVEN',
+      GRADLE_KOTLIN: 'GRADLE_KOTLIN',
+      GRADLE_GROOVY: 'GRADLE_GROOVY',
+    };
     const languageMap = { JAVA: 'Java', KOTLIN: 'Kotlin', GROOVY: 'Groovy' };
     const packagingMap = { JAR: 'Jar', WAR: 'War' };
     setSpringBootVersion(formatSpringVersion(data.springVersion));
     setProjectType(
       projectTypeMap[data.springProject as keyof typeof projectTypeMap] ||
-        'Maven Project'
+        'MAVEN',
     );
     setLanguage(
-      languageMap[data.springLanguage as keyof typeof languageMap] || 'Java'
+      languageMap[data.springLanguage as keyof typeof languageMap] || 'Java',
     );
     setPackaging(
-      packagingMap[data.springPackaging as keyof typeof packagingMap] || 'Jar'
+      packagingMap[data.springPackaging as keyof typeof packagingMap] || 'Jar',
     );
     setJavaVersion(data.springJavaVersion?.toString() || '17');
     setGroupId(data.springGroup || '');
@@ -179,9 +183,9 @@ const SpringSettingsPage = () => {
 
   const toggleDependency = (id: string) => {
     setDependencies(
-      dependencies.map(dep =>
-        dep.id === id ? { ...dep, selected: !dep.selected } : dep
-      )
+      dependencies.map((dep) =>
+        dep.id === id ? { ...dep, selected: !dep.selected } : dep,
+      ),
     );
   };
 
@@ -189,13 +193,13 @@ const SpringSettingsPage = () => {
 
   const filteredDependencies = searchQuery
     ? dependencies.filter(
-        dep =>
+        (dep) =>
           dep.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          dep.description.toLowerCase().includes(searchQuery.toLowerCase())
+          dep.description.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : dependencies;
 
-  const selectedCount = dependencies.filter(dep => dep.selected).length;
+  const selectedCount = dependencies.filter((dep) => dep.selected).length;
 
   const handleDialogConfirm = () => {
     setIsDialogOpen(false);
@@ -216,7 +220,7 @@ const SpringSettingsPage = () => {
 
     const requestData = {
       springSettings: {
-        springProject: projectType === 'Maven Project' ? 'MAVEN' : 'GRADLE',
+        springProject: projectType,
         springLanguage:
           language === 'Java'
             ? 'JAVA'
@@ -232,7 +236,9 @@ const SpringSettingsPage = () => {
         springPackaging: packaging === 'Jar' ? 'JAR' : 'WAR',
         springJavaVersion: parseInt(javaVersion),
       },
-      selectedDependencies: dependencies.filter(d => d.selected).map(d => d.id),
+      selectedDependencies: dependencies
+        .filter((d) => d.selected)
+        .map((d) => d.id),
     };
 
     try {
@@ -247,14 +253,14 @@ const SpringSettingsPage = () => {
       try {
         await generateCode(projectId);
         setDialogMessage(
-          '코드 생성이 완료되었습니다.\n코드 미리보기로 이동하시겠습니까?'
+          '코드 생성이 완료되었습니다.\n코드 미리보기로 이동하시겠습니까?',
         );
         setIsSuccess(true);
         setIsDialogOpen(true);
       } catch (error) {
         console.error('코드 생성 실패:', error);
         setDialogMessage(
-          '설정은 저장되었으나\n코드 생성 중 오류가 발생했습니다.'
+          '설정은 저장되었으나\n코드 생성 중 오류가 발생했습니다.',
         );
         setIsSuccess(false);
         setIsDialogOpen(true);
