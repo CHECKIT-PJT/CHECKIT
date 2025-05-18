@@ -22,7 +22,12 @@ interface FuncTableProps {
   activeUsersByFunc: { [key: string]: User[] };
 }
 
-const FuncTable = ({ data, onRowClick, selectedCategory, activeUsersByFunc }: FuncTableProps) => {
+const FuncTable = ({
+  data,
+  onRowClick,
+  selectedCategory,
+  activeUsersByFunc,
+}: FuncTableProps) => {
   const filteredData =
     selectedCategory === 'ALL'
       ? data
@@ -58,17 +63,17 @@ const FuncTable = ({ data, onRowClick, selectedCategory, activeUsersByFunc }: Fu
         </tr>
       </thead>
       <tbody>
-        {filteredData.map((func) => (
+        {filteredData.map((func, index) => (
           <tr
             key={func.funcId}
             onClick={() => onRowClick(func)}
             className="cursor-pointer bg-white border-b border-gray-200 hover:bg-slate-50 transition"
           >
-            <td className="py-4 px-2 text-center">{func.funcId}</td>
+            <td className="py-4 px-2 text-center">{index + 1}</td>
             <td className="py-4 px-2 flex justify-center">
-              <ActiveUsers 
-                users={activeUsersByFunc[func.funcId?.toString() || ''] || []} 
-                size="small" 
+              <ActiveUsers
+                users={activeUsersByFunc[func.funcId?.toString() || ''] || []}
+                size="small"
               />
             </td>
             <td className="py-4 px-2 text-center">
