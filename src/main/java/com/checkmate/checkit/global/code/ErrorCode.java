@@ -72,6 +72,7 @@ public enum ErrorCode {
 	FAILED_TO_COMMIT_AND_PUSH_REPOSITORY(500, INTERNAL_SERVER_ERROR, "레포지토리 커밋 및 푸시에 실패했습니다."),
 	INVALID_COMMIT_MESSAGE(400, BAD_REQUEST, "유효하지 않은 커밋 메시지입니다."),
 	INVALID_COMMIT_CONVENTION(400, BAD_REQUEST, "유효하지 않은 커밋 규칙입니다."),
+	GIT_REPOSITORY_NOT_FOUND(404, NOT_FOUND, "레포지토리를 찾을 수 없습니다."),
 
 	// 도커 관련 에러
 	INVALID_DATABASE_TYPE(400, BAD_REQUEST, "유효하지 않은 데이터베이스 타입입니다."),

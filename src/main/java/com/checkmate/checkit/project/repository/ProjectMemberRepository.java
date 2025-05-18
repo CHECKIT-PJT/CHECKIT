@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.checkmate.checkit.project.dto.response.ProjectMemberWithEmailResponse;
+import com.checkmate.checkit.project.dto.response.ProjectMemberWithExternalIdResponse;
 import com.checkmate.checkit.project.entity.ProjectMemberEntity;
 import com.checkmate.checkit.project.entity.ProjectMemberId;
 import com.checkmate.checkit.project.entity.ProjectMemberRole;
@@ -52,4 +53,16 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMemberEnti
 			+ "pm.isApproved = true"
 	)
 	List<ProjectMemberWithEmailResponse> findMembersWithEmailByProjectId(@Param("projectId") Integer projectId);
+
+	// 프로젝트 ID를 통해 프로젝트 멤버와 해당 회원의 외부 ID를 조회
+	@Query(
+		"SELECT new com.checkmate.checkit.project.dto.response.ProjectMemberWithExternalIdResponse(pm.id.userId, u.externalId) "
+			+ "FROM ProjectMemberEntity pm "
+			+ "JOIN User u ON pm.id.userId = u.id "
+			+ "WHERE pm.id.projectId = :projectId AND "
+			+ "pm.isDeleted = false AND "
+			+ "pm.isApproved = true"
+	)
+	List<ProjectMemberWithExternalIdResponse> findMembersWithExternalIdByProjectId(
+		@Param("projectId") Integer projectId);
 }
