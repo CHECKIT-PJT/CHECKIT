@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useGitPush } from '../../api/gitAPI';
 import CustomFalseAlert from '../layout/CustomFalseAlert';
 import Dialog from '../buildpreview/Dialog';
+import CustomAlert from '../layout/CustomAlert';
 
 interface FileNode {
   path: string;
@@ -210,19 +211,18 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       {/* 커스텀 알람 띄우기 */}
       <CustomFalseAlert
         isOpen={showNoChangesAlert}
-        title="변경사항 없음"
+        title="변경 사항 없음"
         message="파일을 변경 후 커밋해주세요."
         confirmText="확인"
         onConfirm={() => setShowNoChangesAlert(false)}
       />
 
-      <Dialog
+      <CustomAlert
         isOpen={showCommitSuccess}
         title="커밋 성공"
-        message="성공적으로 커밋되었습니다."
+        message="변경 사항이 성공적으로 커밋되었습니다."
         confirmText="확인"
         onConfirm={() => setShowCommitSuccess(false)}
-        onCancel={() => setShowCommitSuccess(false)}
       />
 
       <CustomFalseAlert
