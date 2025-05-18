@@ -12,6 +12,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Dialog from '../molecules/buildpreview/Dialog';
 import { downloadBuildZip } from '../api/downloadAPI';
 import CustomAlert from '../molecules/layout/CustomAlert';
+import useProjectStore from '../stores/projectStore';
+import { useCreateGitlabProject } from '../api/gitAPI';
 
 const BuildPreviewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -32,6 +34,19 @@ const BuildPreviewPage: React.FC = () => {
 
   // 시스템 테마 감지
   const systemDarkMode = useThemeDetection();
+
+  const { currentProject } = useProjectStore();
+
+  const repoName = currentProject?.projectName || '';
+
+  const { mutate: createGitlabProject } = useCreateGitlabProject(
+    Number(projectId),
+    {
+      repoName: repoName,
+      visibility: 'private',
+      message: '[CHECKIT] init: 프로젝트 초기 커밋',
+    }
+  );
 
   useEffect(() => {
     setCodeDarkMode(systemDarkMode);
@@ -101,8 +116,6 @@ const BuildPreviewPage: React.FC = () => {
 
     const token = sessionStorage.getItem('accessToken');
     if (!token) {
-      setAlertMessage('인증이 필요합니다. 다시 로그인해주세요.');
-      setIsAlertOpen(true);
       return;
     }
     await downloadBuildZip(Number(projectId), token);
@@ -111,17 +124,27 @@ const BuildPreviewPage: React.FC = () => {
   };
 
   const handleRepoCreate = async (): Promise<void> => {
-    try {
-      console.log('저장소 생성 중...');
-      setDialogTitle('저장소 생성 성공');
-      setDialogMessage('프로젝트 저장소가 성공적으로 생성되었습니다.');
-      setIsSuccessDialogOpen(true);
-    } catch (error) {
-      console.error('저장소 생성 중 오류 발생:', error);
+    if (!repoName) {
       setDialogTitle('저장소 생성 실패');
-      setDialogMessage('저장소 생성 중 오류가 발생했습니다.');
+      setDialogMessage('프로젝트 이름이 없습니다.');
       setIsDialogOpen(true);
+      return;
     }
+
+    createGitlabProject(undefined, {
+      onSuccess: () => {
+        setDialogTitle('저장소 생성 성공');
+        setDialogMessage('GitLab 저장소가 성공적으로 생성되었습니다.');
+        setIsSuccessDialogOpen(true);
+      },
+      onError: (error: any) => {
+        setDialogTitle('저장소 생성 실패');
+        setDialogMessage(
+          error?.message || '저장소 생성 중 오류가 발생했습니다.'
+        );
+        setIsDialogOpen(true);
+      },
+    });
   };
 
   const handleDialogConfirm = () => {
