@@ -86,6 +86,7 @@ const convertToFuncDetail = (spec: FunctionalSpec): FuncDetail => ({
   description: spec.functionDescription,
   successCase: spec.successCase,
   failCase: spec.failCase,
+  userName: spec.userName || ''
 });
 
 const convertFromFuncDetail = (
@@ -135,7 +136,7 @@ const DevelopFunc = () => {
   const modalSubscriptionRef = useRef<ModalSubscriptions | null>(null);
   const mainPageCursorSubscription = useRef<StompSubscription | null>(null);
 
-  const { specs } = useFunctionalSpecStore();
+  const { specs, setSpecs } = useFunctionalSpecStore();
   const { refetch } = useGetFunctionalSpecs(Number(projectId));
   const createMutation = useCreateFunctionalSpec();
   const updateMutation = useUpdateFunctionalSpec();
@@ -354,7 +355,31 @@ const DevelopFunc = () => {
     };
   }, []);
 
-  const initStomp = () => {
+  // 웹소켓 메시지 전송 함수
+  const sendFuncSpecSocketMessage = useCallback((
+    action: 'CREATE' | 'UPDATE' | 'DELETE',
+    funcSpec: Partial<FunctionalSpec>
+  ) => {
+    if (!stompClientRef.current?.connected || !projectId) return;
+
+    console.log('[📤 Sending to /pub/function/update]', {
+      projectId: Number(projectId),
+      action,
+      functionalSpec: funcSpec,
+    });
+
+    stompClientRef.current.publish({
+      destination: `/pub/function/update/${projectId}`,
+      body: JSON.stringify({
+        projectId: Number(projectId),
+        action,
+        functionalSpec: funcSpec,
+      }),
+    });
+  }, [projectId]);
+
+  // 웹소켓 연결 및 구독 설정
+  const initStomp = useCallback(() => {
     const token = sessionStorage.getItem('accessToken');
     const sock = new SockJS(
       `${import.meta.env.VITE_API_BASE_URL}/ws/erd?token=${token}`
@@ -367,7 +392,49 @@ const DevelopFunc = () => {
       },
       reconnectDelay: 5000,
       onConnect: () => {
+        console.log('STOMP 연결 성공');
         setIsConnected(true);
+        stompClientRef.current = stompClient;
+
+        // 기능 명세 실시간 변경사항 구독
+        stompClient.subscribe(`/sub/function/${projectId}`, message => {
+          try {
+            const socketMessage = JSON.parse(message.body);
+            console.log('[📥 Received from /sub/function]', socketMessage);
+            const { action, functionalSpec } = socketMessage;
+
+            // 상태 업데이트 함수 수정
+            const updateSpecsState = (prevSpecs: FunctionalSpec[]): FunctionalSpec[] => {
+              let newData = [...prevSpecs];
+
+              switch (action) {
+                case 'CREATE': {
+                  const isDuplicate = newData.some(item => item.id === functionalSpec.id);
+                  if (!isDuplicate) {
+                    newData = [...newData, functionalSpec];
+                  }
+                  break;
+                }
+                case 'UPDATE': {
+                  newData = newData.map(item =>
+                    item.id === functionalSpec.id ? functionalSpec : item
+                  );
+                  break;
+                }
+                case 'DELETE': {
+                  newData = newData.filter(item => item.id !== functionalSpec.id);
+                  break;
+                }
+              }
+
+              return newData;
+            };
+
+            setSpecs(updateSpecsState);
+          } catch (error) {
+            console.error('Failed to parse socket message:', error);
+          }
+        });
 
         try {
           // 페이지 입장 알림
@@ -416,34 +483,7 @@ const DevelopFunc = () => {
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
         setIsConnected(false);
-
-        // 연결이 끊어질 때 페이지에서 퇴장 처리
-        const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
-        stompClient.publish({
-          destination: '/pub/presence',
-          body: JSON.stringify({
-            resourceId: pageResourceId,
-            action: PRESENCE_ACTIONS.LEAVE,
-          }),
-        });
-
-        // 현재 보고 있는 기능 명세 상세 페이지가 있다면 퇴장 처리
-        if (selectedFunc?.id) {
-          const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
-          stompClient.publish({
-            destination: '/pub/presence',
-            body: JSON.stringify({
-              resourceId: funcResourceId,
-              action: PRESENCE_ACTIONS.LEAVE,
-            }),
-          });
-        }
-
-        // 연결 해제 후 사용자 목록 초기화
-        setActiveUsers([]);
-        setModalActiveUsers([]);
-        setActiveUsersByFunc({});
-        setRemoteCursors({});
+        stompClientRef.current = null;
       },
       onStompError: frame => {
         console.error('STOMP 에러:', frame);
@@ -452,46 +492,23 @@ const DevelopFunc = () => {
 
     try {
       stompClient.activate();
-      stompClientRef.current = stompClient;
     } catch (error) {
       console.error('STOMP 클라이언트 활성화 중 에러:', error);
     }
-  };
+  }, [projectId, setSpecs]);
 
+  // 웹소켓 연결 설정
   useEffect(() => {
-    const setupStompClient = () => {
-      try {
-        if (stompClientRef.current?.connected) {
-          return;
-        }
-        
-        initStomp();
-      } catch (error) {
-        console.error('STOMP 클라이언트 설정 중 에러:', error);
-      }
-    };
+    if (!projectId) return;
 
-    setupStompClient();
+    initStomp();
 
     return () => {
       if (stompClientRef.current?.connected) {
-        try {
-          const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
-          stompClientRef.current.publish({
-            destination: '/pub/presence',
-            body: JSON.stringify({
-              resourceId: pageResourceId,
-              action: PRESENCE_ACTIONS.LEAVE,
-            }),
-          });
-          setRemoteCursors({});
-          stompClientRef.current.deactivate();
-        } catch (error) {
-          console.error('STOMP 연결 해제 중 에러:', error);
-        }
+        stompClientRef.current.deactivate();
       }
     };
-  }, [projectId]);
+  }, [projectId, initStomp]);
 
   useEffect(() => {
     if (!isConnected || !selectedFunc?.id) return;
@@ -564,7 +581,7 @@ const DevelopFunc = () => {
     }
   }, [projectId]);
 
-  const filteredData = specs
+  const filteredData = (Array.isArray(specs) ? specs : [])
     .filter(spec => {
       const matchesCategory =
         selectedCategory === 'ALL' || spec.category === selectedCategory;
@@ -694,32 +711,53 @@ const DevelopFunc = () => {
     setModalOpen(true);
   };
 
-  const handleSave = (form: FuncDetail) => {
+  const handleSave = async (form: FuncDetail) => {
     if (!projectId) return;
 
-    if (selectedFunc) {
-      updateMutation.mutate(convertFromFuncDetail(form, selectedFunc));
-    } else {
-      createMutation.mutate({
-        projectId: Number(projectId),
-        userId: Number(form.assignee),
-        functionName: form.funcName,
-        functionDescription: form.description,
-        category: form.category,
-        priority: priorityToNumber(form.priority),
-        successCase: form.successCase,
-        failCase: form.failCase,
-        storyPoint: form.storyPoints,
-      });
+    try {
+      if (selectedFunc) {
+        // 수정
+        const updatedFunc = convertFromFuncDetail(form, selectedFunc);
+        const savedFunc = await updateMutation.mutateAsync(updatedFunc);
+        // 실시간 전파
+        sendFuncSpecSocketMessage('UPDATE', savedFunc);
+      } else {
+        // 생성
+        const newFunc = {
+          projectId: Number(projectId),
+          userId: Number(form.assignee),
+          functionName: form.funcName,
+          functionDescription: form.description,
+          category: form.category,
+          priority: priorityToNumber(form.priority),
+          successCase: form.successCase,
+          failCase: form.failCase,
+          storyPoint: form.storyPoints,
+        };
+        const savedFunc = await createMutation.mutateAsync(newFunc);
+        // 실시간 전파
+        sendFuncSpecSocketMessage('CREATE', savedFunc);
+      }
+      setModalOpen(false);
+      setSelectedFunc(null);
+    } catch (error) {
+      console.error('기능 명세 저장 중 에러:', error);
     }
-    setModalOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedFunc?.id) return;
+    
     if (window.confirm('정말로 이 기능을 삭제하시겠습니까?')) {
-      deleteMutation.mutate(selectedFunc.id);
-      setModalOpen(false);
+      try {
+        await deleteMutation.mutateAsync(selectedFunc.id);
+        // WebSocket으로 삭제 전파
+        sendFuncSpecSocketMessage('DELETE', { id: selectedFunc.id });
+        setModalOpen(false);
+        setSelectedFunc(null);
+      } catch (error) {
+        console.error('기능 명세 삭제 중 에러:', error);
+      }
     }
   };
 
