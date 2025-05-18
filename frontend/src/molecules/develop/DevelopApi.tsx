@@ -298,10 +298,27 @@ const DevelopApi = () => {
           
           switch (action) {
             case 'CREATE': {
-              const convertedItem = convertDetailToListItem(apiSpec);
-              const isDuplicate = newData.some(item => item.apiSpecId === convertedItem.apiSpecId);
+              // 전체 상세 정보를 포함한 데이터로 저장
+              const newItem = {
+                apiSpecId: apiSpec.id,
+                apiName: apiSpec.apiName,
+                endpoint: apiSpec.endpoint,
+                method: apiSpec.method,
+                category: apiSpec.category,
+                description: apiSpec.description,
+                statusCode: apiSpec.statusCode,
+                header: apiSpec.header,
+                pathVariables: apiSpec.pathVariables,
+                requestParams: apiSpec.requestParams,
+                requestDto: apiSpec.requestDto,
+                responseDto: apiSpec.responseDto,
+                responses: apiSpec.responses,
+                ...apiSpec  // 추가 필드들도 모두 포함
+              };
+              
+              const isDuplicate = newData.some(item => item.apiSpecId === newItem.apiSpecId);
               if (!isDuplicate) {
-                newData = [...newData, convertedItem];
+                newData = [...newData, newItem];
                 console.log('CREATE - 새로운 데이터:', newData);
               }
               break;
@@ -309,7 +326,22 @@ const DevelopApi = () => {
             case 'UPDATE': {
               newData = newData.map(item =>
                 item.apiSpecId === apiSpec.id
-                  ? convertDetailToListItem(apiSpec)
+                  ? {
+                      apiSpecId: apiSpec.id,
+                      apiName: apiSpec.apiName,
+                      endpoint: apiSpec.endpoint,
+                      method: apiSpec.method,
+                      category: apiSpec.category,
+                      description: apiSpec.description,
+                      statusCode: apiSpec.statusCode,
+                      header: apiSpec.header,
+                      pathVariables: apiSpec.pathVariables,
+                      requestParams: apiSpec.requestParams,
+                      requestDto: apiSpec.requestDto,
+                      responseDto: apiSpec.responseDto,
+                      responses: apiSpec.responses,
+                      ...apiSpec  // 추가 필드들도 모두 포함
+                    }
                   : item
               );
               console.log('UPDATE - 새로운 데이터:', newData);
