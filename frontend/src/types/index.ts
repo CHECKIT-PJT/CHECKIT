@@ -27,5 +27,5 @@ export interface ExpandedFolders {
   [folder: string]: boolean;
 }
 
-export type ButtonVariant = "primary" | "secondary";
-export type IconColor = "blue" | "yellow";
+export type ButtonVariant = 'primary' | 'secondary';
+export type IconColor = 'blue' | 'yellow';

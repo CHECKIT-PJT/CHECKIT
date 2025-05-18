@@ -96,7 +96,6 @@ const MarkdownEditorPage: React.FC = () => {
       const errorCode = err?.response?.data?.code;
 
       if (errorCode === 'README_ALREADY_EXISTS') {
-        // fallback: 이미 존재하므로 update 시도
         try {
           await updateReadme(pid, markdown);
           setReadmeExists(true);

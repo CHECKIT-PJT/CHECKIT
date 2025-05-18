@@ -4,9 +4,8 @@ import FileExplorer from '../molecules/buildpreview/FileExplorer';
 import CodeViewer from '../molecules/buildpreview/CodeViewer';
 import ProjectStats from '../molecules/buildpreview/ProjectStats';
 import useThemeDetection from '../hooks/useThemeDetection';
-import { downloadProject } from '../api/buildpreview';
-import { generateCode } from '../api/codegenerateAPI';
-import { countFiles, createFilePath } from '../utils/fileUtils';
+import { generateCode, getDockerCompose } from '../api/codegenerateAPI';
+import { countFiles } from '../utils/fileUtils';
 import { ExpandedFolders, SelectedFile, ApiResponse } from '../types';
 import { useNavigate, useParams } from 'react-router-dom';
 import Dialog from '../molecules/buildpreview/Dialog';
@@ -45,7 +44,7 @@ const BuildPreviewPage: React.FC = () => {
       repoName: repoName,
       visibility: 'private',
       message: '[CHECKIT] init: 프로젝트 초기 커밋',
-    }
+    },
   );
 
   useEffect(() => {
@@ -58,7 +57,32 @@ const BuildPreviewPage: React.FC = () => {
 
       try {
         setIsLoading(true);
+
         const response = await generateCode(projectId);
+
+        try {
+          const compose = await getDockerCompose(projectId);
+          console.log(compose);
+          const infra = response.data.infrastructure;
+          const dockerComposeContent = compose.content;
+
+          response.data.infrastructure =
+            typeof infra === 'object' && infra !== null
+              ? {
+                  ...infra,
+                  'docker-compose.yaml': dockerComposeContent,
+                }
+              : {
+                  'docker-compose.yaml': dockerComposeContent,
+                };
+        } catch (composeErr: any) {
+          if (composeErr?.response?.status === 404) {
+            console.warn('docker-compose.yaml 없음');
+          } else {
+            console.error('docker-compose.yaml 불러오기 실패:', composeErr);
+          }
+        }
+
         setProjectData(response);
       } catch (err: any) {
         console.error('코드 생성 실패:', err);
@@ -66,7 +90,6 @@ const BuildPreviewPage: React.FC = () => {
         const code = err?.code ?? 0;
         let message = err?.message || '알 수 없는 오류가 발생했습니다.';
 
-        // 500 에러일 경우 ERD 관련 메시지로 변경
         if (code === 500) {
           message = 'ERD가 없습니다, 먼저 생성해주세요.';
         }
@@ -84,7 +107,7 @@ const BuildPreviewPage: React.FC = () => {
   }, [projectId]);
 
   const toggleFolder = (folderPath: string): void => {
-    setExpandedFolders(prev => ({
+    setExpandedFolders((prev) => ({
       ...prev,
       [folderPath]: !prev[folderPath],
     }));
@@ -93,22 +116,28 @@ const BuildPreviewPage: React.FC = () => {
   const selectFile = (folderPath: string, fileName: string): void => {
     if (!projectData) return;
 
-    const pathSegments = folderPath.split('/');
+    console.log('[selectFile] folderPath:', folderPath);
+    console.log('[selectFile] fileName:', fileName);
+    console.log('[selectFile] projectData.data:', projectData.data);
+
+    const pathSegments = folderPath === '' ? [] : folderPath.split('/');
     let current: any = projectData.data;
 
     for (const segment of pathSegments) {
-      if (!current[segment]) return;
-      current = current[segment];
+      current = current?.[segment];
+      if (!current) return;
     }
 
     const fileContent = current[fileName];
-    if (!fileContent) return;
+    console.log('[selectFile] fileContent:', fileContent);
 
-    setSelectedFile({
-      name: fileName,
-      content: fileContent,
-      path: `${folderPath}/${fileName}`,
-    });
+    if (typeof fileContent === 'string') {
+      setSelectedFile({
+        name: fileName,
+        content: fileContent,
+        path: folderPath ? `${folderPath}/${fileName}` : fileName,
+      });
+    }
   };
 
   const handleDownload = async (): Promise<void> => {
@@ -140,7 +169,7 @@ const BuildPreviewPage: React.FC = () => {
       onError: (error: any) => {
         setDialogTitle('저장소 생성 실패');
         setDialogMessage(
-          error?.message || '저장소 생성 중 오류가 발생했습니다.'
+          error?.message || '저장소 생성 중 오류가 발생했습니다.',
         );
         setIsDialogOpen(true);
       },
