@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { DtoItem } from '../../types/apiDocs';
-import { FiTrash } from 'react-icons/fi';
+import { FiTrash, FiEdit2, FiMove } from 'react-icons/fi';
+import { PiList } from 'react-icons/pi';
 
 interface DtoEditorProps {
   title: string;
@@ -42,6 +43,8 @@ const DtoEditor = ({
   onUseDtoChange,
 }: DtoEditorProps) => {
   const [showAddDto, setShowAddDto] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [newDtoItem, setNewDtoItem] = useState<DtoItem>({
     id: 0,
     dtoItemName: '',
@@ -50,9 +53,43 @@ const DtoEditor = ({
   });
   const [useDto, setUseDto] = useState(dtoItems.length > 0 || Boolean(dtoName));
 
+  const handleDragStart = (index: number) => {
+    setDraggedItem(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (targetIndex: number) => {
+    if (draggedItem === null) return;
+
+    const items = [...dtoItems];
+    const [draggedItemContent] = items.splice(draggedItem, 1);
+    items.splice(targetIndex, 0, draggedItemContent);
+
+    onDtoItemsChange(items);
+    setDraggedItem(null);
+  };
+
+  const handleEdit = (index: number) => {
+    setEditingIndex(index);
+    setNewDtoItem({ ...dtoItems[index] });
+    setShowAddDto(true);
+  };
+
   const handleAddDtoItem = () => {
     if (newDtoItem.dtoItemName.trim() === '') return;
-    onDtoItemsChange([...dtoItems, { ...newDtoItem }]);
+
+    if (editingIndex !== null) {
+      const newItems = [...dtoItems];
+      newItems[editingIndex] = { ...newDtoItem };
+      onDtoItemsChange(newItems);
+      setEditingIndex(null);
+    } else {
+      onDtoItemsChange([...dtoItems, { ...newDtoItem }]);
+    }
+
     setNewDtoItem({
       id: 0,
       dtoItemName: '',
@@ -153,21 +190,38 @@ const DtoEditor = ({
               {dtoItems.map((item, index) => (
                 <div
                   key={index}
-                  className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(index)}
+                  className={`flex justify-between items-center p-2 bg-gray-50 rounded cursor-move ${
+                    draggedItem === index ? 'opacity-50' : ''
+                  }`}
                 >
-                  <div className="flex gap-4 items-center justify-between">
-                    <span className="text-blue-600">{item.dtoItemName}</span>
-                    <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                  <PiList className="w-4 h-4 text-gray-400 mr-3" />
+                  <div className="flex gap-4 items-center flex-1">
+                    <span className="text-blue-600 text-lg font-medium ">
+                      {item.dtoItemName}
+                    </span>
+                    <span className="text-sm bg-gray-200 px-3 py-1 rounded font-medium">
                       {item.dataType}
                       {item.isList ? '[ ]' : ''}
                     </span>
                   </div>
-                  <button
-                    className="text-gray-500 hover:text-red-500"
-                    onClick={() => removeDtoItem(index)}
-                  >
-                    <FiTrash className="w-4 h-4" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      className="text-gray-500 hover:text-blue-500"
+                      onClick={() => handleEdit(index)}
+                    >
+                      <FiEdit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="text-gray-500 hover:text-red-500"
+                      onClick={() => removeDtoItem(index)}
+                    >
+                      <FiTrash className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -179,7 +233,7 @@ const DtoEditor = ({
             <div className="p-3 border border-blue-100 rounded-lg bg-blue-50 mb-2">
               <div className="grid grid-cols-12 gap-2 mb-2">
                 <input
-                  className="p-2 border rounded col-span-5"
+                  className="p-2 border rounded col-span-5 text-base"
                   placeholder="Field Name"
                   value={newDtoItem.dtoItemName}
                   onChange={e =>
@@ -190,7 +244,7 @@ const DtoEditor = ({
                   }
                 />
                 <select
-                  className="p-2 border rounded col-span-4"
+                  className="p-2 border rounded col-span-4 text-base"
                   value={newDtoItem.dataType}
                   onChange={e =>
                     setNewDtoItem({
@@ -220,18 +274,21 @@ const DtoEditor = ({
                   <span className="text-xs">Is List</span>
                 </label>
               </div>
-              <div className="flex justify-between content-between items-center mt-2">
+              <div className="flex justify-end gap-2">
                 <button
-                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs"
-                  onClick={() => setShowAddDto(false)}
+                  className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                  onClick={() => {
+                    setShowAddDto(false);
+                    setEditingIndex(null);
+                  }}
                 >
                   Cancel
                 </button>
                 <button
-                  className="px-3 py-1 bg-blue-500 text-white rounded text-xs"
+                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
                   onClick={handleAddDtoItem}
                 >
-                  Add
+                  {editingIndex !== null ? 'Update' : 'Add'}
                 </button>
               </div>
             </div>

@@ -23,7 +23,7 @@ const InputSelect = ({
     >
       <ChapterCardLong
         title="ERD 설계"
-        subtitle="데이터베이스 구조 설계"
+        subtitle="팀원과 함께 데이터베이스 구조 설계"
         icon={<TbDatabaseEdit size={20} />}
         bgColor="hover:bg-blue-200 hover:bg-opacity-40 border-t"
         onClick={() => navigate('develop/erd')}
@@ -31,14 +31,14 @@ const InputSelect = ({
 
       <ChapterCardLong
         title="API 설계"
-        subtitle="API 엔드포인트 설계"
+        subtitle="팀원과 함께 API 엔드포인트 설계"
         icon={<FaCode size={20} />}
         bgColor="hover:bg-blue-200 hover:bg-opacity-40"
         onClick={() => navigate('develop/api')}
       />
       <ChapterCardLong
         title="기능 명세서"
-        subtitle="시스템 기능 상세 설계"
+        subtitle="팀원과 함께 시스템 기능 상세 설계"
         icon={<IoDocumentTextOutline size={20} />}
         bgColor="hover:bg-blue-200 hover:bg-opacity-40"
         onClick={() => navigate('develop/function')}

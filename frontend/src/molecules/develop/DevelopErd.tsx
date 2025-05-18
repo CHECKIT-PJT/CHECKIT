@@ -41,7 +41,9 @@ const DevelopErd = () => {
   const saveInterval = useRef<number | null>(null);
   const isInternalUpdate = useRef(false);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
-  const [remoteCursors, setRemoteCursors] = useState<{ [key: string]: RemoteCursorData }>({});
+  const [remoteCursors, setRemoteCursors] = useState<{
+    [key: string]: RemoteCursorData;
+  }>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
   const sendPresenceMessage = (resourceId: string, action: string) => {
@@ -80,23 +82,26 @@ const DevelopErd = () => {
   };
 
   // 마우스 이벤트 핸들러
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!containerRef.current || !stompClientRef.current?.connected) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!containerRef.current || !stompClientRef.current?.connected) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-    stompClientRef.current.publish({
-      destination: `/pub/cursor/${projectId}/erd`,
-      body: JSON.stringify({
-        userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
-        x,
-        y,
-        pageType: 'erd'
-      })
-    });
-  }, [projectId]);
+      stompClientRef.current.publish({
+        destination: `/pub/cursor/${projectId}/erd`,
+        body: JSON.stringify({
+          userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+          x,
+          y,
+          pageType: 'erd',
+        }),
+      });
+    },
+    [projectId]
+  );
 
   // 마우스 이벤트 리스너 등록
   useEffect(() => {
@@ -157,14 +162,14 @@ const DevelopErd = () => {
             resourceId: pageResourceId,
             action: PRESENCE_ACTIONS.ENTER,
           }),
-        }); 
+        });
 
         // ERD 페이지 사용자 목록 구독
         stompClient.subscribe(`/sub/presence/${pageResourceId}`, message => {
           try {
             const data = JSON.parse(message.body);
             const currentUsers = data.users;
-            
+
             // presence 메시지를 통해 현재 활성 사용자 확인 및 커서 관리
             setRemoteCursors(prev => {
               const newCursors = { ...prev };
@@ -194,7 +199,7 @@ const DevelopErd = () => {
           try {
             const cursorData = JSON.parse(message.body);
             const myUserId = getUserIdFromToken(token);
-            
+
             // 자신의 커서는 표시하지 않음
             if (cursorData.userId === myUserId) return;
 
@@ -203,8 +208,8 @@ const DevelopErd = () => {
               [cursorData.userId]: {
                 ...cursorData,
                 color: getUserColor(cursorData.userId),
-                username: cursorData.userId
-              }
+                username: cursorData.userId,
+              },
             }));
           } catch (error) {
             console.error('Failed to parse cursor message:', error);
@@ -334,7 +339,7 @@ const DevelopErd = () => {
   }, [projectId]);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex flex-col items-center w-full h-full relative"
     >
@@ -348,7 +353,7 @@ const DevelopErd = () => {
           color={cursor.color}
         />
       ))}
-      <div className="flex justify-between w-[90%] mb-2">
+      <div className="flex justify-between w-[90%] mb-2 mt-2">
         <div className="flex items-center gap-4">
           <ToggleButton />
         </div>
@@ -356,13 +361,13 @@ const DevelopErd = () => {
           <ActiveUsers users={activeUsers} size="medium" />
           <button
             onClick={handleManualSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
           >
             저장하기
           </button>
         </div>
       </div>
-      <div className="w-[90%] h-[500px]">
+      <div className="w-[90%] h-[470px]">
         <erd-editor
           id="erd-editor"
           enableThemeBuilder="true"

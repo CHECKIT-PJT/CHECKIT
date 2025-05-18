@@ -32,7 +32,7 @@ const BuildSelect = ({
         title="Spring 설정"
         subtitle="초기 스프링 설정 선택하기"
         icon={<SiSpring size={20} />}
-        bgColor="hover:bg-blue-600 hover:bg-opacity-40 border-t"
+        bgColor="hover:bg-blue-600 hover:bg-opacity-40 "
         onClick={() => navigate('spring')}
       />
       <ChapterCardLong
