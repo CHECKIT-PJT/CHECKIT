@@ -141,7 +141,7 @@ public class ProjectService {
 		}).toList();
 
 		return new ProjectDetailResponse(project.getId(), project.getProjectName(), memberResponses,
-			project.getCreatedAt().toString(), project.getUpdatedAt().toString());
+			project.getGitUrl(), project.getCreatedAt().toString(), project.getUpdatedAt().toString());
 	}
 
 	/**

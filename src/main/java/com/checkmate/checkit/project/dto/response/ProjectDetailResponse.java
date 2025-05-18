@@ -11,6 +11,7 @@ public class ProjectDetailResponse {
 	private Integer projectId;
 	private String projectName;
 	private List<ProjectMemberResponse> projectMembers;
+	private String repositoryUrl;
 	private String createdAt;
 	private String updatedAt;
 }
