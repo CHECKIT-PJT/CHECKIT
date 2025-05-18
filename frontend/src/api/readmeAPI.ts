@@ -1,10 +1,17 @@
 import axiosInstance from './axiosInstance';
 
+interface ReadmeResponse {
+  is_success: boolean;
+  readme: string;
+  reason: string;
+}
+
 export const generateReadme = async (projectId: number): Promise<string> => {
   const response = await axiosInstance.post(
     `/api/project/${projectId}/readme/generate`,
   );
-  return response.data.data?.readme ?? '';
+  const data: ReadmeResponse = response.data.result;
+  return data.readme ?? '';
 };
 
 export const saveReadme = async (projectId: number, content: string) => {
@@ -13,7 +20,8 @@ export const saveReadme = async (projectId: number, content: string) => {
 
 export const getReadme = async (projectId: number): Promise<string> => {
   const response = await axiosInstance.get(`/api/project/${projectId}/readme`);
-  return response.data.data?.readme ?? '';
+  const data: ReadmeResponse = response.data.result;
+  return data.readme ?? '';
 };
 
 export const updateReadme = async (projectId: number, content: string) => {
