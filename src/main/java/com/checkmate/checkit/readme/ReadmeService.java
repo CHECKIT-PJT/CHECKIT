@@ -1,5 +1,7 @@
 package com.checkmate.checkit.readme;
 
+import java.util.Map;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,10 +10,10 @@ import com.checkmate.checkit.global.common.infra.ai.AiClientService;
 import com.checkmate.checkit.global.config.JwtTokenProvider;
 import com.checkmate.checkit.global.config.properties.AiProperties;
 import com.checkmate.checkit.global.exception.CommonException;
-import com.checkmate.checkit.readme.dto.GenerateReadmeRequest;
-import com.checkmate.checkit.readme.dto.ReadmeUpdateRequest;
-import com.checkmate.checkit.readme.dto.ReadmeResponse;
 import com.checkmate.checkit.project.service.ProjectService;
+import com.checkmate.checkit.readme.dto.GenerateReadmeRequest;
+import com.checkmate.checkit.readme.dto.ReadmeResponse;
+import com.checkmate.checkit.readme.dto.ReadmeUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +48,6 @@ public class ReadmeService {
 		log.info("📥 README 생성 완료 - 길이={} chars", response.getReadme().length());
 		return response;
 	}
-
 
 	/**
 	 * README 저장 (신규 or 업데이트)
@@ -133,7 +134,9 @@ public class ReadmeService {
 		readmeRepository.findByProjectIdAndIsDeletedFalse(projectId)
 			.ifPresentOrElse(
 				ReadmeEntity::delete,
-				() -> { throw new CommonException(ErrorCode.README_NOT_FOUND); }
+				() -> {
+					throw new CommonException(ErrorCode.README_NOT_FOUND);
+				}
 			);
 	}
 
@@ -144,7 +147,19 @@ public class ReadmeService {
 	 * @return 마스킹된 문자열 (예: abcde...vwxyz)
 	 */
 	private String maskToken(String token) {
-		if (token == null || token.length() < 10) return "****";
+		if (token == null || token.length() < 10)
+			return "****";
 		return token.substring(0, 5) + "..." + token.substring(token.length() - 5);
+	}
+
+	/**
+	 * 저장된 README 파일을 가져옵니다.
+	 * @param projectId : 프로젝트 ID
+	 * @return : README 파일 경로
+	 */
+	public Map<String, String> getReadmeFileWithPath(int projectId) {
+		return readmeRepository.findByProjectIdAndIsDeletedFalse(projectId)
+			.map(readme -> Map.of("README.md", readme.getReadmeContent()))
+			.orElseThrow(() -> new CommonException(ErrorCode.README_NOT_FOUND));
 	}
 }

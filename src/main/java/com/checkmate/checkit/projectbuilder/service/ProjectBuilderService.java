@@ -18,8 +18,10 @@ import com.checkmate.checkit.erd.dto.response.ErdSnapshotResponse;
 import com.checkmate.checkit.erd.service.ErdService;
 import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.service.DockerComposeService;
 import com.checkmate.checkit.projectbuilder.dto.InitializerRequest;
 import com.checkmate.checkit.projectbuilder.mapper.InitializerRequestMapper;
+import com.checkmate.checkit.readme.ReadmeService;
 import com.checkmate.checkit.springsettings.dto.SpringSettingsDtoResponse;
 import com.checkmate.checkit.springsettings.service.SpringSettingsService;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,8 @@ public class ProjectBuilderService {
 	private final ServiceGenerateService serviceGenerateService;
 	private final ControllerGenerateService controllerGenerateService;
 	private final CodeSaveService codeSaveService;
+	private final DockerComposeService dockerComposeService;
+	private final ReadmeService readmeService;
 
 	/**
 	 * 전체 프로젝트 빌드 오케스트레이션: 다운로드 + 코드 생성 + 저장
@@ -76,6 +80,8 @@ public class ProjectBuilderService {
 		Map<String, String> serviceFiles = serviceGenerateService.generateServiceCodeByCategory(projectId, basePackage);
 		Map<String, String> controllerFiles = controllerGenerateService.generateControllersByCategory(projectId,
 			basePackage);
+		Map<String, String> dockerComposeFile = dockerComposeService.getDockerComposeFileWithPath(projectId);
+		Map<String, String> readmeFile = readmeService.getReadmeFileWithPath(projectId);
 
 		// 6. 파일 저장
 		codeSaveService.save(projectId, springName, basePackage, entityFiles);
@@ -84,6 +90,8 @@ public class ProjectBuilderService {
 		codeSaveService.save(projectId, springName, basePackage, repositoryFiles);
 		codeSaveService.save(projectId, springName, basePackage, serviceFiles);
 		codeSaveService.save(projectId, springName, basePackage, controllerFiles);
+		codeSaveService.saveRootFile(projectId, springName, dockerComposeFile);
+		codeSaveService.saveRootFile(projectId, springName, readmeFile);
 
 		return Path.of(codeSaveService.getProjectPath(projectId) + "/" + springName);
 	}

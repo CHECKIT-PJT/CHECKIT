@@ -22,6 +22,9 @@ import com.checkmate.checkit.erd.service.ErdService;
 import com.checkmate.checkit.functional.repository.FunctionalSpecRepository;
 import com.checkmate.checkit.global.code.ErrorCode;
 import com.checkmate.checkit.global.exception.CommonException;
+import com.checkmate.checkit.project.service.DockerComposeService;
+import com.checkmate.checkit.springsettings.entity.DependencyEntity;
+import com.checkmate.checkit.springsettings.repository.DependencyRepository;
 import com.checkmate.checkit.springsettings.service.SpringSettingsService;
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +42,8 @@ public class CodeGenerateController {
 	private final ControllerGenerateService controllerGenerateService;
 	private final FunctionalSpecRepository functionalSpecRepository;
 	private final ApiSpecRepository apiSpecRepository;
+	private final DependencyRepository dependencyRepository;
+	private final DockerComposeService dockerComposeService;
 
 	/**
 	 * 프로젝트 ID 기반으로 전체 코드 생성 (Entity + DTO + Service + Repository + Controller) 및 에러 코드 발생
@@ -48,8 +53,8 @@ public class CodeGenerateController {
 		try {
 			// 1. Spring 설정 확인
 			String basePackage = Optional.ofNullable(
-				springSettingsService.getSpringSettings(projectId).getSpringPackageName()
-			).orElseThrow(() -> new CommonException(ErrorCode.SPRING_SETTINGS_NOT_FOUND));
+					springSettingsService.getSpringSettings(projectId).getSpringPackageName())
+				.orElseThrow(() -> new CommonException(ErrorCode.SPRING_SETTINGS_NOT_FOUND));
 
 			// 2. 기능 명세서 확인
 			if (functionalSpecRepository.findByProjectIdAndIsDeletedFalse(projectId).isEmpty()) {
@@ -70,6 +75,8 @@ public class CodeGenerateController {
 				throw new CommonException(ErrorCode.API_SPEC_NOT_FOUND);
 			}
 
+			List<DependencyEntity> dependencies = dependencyRepository.findByProjectEntity_Id(projectId);
+
 			// 5. 코드 생성
 			StringBuilder codeResult = new StringBuilder();
 
@@ -89,6 +96,9 @@ public class CodeGenerateController {
 				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
 			controllerGenerateService.generateControllersByCategory(projectId, basePackage)
+				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
+
+			dockerComposeService.generateDockerComposeByDependenciesAndSave(projectId, dependencies)
 				.forEach((fileName, content) -> codeResult.append(content).append("\n"));
 
 			return ResponseEntity.ok(codeResult.toString());

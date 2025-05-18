@@ -48,6 +48,31 @@ public class CodeSaveService {
 		}
 	}
 
+	/**
+	 * Docker Compose 파일을 저장합니다.
+	 * @param projectId 프로젝트 ID
+	 * @param springName 프로젝트 이름
+	 * @param rootFile Docker Compose 파일 내용
+	 */
+	public void saveRootFile(int projectId, String springName, Map<String, String> rootFile) {
+		String root = BASE_PATH + projectId + "/" + springName + "/";
+
+		for (Map.Entry<String, String> entry : rootFile.entrySet()) {
+			String relativePath = entry.getKey();  // 예: docker-compose.yml, readme.md
+			String code = entry.getValue();
+			Path fullPath = Paths.get(root + relativePath);
+
+			try {
+				Files.createDirectories(fullPath.getParent());
+				Files.writeString(fullPath, code);
+				log.info("[Saved] Root file: {}", fullPath);
+			} catch (IOException e) {
+				log.error("[Error] Failed to save Root file: {}", fullPath, e);
+				throw new CommonException(ErrorCode.SPRING_CODE_FILE_SAVE);
+			}
+		}
+	}
+
 	public Path getProjectPath(int projectId) {
 		String projectPath = BASE_PATH + projectId + "/";
 		Path path = Paths.get(projectPath);

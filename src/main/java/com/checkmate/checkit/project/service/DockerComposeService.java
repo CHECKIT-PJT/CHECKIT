@@ -1,6 +1,9 @@
 package com.checkmate.checkit.project.service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import com.checkmate.checkit.project.dto.request.DockerComposeUpdateRequest;
 import com.checkmate.checkit.project.dto.response.DockerComposeResponse;
 import com.checkmate.checkit.project.entity.DockerComposeEntity;
 import com.checkmate.checkit.project.repository.DockerComposeRepository;
+import com.checkmate.checkit.springsettings.entity.DependencyEntity;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -113,6 +117,106 @@ public class DockerComposeService {
 		String content = dockerComposeEntity.getContent();
 
 		return new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
+	}
+
+	/**
+	 * 의존성 목록을 기반으로 도커 컴포즈 파일을 생성하고 저장
+	 * @param projectId : 프로젝트 ID
+	 * @param dependencies : 의존성 목록
+	 * @return : 생성된 도커 컴포즈 파일 경로
+	 */
+	public Map<String, String> generateDockerComposeByDependenciesAndSave(int projectId,
+		List<DependencyEntity> dependencies) {
+		StringBuilder dockerComposeContent = new StringBuilder();
+		dockerComposeContent.append("services:\n");
+
+		boolean hasMySQL = false;
+		boolean hasPostgreSQL = false;
+		boolean hasMongoDB = false;
+
+		for (DependencyEntity dependency : dependencies) {
+			String name = dependency.getDependencyName();
+			DatabaseType dbType = getDatabaseTypeFromDependency(name);
+
+			if (dbType == null)
+				continue;
+
+			switch (dbType) {
+				case MYSQL -> {
+					dockerComposeContent.append(generateMySQLContent());
+					hasMySQL = true;
+				}
+				case POSTGRESQL -> {
+					dockerComposeContent.append(generatePostgreSQLContent());
+					hasPostgreSQL = true;
+				}
+				case MONGODB -> {
+					dockerComposeContent.append(generateMongoDBContent());
+					hasMongoDB = true;
+				}
+				case REDIS -> dockerComposeContent.append(generateRedisContent());
+			}
+		}
+
+		// 볼륨 추가
+		dockerComposeContent.append("\nvolumes:\n");
+		if (hasMySQL) {
+			dockerComposeContent.append("  mysql-data:\n");
+		}
+		if (hasPostgreSQL) {
+			dockerComposeContent.append("  pgdata:\n");
+		}
+		if (hasMongoDB) {
+			dockerComposeContent.append("  mongo-data:\n");
+		}
+
+		DockerComposeEntity dockerComposeEntity = dockerComposeRepository.findByProjectId(projectId)
+			.map(entity -> {
+				entity.updateContent(dockerComposeContent.toString());
+				return entity;
+			})
+			.orElse(DockerComposeEntity.builder()
+				.projectId(projectId)
+				.content(dockerComposeContent.toString())
+				.build());
+
+		dockerComposeRepository.save(dockerComposeEntity);
+
+		// 결과 반환
+		Map<String, String> result = new HashMap<>();
+		result.put("docker-compose.yml", dockerComposeContent.toString());
+		return result;
+	}
+
+	/**
+	 * 도커 컴포즈 파일을 조회
+	 * @param projectId : 프로젝트 ID
+	 * @return : 도커 컴포즈 파일 경로
+	 */
+	public Map<String, String> getDockerComposeFileWithPath(int projectId) {
+		DockerComposeEntity dockerComposeEntity = dockerComposeRepository.findByProjectId(projectId)
+			.orElseThrow(
+				() -> new CommonException(ErrorCode.DOCKER_COMPOSE_NOT_FOUND));
+
+		Map<String, String> result = new HashMap<>();
+		result.put("docker-compose.yml", dockerComposeEntity.getContent());
+		return result;
+	}
+
+	private DatabaseType getDatabaseTypeFromDependency(String name) {
+		if (name.contains("MySQL")) {
+			return DatabaseType.MYSQL;
+		}
+		if (name.contains("PostgreSQL")) {
+			return DatabaseType.POSTGRESQL;
+		}
+		if (name.contains("MongoDB")) {
+			return DatabaseType.MONGODB;
+		}
+		if (name.contains("Redis")) {
+			return DatabaseType.REDIS;
+		}
+		return null; // DB 관련이 아닌 경우
 	}
 
 	private String generateMySQLContent() {
