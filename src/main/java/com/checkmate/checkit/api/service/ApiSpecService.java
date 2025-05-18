@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,7 @@ public class ApiSpecService {
     private final ProjectRepository projectRepository;
 
     @Transactional
-    public void saveApiSpec(int projectId, ApiSpecRequest request) {
+    public ApiSpecResponse saveApiSpec(int projectId, ApiSpecRequest request) {
         ApiSpecEntity spec;
 
         if (request.getId() != null) {
@@ -101,6 +103,18 @@ public class ApiSpecService {
                 );
             });
         }
+
+        List<ApiQueryStringEntity> queryStrings = queryStringRepository.findByApiSpec(spec);
+        List<ApiPathVariableEntity> pathVariables = pathVariableRepository.findByApiSpec(spec);
+        List<DtoEntity> dtoEntities = dtoRepository.findByApiSpecId(spec.getId());
+
+        Map<Long, List<DtoItemEntity>> dtoItemMap = dtoEntities.stream()
+                .collect(Collectors.toMap(
+                        DtoEntity::getId,
+                        dtoItemRepository::findByDto
+                ));
+
+        return ApiSpecResponse.from(spec, queryStrings, pathVariables, dtoEntities, dtoItemMap);
     }
 
     @Transactional(readOnly = true)

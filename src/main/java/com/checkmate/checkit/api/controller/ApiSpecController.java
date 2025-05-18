@@ -20,11 +20,9 @@ public class ApiSpecController {
     private final ApiSpecService apiSpecService;
 
     @PostMapping("/{projectId}")
-    public ResponseEntity<JSONResponse<Void>> saveApiSpec(@PathVariable int projectId, @RequestBody ApiSpecRequest request,@RequestHeader("Authorization") String authorization)
+    public ResponseEntity<JSONResponse<ApiSpecResponse>> saveApiSpec(@PathVariable int projectId, @RequestBody ApiSpecRequest request,@RequestHeader("Authorization") String authorization)
     {
-        log.info(request.toString());
-        apiSpecService.saveApiSpec(projectId, request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(JSONResponse.onSuccess(apiSpecService.saveApiSpec(projectId, request)));
     }
 
     @GetMapping("/{projectId}")
