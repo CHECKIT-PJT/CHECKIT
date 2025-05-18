@@ -23,6 +23,7 @@ import SequenceDiagramPage from '../pages/SequenceDiagramPage';
 import MarkdownEditorPage from '../pages/MarkdownEditorPage';
 import JiraAuthCallback from '../pages/JiraAuthCallBack';
 import NotFoundPage from '../pages/NotFoundPage';
+import IdeEditorPage from '../pages/IdeEditorPage';
 
 const Router = () => {
   // 로그인 체크
@@ -83,6 +84,7 @@ const Router = () => {
             <Route path="commit" element={<CommitConvention />} />
             <Route path="gitignore" element={<GitignoreConvention />} />
           </Route>
+          <Route path="/project/:projectId/ide" element={<IdeEditorPage />} />
         </Route>
       </Route>
     </Routes>

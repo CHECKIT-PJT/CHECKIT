@@ -1,16 +1,19 @@
-import { useState, useEffect } from "react";
-import ProjectHeader from "../molecules/buildpreview/ProjectHeader";
-import FileExplorer from "../molecules/buildpreview/FileExplorer";
-import CodeViewer from "../molecules/buildpreview/CodeViewer";
-import ProjectStats from "../molecules/buildpreview/ProjectStats";
-import ActionBar from "../molecules/buildpreview/ActionBar";
-import useThemeDetection from "../hooks/useThemeDetection";
-import { downloadProject } from "../api/buildpreview";
-import { generateCode } from "../api/codegenerateAPI";
-import { countFiles, createFilePath } from "../utils/fileUtils";
-import { ExpandedFolders, SelectedFile, ApiResponse } from "../types";
-import { useNavigate, useParams } from "react-router-dom";
-import Dialog from "../molecules/buildpreview/Dialog";
+import { useState, useEffect } from 'react';
+import ProjectHeader from '../molecules/buildpreview/ProjectHeader';
+import FileExplorer from '../molecules/buildpreview/FileExplorer';
+import CodeViewer from '../molecules/buildpreview/CodeViewer';
+import ProjectStats from '../molecules/buildpreview/ProjectStats';
+import useThemeDetection from '../hooks/useThemeDetection';
+import { downloadProject } from '../api/buildpreview';
+import { generateCode } from '../api/codegenerateAPI';
+import { countFiles, createFilePath } from '../utils/fileUtils';
+import { ExpandedFolders, SelectedFile, ApiResponse } from '../types';
+import { useNavigate, useParams } from 'react-router-dom';
+import Dialog from '../molecules/buildpreview/Dialog';
+import { downloadBuildZip } from '../api/downloadAPI';
+import CustomAlert from '../molecules/layout/CustomAlert';
+import useProjectStore from '../stores/projectStore';
+import { useCreateGitlabProject } from '../api/gitAPI';
 
 const BuildPreviewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -21,12 +24,29 @@ const BuildPreviewPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorCode, setErrorCode] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [dialogTitle, setDialogTitle] = useState<string>("");
-  const [dialogMessage, setDialogMessage] = useState<string>("");
+  const [dialogTitle, setDialogTitle] = useState<string>('');
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] =
+    useState<boolean>(false);
+  const [isAlertOpen, setIsAlertOpen] = useState<boolean>(false);
+  const [alertMessage, setAlertMessage] = useState<string>('');
   const navigate = useNavigate();
 
   // 시스템 테마 감지
   const systemDarkMode = useThemeDetection();
+
+  const { currentProject } = useProjectStore();
+
+  const repoName = currentProject?.projectName || '';
+
+  const { mutate: createGitlabProject } = useCreateGitlabProject(
+    Number(projectId),
+    {
+      repoName: repoName,
+      visibility: 'private',
+      message: '[CHECKIT] init: 프로젝트 초기 커밋',
+    }
+  );
 
   useEffect(() => {
     setCodeDarkMode(systemDarkMode);
@@ -41,13 +61,18 @@ const BuildPreviewPage: React.FC = () => {
         const response = await generateCode(projectId);
         setProjectData(response);
       } catch (err: any) {
-        console.error("코드 생성 실패:", err);
+        console.error('코드 생성 실패:', err);
 
         const code = err?.code ?? 0;
-        const message = err?.message || "알 수 없는 오류가 발생했습니다.";
+        let message = err?.message || '알 수 없는 오류가 발생했습니다.';
+
+        // 500 에러일 경우 ERD 관련 메시지로 변경
+        if (code === 500) {
+          message = 'ERD가 없습니다, 먼저 생성해주세요.';
+        }
 
         setErrorCode(code);
-        setDialogTitle("코드 생성 실패");
+        setDialogTitle('코드 생성 실패');
         setDialogMessage(message);
         setIsDialogOpen(true);
       } finally {
@@ -59,7 +84,7 @@ const BuildPreviewPage: React.FC = () => {
   }, [projectId]);
 
   const toggleFolder = (folderPath: string): void => {
-    setExpandedFolders((prev) => ({
+    setExpandedFolders(prev => ({
       ...prev,
       [folderPath]: !prev[folderPath],
     }));
@@ -68,7 +93,7 @@ const BuildPreviewPage: React.FC = () => {
   const selectFile = (folderPath: string, fileName: string): void => {
     if (!projectData) return;
 
-    const pathSegments = folderPath.split("/");
+    const pathSegments = folderPath.split('/');
     let current: any = projectData.data;
 
     for (const segment of pathSegments) {
@@ -87,13 +112,39 @@ const BuildPreviewPage: React.FC = () => {
   };
 
   const handleDownload = async (): Promise<void> => {
-    try {
-      await downloadProject();
-      alert("프로젝트 다운로드가 완료되었습니다.");
-    } catch (error) {
-      console.error("다운로드 중 오류 발생:", error);
-      alert("다운로드 중 오류가 발생했습니다.");
+    if (!projectId) return;
+
+    const token = sessionStorage.getItem('accessToken');
+    if (!token) {
+      return;
     }
+    await downloadBuildZip(Number(projectId), token);
+    setAlertMessage('프로젝트 다운로드가 완료되었습니다.');
+    setIsAlertOpen(true);
+  };
+
+  const handleRepoCreate = async (): Promise<void> => {
+    if (!repoName) {
+      setDialogTitle('저장소 생성 실패');
+      setDialogMessage('프로젝트 이름이 없습니다.');
+      setIsDialogOpen(true);
+      return;
+    }
+
+    createGitlabProject(undefined, {
+      onSuccess: () => {
+        setDialogTitle('저장소 생성 성공');
+        setDialogMessage('GitLab 저장소가 성공적으로 생성되었습니다.');
+        setIsSuccessDialogOpen(true);
+      },
+      onError: (error: any) => {
+        setDialogTitle('저장소 생성 실패');
+        setDialogMessage(
+          error?.message || '저장소 생성 중 오류가 발생했습니다.'
+        );
+        setIsDialogOpen(true);
+      },
+    });
   };
 
   const handleDialogConfirm = () => {
@@ -124,6 +175,14 @@ const BuildPreviewPage: React.FC = () => {
     setIsDialogOpen(false);
   };
 
+  const handleSuccessDialogConfirm = () => {
+    setIsSuccessDialogOpen(false);
+  };
+
+  const handleSuccessDialogCancel = () => {
+    setIsSuccessDialogOpen(false);
+  };
+
   const fileCount = projectData ? countFiles(projectData.data) : 0;
 
   if (isLoading) {
@@ -135,8 +194,8 @@ const BuildPreviewPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 text-gray-900">
-      <ProjectHeader />
+    <div className="flex flex-col h-screen">
+      <ProjectHeader onDownload={handleDownload} onCreate={handleRepoCreate} />
 
       {projectData ? (
         <div className="flex flex-1 overflow-hidden">
@@ -163,8 +222,6 @@ const BuildPreviewPage: React.FC = () => {
               codeDarkMode={codeDarkMode}
               setCodeDarkMode={setCodeDarkMode}
             />
-
-            <ActionBar onDownload={handleDownload} />
           </div>
         </div>
       ) : (
@@ -176,11 +233,30 @@ const BuildPreviewPage: React.FC = () => {
       <Dialog
         isOpen={isDialogOpen}
         title={dialogTitle}
-        message={dialogMessage}
-        confirmText="해당 페이지로 이동"
+        message={`${dialogMessage}\n페이지로 이동하시겠습니까?`}
+        confirmText="이동"
         cancelText="닫기"
         onConfirm={handleDialogConfirm}
         onCancel={handleDialogCancel}
+        success={errorCode === 200}
+      />
+
+      <Dialog
+        isOpen={isSuccessDialogOpen}
+        title={dialogTitle}
+        message={dialogMessage}
+        confirmText="확인"
+        cancelText="닫기"
+        onConfirm={handleSuccessDialogConfirm}
+        onCancel={handleSuccessDialogCancel}
+        success={true}
+      />
+
+      <CustomAlert
+        isOpen={isAlertOpen}
+        message={alertMessage}
+        confirmText="확인"
+        onConfirm={() => setIsAlertOpen(false)}
       />
     </div>
   );

@@ -1,4 +1,3 @@
-// 수정된 SpringSettingsPage 컴포넌트
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiInfo } from 'react-icons/fi';
@@ -31,21 +30,19 @@ interface Dependency {
 interface SpringBootVersion {
   version: string;
   releaseDate: string;
-  springVersion: string;
   javaCompatibility: string;
 }
 
-const SpringSettingsPage: React.FC = () => {
+const SpringSettingsPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [settingsExist, setSettingsExist] = useState(false);
 
-  // Dialog 상태 관리
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogMessage, setDialogMessage] = useState('');
-
-  const [springBootVersion, setSpringBootVersion] = useState('3.0.6');
+  const [springBootVersions, setSpringBootVersions] = useState<
+    SpringBootVersion[]
+  >([]);
+  const [springBootVersion, setSpringBootVersion] = useState<string>('');
   const [projectType, setProjectType] = useState('Maven Project');
   const [language, setLanguage] = useState('Java');
   const [packaging, setPackaging] = useState('Jar');
@@ -62,53 +59,31 @@ const SpringSettingsPage: React.FC = () => {
   const [dependencies, setDependencies] = useState<Dependency[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const springBootVersions: SpringBootVersion[] = [
-    {
-      version: '3.0.6',
-      releaseDate: '2023-04-20',
-      springVersion: '6.0.9',
-      javaCompatibility: '17+',
-    },
-    {
-      version: '3.0.5',
-      releaseDate: '2023-03-23',
-      springVersion: '6.0.8',
-      javaCompatibility: '17+',
-    },
-    {
-      version: '2.7.10',
-      releaseDate: '2023-03-23',
-      springVersion: '5.3.26',
-      javaCompatibility: '8+',
-    },
-    {
-      version: '2.7.9',
-      releaseDate: '2023-02-23',
-      springVersion: '5.3.25',
-      javaCompatibility: '8+',
-    },
-    {
-      version: '2.6.14',
-      releaseDate: '2023-02-23',
-      springVersion: '5.3.25',
-      javaCompatibility: '8+',
-    },
-  ];
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    const versions: SpringBootVersion[] = [
+      { version: '4.0.0', releaseDate: '2025-11-20', javaCompatibility: '17+' },
+      { version: '3.5.0', releaseDate: '2025-05-22', javaCompatibility: '17+' },
+      { version: '3.4.6', releaseDate: '2024-11-21', javaCompatibility: '17+' },
+      { version: '3.4.5', releaseDate: '2024-11-21', javaCompatibility: '17+' },
+    ];
+    setSpringBootVersions(versions);
+    setSpringBootVersion(versions[0]?.version || '3.4.5');
+  }, []);
 
   const resetSettings = () => {
-    setSpringBootVersion('3.0.6');
     setProjectType('Maven Project');
     setLanguage('Java');
     setPackaging('Jar');
     setJavaVersion('17');
-
     setGroupId('');
     setArtifactId('');
     setDescription('');
     setProjectName('');
     setPackageName('');
-
-    // 이전에 deps 세팅은 loadData에서 했으므로, 선택만 false로 바꿈
     setDependencies(prev => prev.map(d => ({ ...d, selected: false })));
     setSettingsExist(false);
   };
@@ -142,14 +117,12 @@ const SpringSettingsPage: React.FC = () => {
           if (
             !(error instanceof AxiosError && error.response?.status === 404)
           ) {
-            throw error; // 예상치 못한 에러는 다시 throw
+            throw error;
           }
         }
 
         const selectedDeps: string[] =
           settingsResponse?.result?.dependencies || [];
-
-        // dependencies 상태 먼저 세팅
         const deps: Dependency[] = availableDeps.map((name: string) => ({
           id: name,
           name,
@@ -162,7 +135,7 @@ const SpringSettingsPage: React.FC = () => {
           setSettingsExist(true);
           mapResponseToState(settingsResponse.result);
         } else {
-          resetSettings(); // 선택만 false로
+          resetSettings();
         }
       } catch (error) {
         console.error('설정 또는 의존성 불러오기 실패:', error);
@@ -177,13 +150,9 @@ const SpringSettingsPage: React.FC = () => {
   const mapResponseToState = (data: any) => {
     const formatSpringVersion = (num: number): string => {
       const str = num.toString();
-      if (str.length === 3) {
-        return `${str[0]}.0.${str[1]}${str[2]}`;
-      } else if (str.length === 4) {
-        return `${str[0]}.${str[1]}.${str[2]}${str[3]}`;
-      } else {
-        return '3.0.6';
-      }
+      if (str.length === 3) return `${str[0]}.0.${str[1]}${str[2]}`;
+      if (str.length === 4) return `${str[0]}.${str[1]}.${str[2]}${str[3]}`;
+      return '3.0.6';
     };
 
     const projectTypeMap = { MAVEN: 'Maven Project', GRADLE: 'Gradle Project' };
@@ -201,7 +170,6 @@ const SpringSettingsPage: React.FC = () => {
       packagingMap[data.springPackaging as keyof typeof packagingMap] || 'Jar'
     );
     setJavaVersion(data.springJavaVersion?.toString() || '17');
-
     setGroupId(data.springGroup || '');
     setArtifactId(data.springArtifact || '');
     setProjectName(data.springName || data.springArtifact || '');
@@ -217,9 +185,7 @@ const SpringSettingsPage: React.FC = () => {
     );
   };
 
-  const onClickBack = () => {
-    navigate(`/project/${projectId}`);
-  };
+  const onClickBack = () => navigate(`/project/${projectId}`);
 
   const filteredDependencies = searchQuery
     ? dependencies.filter(
@@ -231,22 +197,22 @@ const SpringSettingsPage: React.FC = () => {
 
   const selectedCount = dependencies.filter(dep => dep.selected).length;
 
-  // Dialog 확인 버튼 핸들러
   const handleDialogConfirm = () => {
     setIsDialogOpen(false);
     navigate(`/project/${projectId}/buildpreview`);
   };
 
-  // Dialog 취소 버튼 핸들러
-  const handleDialogCancel = () => {
-    setIsDialogOpen(false);
-  };
+  const handleDialogCancel = () => setIsDialogOpen(false);
 
   const handleSave = async () => {
     if (!projectId) return;
-
     const accessToken = sessionStorage.getItem('accessToken');
     if (!accessToken) return;
+
+    const versionAsInt = (() => {
+      const [major, minor, patch] = springBootVersion.split('.').map(Number);
+      return major * 100 + minor * 10 + patch;
+    })();
 
     const requestData = {
       springSettings: {
@@ -257,7 +223,7 @@ const SpringSettingsPage: React.FC = () => {
             : language === 'Kotlin'
               ? 'KOTLIN'
               : 'GROOVY',
-        springVersion: parseInt(springBootVersion.split('.').join('')),
+        springVersion: versionAsInt,
         springGroup: groupId,
         springArtifact: artifactId,
         springName: projectName,
@@ -271,23 +237,27 @@ const SpringSettingsPage: React.FC = () => {
 
     try {
       if (settingsExist) {
+        console.log(requestData);
         await updateSpringSettings(Number(projectId), requestData, accessToken);
       } else {
         await createSpringSettings(Number(projectId), requestData, accessToken);
       }
       setSettingsExist(true);
 
-      // 코드 생성 API 호출
       try {
         await generateCode(projectId);
-        // 다이얼로그 표시
         setDialogMessage(
-          '코드 생성이 완료되었습니다. 코드 미리보기로 이동하시겠습니까?'
+          '코드 생성이 완료되었습니다.\n코드 미리보기로 이동하시겠습니까?'
         );
+        setIsSuccess(true);
         setIsDialogOpen(true);
       } catch (error) {
         console.error('코드 생성 실패:', error);
-        alert('설정은 저장되었으나 코드 생성 중 오류가 발생했습니다.');
+        setDialogMessage(
+          '설정은 저장되었으나\n코드 생성 중 오류가 발생했습니다.'
+        );
+        setIsSuccess(false);
+        setIsDialogOpen(true);
       }
     } catch (error) {
       console.error('저장 실패:', error);
@@ -393,7 +363,6 @@ const SpringSettingsPage: React.FC = () => {
         </div>
       </main>
 
-      {/* Dialog 컴포넌트 */}
       <Dialog
         isOpen={isDialogOpen}
         title="코드 생성 완료"
@@ -402,6 +371,7 @@ const SpringSettingsPage: React.FC = () => {
         cancelText="닫기"
         onConfirm={handleDialogConfirm}
         onCancel={handleDialogCancel}
+        success={isSuccess}
       />
     </div>
   );

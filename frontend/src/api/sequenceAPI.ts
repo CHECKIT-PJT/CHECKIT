@@ -1,57 +1,57 @@
-import axiosInstance from "./axiosInstance";
+import axiosInstance from './axiosInstance';
 
-/**
- * API 요청을 처리하는 서비스
- */
-class sequenceAPI {
-  /**
-   * UML 코드 가져오기
-   * @param categoryId - 카테고리 ID
-   * @returns UML 코드
-   */
-  public async fetchUmlCode(categoryId: string): Promise<string> {
-    try {
-      const response = await axiosInstance.get(
-        `/api/diagrams/${categoryId}/code`
-      );
-      return response.data.code;
-    } catch (error) {
-      console.error("UML 코드 가져오기 실패:", error);
-      throw error;
-    }
-  }
+export const generateSequenceDiagram = (
+  projectId: number,
+  category: string,
+) => {
+  return axiosInstance.post(
+    `/api/project/${projectId}/sequence/generate`,
+    null,
+    {
+      params: { category },
+    },
+  );
+};
 
-  /**
-   * 다이어그램 이미지 URL 가져오기
-   * @param categoryId - 카테고리 ID
-   * @returns 다이어그램 이미지 URL
-   */
-  public async fetchDiagramUrl(categoryId: string): Promise<string> {
-    try {
-      const response = await axiosInstance.get(
-        `/api/diagrams/${categoryId}/image`
-      );
-      return response.data.imageUrl;
-    } catch (error) {
-      console.error("다이어그램 이미지 URL 가져오기 실패:", error);
-      throw error;
-    }
-  }
+export const saveSequenceDiagram = (
+  projectId: number,
+  data: { content: string; diagramUrl: string; category: string },
+) => {
+  return axiosInstance.post(`/api/project/${projectId}/sequence`, data, {});
+};
 
-  /**
-   * 카테고리 목록 가져오기
-   * @returns 카테고리 목록
-   */
-  public async fetchCategories(): Promise<Array<{ id: string; name: string }>> {
-    try {
-      const response = await axiosInstance.get(`/api/diagrams/categories`);
-      return response.data.categories;
-    } catch (error) {
-      console.error("카테고리 목록 가져오기 실패:", error);
-      throw error;
-    }
-  }
-}
+export const getSequenceDiagram = (projectId: number, category: string) => {
+  return axiosInstance.get(`/api/project/${projectId}/sequence`, {
+    params: { category },
+  });
+};
 
-// 싱글톤 인스턴스 생성
-export default new sequenceAPI();
+export const updateSequenceDiagram = (
+  projectId: number,
+  data: { content: string; diagramUrl: string; category: string },
+) => {
+  return axiosInstance.put(`/api/project/${projectId}/sequence`, data, {});
+};
+
+export const deleteSequenceDiagram = (projectId: number, category: string) => {
+  return axiosInstance.delete(`/api/project/${projectId}/sequence`, {
+    params: { category },
+  });
+};
+
+export const downloadSequenceCode = (projectId: number, category: string) => {
+  return axiosInstance.get(`/api/project/${projectId}/sequence/download/code`, {
+    params: { category },
+    responseType: 'blob',
+  });
+};
+
+export const downloadSequenceImage = (projectId: number, category: string) => {
+  return axiosInstance.get(
+    `/api/project/${projectId}/sequence/download/image`,
+    {
+      params: { category },
+      responseType: 'blob',
+    },
+  );
+};

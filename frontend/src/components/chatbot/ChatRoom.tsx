@@ -75,12 +75,12 @@ const ChatRoom = () => {
             onChange={e => setInputText(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="메시지를 입력하세요."
-            className="text-xs flex-1 border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
+            className="text-xs flex-1 border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
             rows={1}
           />
           <button
             onClick={handleSendMessage}
-            className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-blue-200 text-white px-4 py-2 rounded-r-lg hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
           >
             <LuSendHorizontal />
           </button>

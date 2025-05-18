@@ -1,6 +1,5 @@
 import { useState, useEffect, ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { convertMarkdownToHtml } from '../utils/markdown';
 import {
   FaSave,
@@ -11,77 +10,84 @@ import {
   FaPlus,
 } from 'react-icons/fa';
 import { IoArrowBack } from 'react-icons/io5';
+import {
+  generateReadme,
+  saveReadme,
+  getReadme,
+  updateReadme,
+} from '../api/readmeAPI';
 
-// 필요한 스타일링을 위한 Tailwind CSS 클래스 정의
 const tailwindMarkdownStyles = {
   wrapper:
     'prose prose-sm sm:prose lg:prose-lg dark:prose-invert max-w-none break-words',
 };
 
 const MarkdownEditorPage: React.FC = () => {
-  // 상태 관리
-  const [markdown, setMarkdown] = useState(`# 마크다운 에디터
+  const { projectId } = useParams<{ projectId: string }>();
+  const pid = Number(projectId);
+  const navigate = useNavigate();
 
-이것은 **실시간** 마크다운 에디터입니다.
-
-## 기능
-
-- 왼쪽에 마크다운 코드 입력
-- 오른쪽에 실시간 프리뷰
-- TypeScript와 Tailwind CSS 사용
-- 생성 및 저장 기능
-
-### 코드 예제
-
-\`\`\`typescript
-const greeting = (name: string): string => {
-  return \`안녕하세요, \${name}님!\`;
-};
-\`\`\`
-
-> 마크다운으로 문서를 쉽게 작성하세요!
-
-[깃허브 링크](https://github.com)
-
----
-
-![이미지 예제](/api/placeholder/400/200)
-`);
+  const [markdown, setMarkdown] = useState('');
   const [fileName, setFileName] = useState('README.md');
   const [html, setHtml] = useState('');
   const [showFileNameInput, setShowFileNameInput] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [readmeExists, setReadmeExists] = useState(false);
 
   useEffect(() => {
     setHtml(convertMarkdownToHtml(markdown));
   }, [markdown]);
 
-  // 테마 변경 시 적용
-  useEffect(() => {});
+  useEffect(() => {
+    if (!pid) return;
 
-  // 이벤트 핸들러
+    const fetchReadme = async () => {
+      try {
+        const content = await getReadme(pid);
+        if (content) {
+          setMarkdown(content);
+          setReadmeExists(true);
+        } else {
+          console.warn('README가 비어있습니다.');
+        }
+      } catch (err) {
+        console.warn('README 불러오기 실패:', err);
+        setReadmeExists(false);
+      }
+    };
+
+    fetchReadme();
+  }, [pid]);
+
+  const handleGenerateReadme = async () => {
+    try {
+      const content = await generateReadme(pid);
+      setMarkdown(content);
+      showToast('README가 성공적으로 생성되었습니다!');
+    } catch (err) {
+      console.error('README 생성 실패:', err);
+      showToast('README 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleSaveOrUpdateReadme = async () => {
+    try {
+      if (readmeExists) {
+        await updateReadme(pid, markdown);
+        showToast('README가 수정되었습니다!');
+      } else {
+        await saveReadme(pid, markdown);
+        setReadmeExists(true);
+        showToast('README가 생성되었습니다!');
+      }
+    } catch (err) {
+      console.error('README 저장/수정 실패:', err);
+      showToast('README 저장 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setMarkdown(e.target.value);
-  };
-
-  const createNewFile = () => {
-    setMarkdown('# 새 마크다운 파일');
-    setFileName('NEW_FILE.md');
-    setShowFileNameInput(true);
-  };
-
-  const saveFile = () => {
-    const blob = new Blob([markdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    showToast('파일이 저장되었습니다!');
   };
 
   const showToast = (message: string) => {
@@ -90,7 +96,6 @@ const greeting = (name: string): string => {
       toast.textContent = message;
       toast.classList.remove('opacity-0', 'translate-y-2');
       toast.classList.add('opacity-100', 'translate-y-0');
-
       setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', 'translate-y-2');
@@ -109,9 +114,6 @@ const greeting = (name: string): string => {
       setMarkdown('');
     }
   };
-
-  const navigate = useNavigate();
-  const { projectId } = useParams();
 
   const handleBackClick = () => {
     navigate(`/project/${projectId}`);
@@ -133,17 +135,13 @@ const greeting = (name: string): string => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  // 마크다운의 첫 번째 헤더를 가져오는 함수
   const getDocumentTitle = () => {
     const match = markdown.match(/^#\s+(.*)$/m);
     return match ? match[1] : '제목 없음';
   };
 
   return (
-    <div
-      className={`min-h-screen flex flex-col transition-colors duration-300 ${'bg-gray-50 text-gray-800'}`}
-    >
-      {/* 토스트 메시지 */}
+    <div className="min-h-screen flex flex-col bg-gray-50 text-gray-800 transition-colors">
       <div
         id="toast"
         className="fixed top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 translate-y-2 transform transition-all duration-300 z-50"
@@ -151,9 +149,7 @@ const greeting = (name: string): string => {
         파일이 저장되었습니다!
       </div>
 
-      {/* 상단 헤더 */}
-      <div className="bg-white dark:bg-gray-800 transition-colors duration-300">
-        {/* 메인 툴바 */}
+      <div className="bg-white dark:bg-gray-800 transition-colors">
         <div className="h-16 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <button
@@ -166,7 +162,6 @@ const greeting = (name: string): string => {
 
             <div className="flex items-center gap-2">
               <FaFile size={20} className="text-blue-500" />
-
               {showFileNameInput ? (
                 <input
                   type="text"
@@ -194,22 +189,25 @@ const greeting = (name: string): string => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                createNewFile();
+                handleGenerateReadme();
                 setIsDropdownOpen(false);
               }}
               className="flex items-center gap-1 px-3 py-2 rounded-md bg-gray-100 border-blue hover:bg-gray-200 text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-opacity-50"
-              title="생성"
+              title="README 생성"
             >
               <FaPlus size={16} />
               <span className="hidden sm:inline">생성</span>
             </button>
+
             <button
-              onClick={saveFile}
+              onClick={handleSaveOrUpdateReadme}
               className="flex items-center gap-1 px-3 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-opacity-50"
-              title="파일 저장하기"
+              title={readmeExists ? 'README 수정' : 'README 생성'}
             >
               <FaSave size={16} />
-              <span className="hidden sm:inline">저장</span>
+              <span className="hidden sm:inline">
+                {readmeExists ? '수정' : '저장'}
+              </span>
             </button>
 
             <div className="relative">
@@ -223,17 +221,6 @@ const greeting = (name: string): string => {
 
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-1 py-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-10">
-                  <button
-                    onClick={() => {
-                      createNewFile();
-                      setIsDropdownOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors"
-                  >
-                    <FaFile size={16} className="text-green-500" />
-                    <span>새 파일</span>
-                  </button>
-
                   <button
                     onClick={() => {
                       copyToClipboard();
@@ -262,15 +249,10 @@ const greeting = (name: string): string => {
         </div>
       </div>
 
-      {/* 에디터 및 프리뷰 영역 */}
       <div className="flex flex-1 overflow-hidden pt-4 gap-5">
-        {/* 에디터 패널 */}
         <div className="w-1/2 flex flex-col rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-lg transition-colors">
-          <div className="p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 font-medium flex justify-between items-center transition-colors">
-            <span>마크다운 편집</span>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              {markdown.length} 자
-            </div>
+          <div className="p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 font-medium">
+            마크다운 편집
           </div>
           <textarea
             value={markdown}
@@ -280,9 +262,8 @@ const greeting = (name: string): string => {
           />
         </div>
 
-        {/* 프리뷰 패널 */}
         <div className="w-1/2 flex flex-col rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-lg transition-colors">
-          <div className="p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 font-medium transition-colors">
+          <div className="p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 font-medium">
             미리보기
           </div>
           <div
@@ -292,7 +273,6 @@ const greeting = (name: string): string => {
         </div>
       </div>
 
-      {/* 하단 상태바 */}
       <div className="bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-2 px-4 text-xs text-gray-500 dark:text-gray-400 flex justify-between transition-colors">
         <div>마크다운 에디터</div>
         <div>마지막 수정: {new Date().toLocaleTimeString()}</div>
