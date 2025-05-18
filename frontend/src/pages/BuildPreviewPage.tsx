@@ -63,10 +63,10 @@ const BuildPreviewPage: React.FC = () => {
         try {
           const compose = await getDockerCompose(projectId);
           console.log(compose);
-          const infra = response.data.infrastructure;
+          const infra = response.data.docker;
           const dockerComposeContent = compose.content;
 
-          response.data.infrastructure =
+          response.data.docker =
             typeof infra === 'object' && infra !== null
               ? {
                   ...infra,
