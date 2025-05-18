@@ -7,7 +7,7 @@ interface JiraAddButtonProps {
 const JiraAddButton = ({ onClick }: JiraAddButtonProps) => {
   return (
     <button
-      className="text-white flex items-center justify-center gap-2 bg-blue-800 border px-3 py-1 rounded-md"
+      className="text-white flex items-center justify-center gap-2 bg-blue-800 border px-3 py-1 rounded-md text-sm"
       onClick={onClick}
     >
       <img src={jiraLogo} alt="Jira Logo" className="w-4 h-4 mr-2 rounded-sm" />

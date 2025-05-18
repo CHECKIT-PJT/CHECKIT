@@ -12,6 +12,7 @@ interface ProjectMember {
   nickname: string;
   userEmail: string;
   role: string;
+  isApproved: boolean | null;
 }
 
 interface ProjectDetail extends Project {

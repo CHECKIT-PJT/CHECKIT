@@ -24,6 +24,8 @@ import RemoteCursor from '../../components/cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
 import { getUserColor } from '../../utils/colorUtils';
+import { toast } from 'react-toastify';
+import Dialog from '../../molecules/buildpreview/Dialog';
 
 // API 세부 정보를 목록 형식으로 변환하는 유틸리티 함수
 const convertDetailToListItem = (apiDetail: ApiDetail): ApiDocListItem => {
@@ -74,6 +76,7 @@ const DevelopApi = () => {
   }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const mainPageCursorSubscription = useRef<StompSubscription | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // API hooks
   const { data: apiListItems = [], isLoading } = useGetApiSpecs(
@@ -202,7 +205,7 @@ const DevelopApi = () => {
       const rect = modalElement.getBoundingClientRect();
       const scrollTop = modalElement.scrollTop;
       const scrollLeft = modalElement.scrollLeft;
-      
+
       // 스크롤 위치를 고려한 상대적 좌표 계산
       const x = e.clientX - rect.left + scrollLeft;
       const y = e.clientY - rect.top + scrollTop;
@@ -256,6 +259,20 @@ const DevelopApi = () => {
     };
   }, []);
 
+  // useEffect로 apiListItems 로드 완료 후 웹소켓 연결하도록 수정
+  useEffect(() => {
+    if (!isLoading && apiListItems) {
+      console.log('API 리스트 로드 완료:', apiListItems);
+      initStomp();
+    }
+
+    return () => {
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.deactivate();
+      }
+    };
+  }, [isLoading, apiListItems, projectId]);
+
   // 웹소켓 연결 시 커서 구독 추가
   const initStomp = () => {
     const token = sessionStorage.getItem('accessToken');
@@ -271,6 +288,88 @@ const DevelopApi = () => {
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('STOMP 연결 성공');
+        console.log('현재 API 리스트:', apiListItems); // 여기서는 데이터가 있어야 함
+        stompClientRef.current = stompClient;
+        setIsConnected(true);
+
+        stompClient.subscribe(`/sub/spec/${projectId}`, message => {
+          const socketMessage = JSON.parse(message.body);
+          console.log('[📥 Received from /sub/spec]', socketMessage);
+          const { action, apiSpec } = socketMessage;
+
+          // apiListItems 사용
+          console.log('현재 apiListItems:', apiListItems);
+          let newData: ApiDocListItem[] = [...apiListItems];
+
+          switch (action) {
+            case 'CREATE': {
+              // 전체 상세 정보를 포함한 데이터로 저장
+              const newItem = {
+                apiSpecId: apiSpec.id,
+                apiName: apiSpec.apiName,
+                endpoint: apiSpec.endpoint,
+                method: apiSpec.method,
+                category: apiSpec.category,
+                description: apiSpec.description,
+                statusCode: apiSpec.statusCode,
+                header: apiSpec.header,
+                pathVariables: apiSpec.pathVariables,
+                requestParams: apiSpec.requestParams,
+                requestDto: apiSpec.requestDto,
+                responseDto: apiSpec.responseDto,
+                responses: apiSpec.responses,
+                ...apiSpec, // 추가 필드들도 모두 포함
+              };
+
+              const isDuplicate = newData.some(
+                item => item.apiSpecId === newItem.apiSpecId
+              );
+              if (!isDuplicate) {
+                newData = [...newData, newItem];
+                console.log('CREATE - 새로운 데이터:', newData);
+              }
+              break;
+            }
+            case 'UPDATE': {
+              newData = newData.map(item =>
+                item.apiSpecId === apiSpec.id
+                  ? {
+                      apiSpecId: apiSpec.id,
+                      apiName: apiSpec.apiName,
+                      endpoint: apiSpec.endpoint,
+                      method: apiSpec.method,
+                      category: apiSpec.category,
+                      description: apiSpec.description,
+                      statusCode: apiSpec.statusCode,
+                      header: apiSpec.header,
+                      pathVariables: apiSpec.pathVariables,
+                      requestParams: apiSpec.requestParams,
+                      requestDto: apiSpec.requestDto,
+                      responseDto: apiSpec.responseDto,
+                      responses: apiSpec.responses,
+                      ...apiSpec, // 추가 필드들도 모두 포함
+                    }
+                  : item
+              );
+              console.log('UPDATE - 새로운 데이터:', newData);
+              break;
+            }
+            case 'DELETE': {
+              newData = newData.filter(item => item.apiSpecId !== apiSpec.id);
+              console.log('DELETE - 새로운 데이터:', newData);
+              break;
+            }
+          }
+
+          queryClient.setQueryData(
+            ['apiListItems', Number(projectId)],
+            newData
+          );
+          queryClient.setQueriesData(
+            ['apiListItems', Number(projectId)],
+            () => newData
+          );
+        });
 
         // 페이지 입장 알림
         const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
@@ -366,6 +465,7 @@ const DevelopApi = () => {
       onDisconnect: () => {
         console.log('STOMP 연결 해제');
         setIsConnected(false);
+        stompClientRef.current = null;
 
         // 연결이 끊어질 때 페이지에서 퇴장 처리
         const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
@@ -389,21 +489,7 @@ const DevelopApi = () => {
     });
 
     stompClient.activate();
-    stompClientRef.current = stompClient;
   };
-
-  useEffect(() => {
-    initStomp();
-
-    return () => {
-      if (stompClientRef.current?.connected) {
-        const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
-        sendPresenceMessage(pageResourceId, PRESENCE_ACTIONS.LEAVE);
-        setRemoteCursors({}); // 페이지 나갈 때 커서 초기화
-        stompClientRef.current.deactivate();
-      }
-    };
-  }, [projectId]);
 
   // 모달 열릴 때 구독 설정
   useEffect(() => {
@@ -635,10 +721,25 @@ const DevelopApi = () => {
     setModalOpen(true);
   };
 
+  const sendApiSpecSocketMessage = (
+    action: 'CREATE' | 'UPDATE' | 'DELETE',
+    apiSpec: Partial<ApiDetail> // 최소 id만 있어도 전송 가능
+  ) => {
+    if (!stompClientRef.current?.connected || !projectId) return;
+
+    stompClientRef.current.publish({
+      destination: `/pub/spec/update/${projectId}`,
+      body: JSON.stringify({
+        projectId: Number(projectId),
+        action,
+        apiSpec,
+      }),
+    });
+  };
+
   // 메인 페이지 커서 구독 설정
   useEffect(() => {
     if (!isConnected || modalOpen) return;
-
     // 메인 페이지 커서 구독
     mainPageCursorSubscription.current = stompClientRef.current?.subscribe(
       `/sub/cursor/${projectId}/api`,
@@ -732,9 +833,28 @@ const DevelopApi = () => {
         apiSpec: apiSpecRequest,
       },
       {
-        onSuccess: () => {
+        onSuccess: savedApiSpecResponse => {
+          // 실시간 전파
+          console.log('savedApiSpecResponse', savedApiSpecResponse);
+          sendApiSpecSocketMessage(
+            apiSpecRequest.id ? 'UPDATE' : 'CREATE',
+            savedApiSpecResponse.result
+          );
+
+          // 성공 메시지 표시
+          toast.success(
+            apiSpecRequest.id
+              ? 'API가 성공적으로 수정되었습니다.'
+              : 'API가 성공적으로 생성되었습니다.'
+          );
+
+          // 모달 닫기 및 상태 초기화
           setModalOpen(false);
           setSelectedApi(null);
+        },
+        onError: error => {
+          console.error('API 저장 중 에러:', error);
+          toast.error('API 저장 중 오류가 발생했습니다.');
         },
       }
     );
@@ -742,21 +862,37 @@ const DevelopApi = () => {
 
   const handleDelete = () => {
     if (!selectedApi?.id || !projectId) return;
+    setShowDeleteDialog(true);
+  };
 
-    if (window.confirm('정말로 이 API를 삭제하시겠습니까?')) {
-      deleteApiSpec.mutate(
-        {
-          projectId: Number(projectId),
-          apiSpecId: selectedApi.id,
+  const handleDeleteConfirm = () => {
+    if (!selectedApi?.id || !projectId) return;
+
+    deleteApiSpec.mutate(
+      {
+        projectId: Number(projectId),
+        apiSpecId: selectedApi.id,
+      },
+      {
+        onSuccess: () => {
+          // WebSocket으로 삭제 전파
+          sendApiSpecSocketMessage('DELETE', { id: selectedApi.id });
+
+          // 성공 메시지 표시
+          toast.success('API가 성공적으로 삭제되었습니다.');
+
+          // 모달 닫기 및 상태 초기화
+          setModalOpen(false);
+          setSelectedApi(null);
+          setShowDeleteDialog(false);
         },
-        {
-          onSuccess: () => {
-            setModalOpen(false);
-            setSelectedApi(null);
-          },
-        }
-      );
-    }
+        onError: error => {
+          console.error('API 삭제 중 에러:', error);
+          toast.error('API 삭제 중 오류가 발생했습니다.');
+          setShowDeleteDialog(false);
+        },
+      }
+    );
   };
 
   return (
@@ -811,6 +947,16 @@ const DevelopApi = () => {
           remoteCursors={modalRemoteCursors}
         />
       )}
+      <Dialog
+        isOpen={showDeleteDialog}
+        title="API 삭제"
+        message="정말로 이 API를 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteDialog(false)}
+        success={false}
+      />
     </div>
   );
 };
