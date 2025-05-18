@@ -40,7 +40,6 @@ const Router = () => {
       <Route path="/jira/callback" element={<JiraAuthCallback />} />
       <Route path="/invite" element={<InvitePage />} />
       <Route path="*" element={<NotFoundPage />} />
-      <Route path="/ide" element={<IdeEditorPage />} />
 
       {/* 로그인 페이지 */}
       <Route element={<ProtectedRoute />}>
@@ -85,6 +84,7 @@ const Router = () => {
             <Route path="commit" element={<CommitConvention />} />
             <Route path="gitignore" element={<GitignoreConvention />} />
           </Route>
+          <Route path="/project/:projectId/ide" element={<IdeEditorPage />} />
         </Route>
       </Route>
     </Routes>

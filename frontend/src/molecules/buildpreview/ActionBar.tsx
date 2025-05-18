@@ -9,7 +9,7 @@ interface ActionBarProps {
  */
 const ActionBar = ({ onDownload }: ActionBarProps) => {
   return (
-    <div className="p-3 border-gray-200">
+    <div className="border-gray-200">
       <button
         onClick={onDownload}
         className={
