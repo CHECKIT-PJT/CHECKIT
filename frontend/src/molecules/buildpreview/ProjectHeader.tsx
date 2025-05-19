@@ -2,6 +2,7 @@ import { IoArrowBack } from 'react-icons/io5';
 import { useNavigate, useParams } from 'react-router-dom';
 import ActionBar from './ActionBar';
 import RepoCreate from './RepoCreate';
+import useProjectStore from '../../stores/projectStore';
 
 interface ProjectHeaderProps {
   onDownload?: () => void;
@@ -17,8 +18,11 @@ const ProjectHeader = ({
 }: ProjectHeaderProps) => {
   const navigate = useNavigate();
   const { projectId } = useParams();
+  const { currentProject } = useProjectStore();
+  const projectName = currentProject?.projectName || '';
+
   const onClickBack = () => {
-    navigate(`/project/${projectId}`);
+    navigate(`project/${projectId}`);
   };
 
   return (

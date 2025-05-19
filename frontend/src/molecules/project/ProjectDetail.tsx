@@ -88,13 +88,13 @@ const ProjectDetail = () => {
 
       {/* Main Content */}
       <div className="w-4/5 p-2 overflow-y-auto">
-        <div className="space-y-10">
+        <div className="space-y-6">
           <section className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-blue-900 px-6 py-3">
               <h3 className="text-xl font-bold text-white">설계 문서 작업</h3>
             </div>
             <div className="p-6 ">
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-sm text-gray-400 mb-4 ml-4">
                 설계는 좋은 코드의 시작점이며 명확한 방향성을 제시합니다
               </p>
               <InputSelect className="justify-start" />
@@ -108,7 +108,7 @@ const ProjectDetail = () => {
               </h3>
             </div>
             <div className="p-6 ">
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-sm text-gray-400 mb-4 ml-4">
                 좋은 설계를 통해 프로젝트 파일을 제공합니다.
               </p>
               <BuildSelect className="justify-start" />

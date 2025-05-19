@@ -43,7 +43,7 @@ const BuildPreviewPage: React.FC = () => {
       repoName: repoName,
       visibility: 'private',
       message: '[CHECKIT] init: 프로젝트 초기 커밋',
-    },
+    }
   );
 
   useEffect(() => {
@@ -110,7 +110,7 @@ const BuildPreviewPage: React.FC = () => {
       onError: (error: any) => {
         setDialogTitle('저장소 생성 실패');
         setDialogMessage(
-          error?.message || '저장소 생성 중 오류가 발생했습니다.',
+          error?.message || '저장소 생성 중 오류가 발생했습니다.'
         );
         setIsDialogOpen(true);
       },
@@ -171,7 +171,7 @@ const BuildPreviewPage: React.FC = () => {
 
       {projectData ? (
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-1/3 bg-gray-50 border-gray-200 border-r overflow-y-auto p-2">
+          <div className="w-1/3 bg-gray-50 border-gray-200 border-r overflow-y-auto ">
             <FileTree
               files={projectData.data.files}
               selectedFile={selectedFile?.path || null}
