@@ -9,10 +9,8 @@ import {
   ApiSpecRequest,
   QueryStringRequest,
 } from '../../types/apiDocs';
-import DtoEditor from './DtoEditor';
 import { FaRegTrashAlt, FaRegSave } from 'react-icons/fa';
 import { FiTrash, FiEdit2 } from 'react-icons/fi';
-import DtoEditorReq from './DtoEditorReq';
 import ApiHeader from './ApiHeader';
 import {
   convertToApiSpecRequest,
@@ -193,59 +191,45 @@ const ApiDetailModal = ({
   };
 
   useEffect(() => {
-    if (api) {
-      const dtoList = api.dtoList || [];
+    if (!api) return;
 
-      const requestDto = dtoList.find(dto => dto.dtoType === 'REQUEST') || {
-        id: null,
-        dtoName: '',
-        fields: [],
-        dtoType: 'REQUEST',
-      };
+    const dtoList = api.dtoList || [];
+    const requestDto = dtoList.find(d => d.dtoType === 'REQUEST') || {
+      id: null,
+      dtoName: '',
+      fields: [],
+      dtoType: 'REQUEST' as const,
+    };
+    const responseDto = dtoList.find(d => d.dtoType === 'RESPONSE') || {
+      id: null,
+      dtoName: '',
+      fields: [],
+      dtoType: 'RESPONSE' as const,
+    };
 
-      const responseDto = dtoList.find(dto => dto.dtoType === 'RESPONSE') || {
-        id: null,
-        dtoName: '',
-        fields: [],
-        dtoType: 'RESPONSE',
-      };
+    setForm({
+      ...api,
+      requestDto,
+      responseDto,
+      pathVariables: api.pathVariables ?? [],
+      queryStrings: api.queryStrings ?? [],
+      responses: api.responses ?? [],
+      header: api.header ?? '',
+    });
 
-      // form 상태에 request/responseDto를 dtoList로부터 명확히 주입
-      setForm({
-        ...api,
-        requestDto,
-        responseDto,
-        pathVariables: api.pathVariables ?? [],
-        queryStrings: api.queryStrings ?? [],
-        responses: api.responses ?? [],
-        header: api.header ?? '',
-      });
-
-      // DTO 값이 있으면 showDto를 true로 설정
-      const hasDto =
-        dtoList.length > 0 ||
+    setShowDto(
+      dtoList.length > 0 ||
         requestDto.fields.length > 0 ||
-        responseDto.fields.length > 0;
-      setShowDto(hasDto);
-
-      // DTO 값이 있으면 useRequestDto와 useResponseDto도 true로 설정
-      setUseRequestDto(
-        requestDto.fields.length > 0 || Boolean(requestDto.dtoName)
-      );
-      setUseResponseDto(
-        responseDto.fields.length > 0 || Boolean(responseDto.dtoName)
-      );
-
-      setStatusCode(api.statusCode ?? api.responses?.[0]?.statusCode ?? 200);
-      setStatusDescription(api.responses?.[0]?.responseDescription ?? 'OK');
-    } else {
-      setForm(blankApiDetail);
-      setShowDto(false);
-      setUseRequestDto(false);
-      setUseResponseDto(false);
-      setStatusCode(200);
-      setStatusDescription('OK');
-    }
+        responseDto.fields.length > 0
+    );
+    setUseRequestDto(
+      requestDto.fields.length > 0 || Boolean(requestDto.dtoName)
+    );
+    setUseResponseDto(
+      responseDto.fields.length > 0 || Boolean(responseDto.dtoName)
+    );
+    setStatusCode(api.statusCode ?? api.responses?.[0]?.statusCode ?? 200);
+    setStatusDescription(api.responses?.[0]?.responseDescription ?? 'OK');
   }, [api]);
 
   const handleSave = () => {
