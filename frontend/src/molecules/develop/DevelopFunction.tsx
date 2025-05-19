@@ -345,6 +345,10 @@ const DevelopFunc = () => {
       if (document.hidden && stompClientRef.current?.connected) {
         // 페이지가 숨겨질 때 커서 제거
         setRemoteCursors({});
+        setModalRemoteCursors({});
+        setActiveUsers([]);
+        setModalActiveUsers([]);
+        setActiveUsersByFunc({});
       }
     };
 
@@ -352,6 +356,10 @@ const DevelopFunc = () => {
     const handleBeforeUnload = () => {
       if (stompClientRef.current?.connected) {
         setRemoteCursors({});
+        setModalRemoteCursors({});
+        setActiveUsers([]);
+        setModalActiveUsers([]);
+        setActiveUsersByFunc({});
       }
     };
 
@@ -836,6 +844,54 @@ const DevelopFunc = () => {
     setSelectedFunc(null);
     setModalActiveUsers([]); // 모달 닫을 때 모달 활성 사용자 목록 초기화
   };
+
+  // 컴포넌트 언마운트 시 cleanup
+  useEffect(() => {
+    return () => {
+      // 모든 구독 해제
+      if (mainPageCursorSubscription.current) {
+        mainPageCursorSubscription.current.unsubscribe();
+      }
+      if (modalSubscriptionRef.current) {
+        modalSubscriptionRef.current.cursor?.unsubscribe();
+        modalSubscriptionRef.current.presence?.unsubscribe();
+      }
+
+      // STOMP 연결 해제
+      if (stompClientRef.current?.connected) {
+        // 페이지에서 퇴장
+        const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
+        stompClientRef.current.publish({
+          destination: '/pub/presence',
+          body: JSON.stringify({
+            resourceId: pageResourceId,
+            action: PRESENCE_ACTIONS.LEAVE,
+          }),
+        });
+
+        // 현재 보고 있는 기능 명세가 있다면 퇴장
+        if (selectedFunc?.id) {
+          const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
+          stompClientRef.current.publish({
+            destination: '/pub/presence',
+            body: JSON.stringify({
+              resourceId: funcResourceId,
+              action: PRESENCE_ACTIONS.LEAVE,
+            }),
+          });
+        }
+
+        stompClientRef.current.deactivate();
+      }
+
+      // 모든 상태 초기화
+      setRemoteCursors({});
+      setModalRemoteCursors({});
+      setActiveUsers([]);
+      setModalActiveUsers([]);
+      setActiveUsersByFunc({});
+    };
+  }, [projectId, selectedFunc?.id]);
 
   if (!projectId) return null;
 

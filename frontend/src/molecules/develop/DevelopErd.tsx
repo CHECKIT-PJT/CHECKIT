@@ -120,6 +120,7 @@ const DevelopErd = () => {
       if (document.hidden && stompClientRef.current?.connected) {
         // 페이지가 숨겨질 때 커서 제거
         setRemoteCursors({});
+        setActiveUsers([]);
       }
     };
 
@@ -127,6 +128,7 @@ const DevelopErd = () => {
     const handleBeforeUnload = () => {
       if (stompClientRef.current?.connected) {
         setRemoteCursors({});
+        setActiveUsers([]);
       }
     };
 
