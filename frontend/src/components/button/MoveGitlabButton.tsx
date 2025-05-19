@@ -1,20 +1,20 @@
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import GitLabIcon from '../../assets/gitlab.png';
 import { IoArrowForward } from 'react-icons/io5';
 
-const MoveGitlabButton = () => {
-  const navigate = useNavigate();
-  const repository = null; // 실제 repository 주소로 대체
+interface MoveGitlabButtonProps {
+  repositoryUrl: string | null;
+}
 
+const MoveGitlabButton = ({ repositoryUrl }: MoveGitlabButtonProps) => {
   const notifyWarning = () => toast.warning('프로젝트를 먼저 만들어 주세요.');
 
   const handleMove = () => {
-    if (!repository) {
+    if (!repositoryUrl) {
       notifyWarning();
       return;
     }
-    navigate('/gitlab');
+    window.open(repositoryUrl, '_blank');
   };
 
   return (

@@ -200,10 +200,10 @@ const DtoEditor = ({
                 >
                   <PiList className="w-4 h-4 text-gray-400 mr-3" />
                   <div className="flex gap-4 items-center flex-1">
-                    <span className="text-blue-600 text-lg font-medium ">
+                    <span className="text-blue-600 font-medium ">
                       {item.dtoItemName}
                     </span>
-                    <span className="text-sm bg-gray-200 px-3 py-1 rounded font-medium">
+                    <span className="text-xs bg-gray-200 px-3 py-1 rounded font-medium">
                       {item.dataType}
                       {item.isList ? '[ ]' : ''}
                     </span>
