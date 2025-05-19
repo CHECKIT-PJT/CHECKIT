@@ -22,7 +22,7 @@ const ProjectHeader = ({
   };
 
   return (
-    <header className=" pl-4 pt-2 pb-4 border-b border-gray-400">
+    <header className=" pl-4 pt-2 pb-6 border-b">
       <div className="flex items-start justify-between">
         <div className="flex items-start">
           <button onClick={onClickBack} className="p-1 pr-3">
