@@ -63,10 +63,10 @@ export const convertToApiSpecRequest = (
       pathVariableDataType: pv.pathVariableDataType,
     })),
 
-    queryStrings: apiDetail.requestParams.map(param => ({
+    queryStrings: apiDetail.queryStrings.map(param => ({
       id: param.id,
-      queryStringVariable: param.requestParamName,
-      queryStringDataType: param.requestParamDataType,
+      queryStringVariable: param.queryStringVariable,
+      queryStringDataType: param.queryStringDataType,
     })),
 
     responses: apiDetail.responses || [],
@@ -90,11 +90,11 @@ export const convertFromApiResponse = (response: any): ApiDetail => {
       pathVariableDataType: pv.pathVariableDataType,
     })) || [];
 
-  const requestParams: RequestParam[] =
+  const queryStrings: QueryStringRequest[] =
     response.queryStrings?.map((qs: QueryStringRequest) => ({
       id: qs.id,
-      requestParamName: qs.queryStringVariable,
-      requestParamDataType: qs.queryStringDataType,
+      queryStringVariable: qs.queryStringVariable,
+      queryStringDataType: qs.queryStringDataType,
     })) || [];
 
   const responses: ApiResponse[] =
@@ -119,7 +119,7 @@ export const convertFromApiResponse = (response: any): ApiDetail => {
     statusCode: response.statusCode ?? 200,
     header: response.header || '',
     pathVariables,
-    requestParams,
+    queryStrings,
     requestDto: { ...emptyDto },
     responseDto: { ...emptyDto },
     responses,
