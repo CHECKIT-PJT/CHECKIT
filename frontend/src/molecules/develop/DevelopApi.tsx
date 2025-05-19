@@ -343,10 +343,10 @@ const DevelopApi = () => {
                       statusCode: apiSpec.statusCode,
                       header: apiSpec.header,
                       pathVariables: apiSpec.pathVariables,
-                      requestParams: apiSpec.queryStrings?.map(qs => ({
+                      queryStrings: apiSpec.queryStrings?.map(qs => ({
                         id: qs.id,
-                        requestParamName: qs.queryString,
-                        requestParamDataType: qs.queryStringDataType
+                        queryStringVariable: qs.queryStringVariable,
+                        queryStringDataType: qs.queryStringDataType
                       })) || [],
                       requestDto: apiSpec.requestDto || {
                         id: null,
@@ -371,10 +371,10 @@ const DevelopApi = () => {
               if (selectedApi?.id === apiSpec.id) {
                 setSelectedApi({
                   ...apiSpec,
-                  requestParams: apiSpec.queryStrings?.map(qs => ({
+                  queryStrings: apiSpec.queryStrings?.map(qs => ({
                     id: qs.id,
-                    requestParamName: qs.queryString,
-                    requestParamDataType: qs.queryStringDataType
+                    queryStringVariable: qs.queryStringVariable,
+                    queryStringDataType: qs.queryStringDataType
                   })) || [],
                   requestDto: apiSpec.requestDto || {
                     id: null,
@@ -641,7 +641,7 @@ const DevelopApi = () => {
       statusCode: 200,
       header: '',
       pathVariables: [],
-      requestParams: [],
+      queryStrings: [],
       requestDto: { id: null, dtoName: '', fields: [], dtoType: 'REQUEST' },
       responseDto: { id: null, dtoName: '', fields: [], dtoType: 'RESPONSE' },
       responses: [
