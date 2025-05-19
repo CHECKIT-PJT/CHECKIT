@@ -12,12 +12,6 @@ import DependencyRecommendations from '../molecules/springsetting/DependencyReco
 import ActionButtons from '../molecules/springsetting/ActionButtons';
 import Dialog from '../molecules/buildpreview/Dialog';
 import {
-  getDockerCompose,
-  createDockerCompose,
-  updateDockerCompose,
-} from '../api/dockercomposeAPI';
-
-import {
   getSpringSettings,
   createSpringSettings,
   updateSpringSettings,
@@ -256,28 +250,6 @@ const SpringSettingsPage = () => {
       }
 
       setSettingsExist(true);
-
-      const knownDatabases = ['MYSQL', 'POSTGRESQL', 'MONGODB', 'REDIS'];
-      const selectedDatabases = selectedDependencies.filter((dep) =>
-        knownDatabases.includes(dep),
-      );
-
-      const dockerComposeRequest = { databases: selectedDatabases };
-
-      try {
-        await getDockerCompose(Number(projectId), accessToken);
-        await updateDockerCompose(
-          Number(projectId),
-          { content: '' },
-          accessToken,
-        );
-      } catch (error: any) {
-        if (error?.response?.status === 404) {
-          await createDockerCompose(Number(projectId), selectedDatabases);
-        } else {
-          console.error('Docker Compose 처리 실패:', error);
-        }
-      }
 
       await generateCode(projectId);
       setDialogMessage(

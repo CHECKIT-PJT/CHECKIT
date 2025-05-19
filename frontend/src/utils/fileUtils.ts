@@ -1,24 +1,7 @@
-import { ProjectData, FileData } from '../types';
+import { FileNode } from '../api/buildpreview';
 
-export const countFiles = (data: ProjectData | null | undefined): number => {
-  if (!data) return 0;
-
-  let count = 0;
-
-  const traverse = (node: FileData | string) => {
-    if (typeof node === 'string') {
-      count++;
-      return;
-    }
-
-    for (const key in node) {
-      traverse(node[key]);
-    }
-  };
-
-  Object.values(data).forEach((node) => traverse(node));
-
-  return count;
+export const countFiles = (data: { files: FileNode[] }): number => {
+  return data.files.filter((file) => file.type === 'file').length;
 };
 
 export const createFilePath = (

@@ -1,24 +1,23 @@
 import { useState, useEffect } from 'react';
 import ProjectHeader from '../molecules/buildpreview/ProjectHeader';
-import FileExplorer from '../molecules/buildpreview/FileExplorer';
 import CodeViewer from '../molecules/buildpreview/CodeViewer';
 import ProjectStats from '../molecules/buildpreview/ProjectStats';
 import useThemeDetection from '../hooks/useThemeDetection';
-import { generateCode, getDockerCompose } from '../api/codegenerateAPI';
+import { generateCode } from '../api/codegenerateAPI';
 import { countFiles } from '../utils/fileUtils';
-import { ExpandedFolders, SelectedFile, ApiResponse } from '../types';
+import { ApiResponse } from '../types';
 import { useNavigate, useParams } from 'react-router-dom';
 import Dialog from '../molecules/buildpreview/Dialog';
 import { downloadBuildZip } from '../api/downloadAPI';
 import CustomAlert from '../molecules/layout/CustomAlert';
 import useProjectStore from '../stores/projectStore';
 import { useCreateGitlabProject } from '../api/gitAPI';
+import FileTree from '../components/FileTree';
+import { FileNode } from '../api/buildpreview';
 
 const BuildPreviewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
-  const [expandedFolders, setExpandedFolders] = useState<ExpandedFolders>({});
-  const [codeDarkMode, setCodeDarkMode] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [projectData, setProjectData] = useState<ApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorCode, setErrorCode] = useState<number | null>(null);
@@ -33,9 +32,9 @@ const BuildPreviewPage: React.FC = () => {
 
   // 시스템 테마 감지
   const systemDarkMode = useThemeDetection();
+  const [codeDarkMode, setCodeDarkMode] = useState<boolean>(false);
 
   const { currentProject } = useProjectStore();
-
   const repoName = currentProject?.projectName || '';
 
   const { mutate: createGitlabProject } = useCreateGitlabProject(
@@ -57,43 +56,16 @@ const BuildPreviewPage: React.FC = () => {
 
       try {
         setIsLoading(true);
-
         const response = await generateCode(projectId);
-
-        try {
-          const compose = await getDockerCompose(projectId);
-          console.log(compose);
-          const infra = response.data.docker;
-          const dockerComposeContent = compose.content;
-
-          response.data.docker =
-            typeof infra === 'object' && infra !== null
-              ? {
-                  ...infra,
-                  'docker-compose.yaml': dockerComposeContent,
-                }
-              : {
-                  'docker-compose.yaml': dockerComposeContent,
-                };
-        } catch (composeErr: any) {
-          if (composeErr?.response?.status === 404) {
-            console.warn('docker-compose.yaml 없음');
-          } else {
-            console.error('docker-compose.yaml 불러오기 실패:', composeErr);
-          }
-        }
-
         setProjectData(response);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('코드 생성 실패:', err);
-
-        const code = err?.code ?? 0;
-        let message = err?.message || '알 수 없는 오류가 발생했습니다.';
-
+        const code = (err as any)?.code ?? 0;
+        let message =
+          (err as any)?.message || '알 수 없는 오류가 발생했습니다.';
         if (code === 500) {
           message = 'ERD가 없습니다, 먼저 생성해주세요.';
         }
-
         setErrorCode(code);
         setDialogTitle('코드 생성 실패');
         setDialogMessage(message);
@@ -102,42 +74,11 @@ const BuildPreviewPage: React.FC = () => {
         setIsLoading(false);
       }
     };
-
     fetchProjectData();
   }, [projectId]);
 
-  const toggleFolder = (folderPath: string): void => {
-    setExpandedFolders((prev) => ({
-      ...prev,
-      [folderPath]: !prev[folderPath],
-    }));
-  };
-
-  const selectFile = (folderPath: string, fileName: string): void => {
-    if (!projectData) return;
-
-    console.log('[selectFile] folderPath:', folderPath);
-    console.log('[selectFile] fileName:', fileName);
-    console.log('[selectFile] projectData.data:', projectData.data);
-
-    const pathSegments = folderPath === '' ? [] : folderPath.split('/');
-    let current: any = projectData.data;
-
-    for (const segment of pathSegments) {
-      current = current?.[segment];
-      if (!current) return;
-    }
-
-    const fileContent = current[fileName];
-    console.log('[selectFile] fileContent:', fileContent);
-
-    if (typeof fileContent === 'string') {
-      setSelectedFile({
-        name: fileName,
-        content: fileContent,
-        path: folderPath ? `${folderPath}/${fileName}` : fileName,
-      });
-    }
+  const handleFileClick = (file: FileNode) => {
+    setSelectedFile(file);
   };
 
   const handleDownload = async (): Promise<void> => {
@@ -212,7 +153,9 @@ const BuildPreviewPage: React.FC = () => {
     setIsSuccessDialogOpen(false);
   };
 
-  const fileCount = projectData ? countFiles(projectData.data) : 0;
+  const fileCount = projectData?.data?.files
+    ? countFiles({ files: projectData.data.files })
+    : 0;
 
   if (isLoading) {
     return (
@@ -229,13 +172,12 @@ const BuildPreviewPage: React.FC = () => {
       {projectData ? (
         <div className="flex flex-1 overflow-hidden">
           <div className="w-1/3 bg-gray-50 border-gray-200 border-r overflow-y-auto p-2">
-            <FileExplorer
-              data={projectData.data}
-              expandedFolders={expandedFolders}
-              toggleFolder={toggleFolder}
-              selectedFile={selectedFile}
-              selectFile={selectFile}
-              rootPackage={projectData.rootPackage}
+            <FileTree
+              files={projectData.data.files}
+              selectedFile={selectedFile?.path || null}
+              onFileClick={handleFileClick}
+              branch="main"
+              root=""
             />
 
             <ProjectStats
