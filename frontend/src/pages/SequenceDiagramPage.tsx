@@ -11,6 +11,7 @@ import {
   updateSequenceDiagram,
 } from '../api/sequenceAPI';
 import Loading from '../molecules/layout/loading';
+import useProjectStore from '../stores/projectStore';
 
 const SequenceDiagramPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -43,7 +44,7 @@ const SequenceDiagramPage: React.FC = () => {
     try {
       const response = await getSequenceDiagram(
         parsedProjectId,
-        activeCategory,
+        activeCategory
       );
       const existing = response.data.result;
 
@@ -71,7 +72,7 @@ const SequenceDiagramPage: React.FC = () => {
     try {
       const response = await generateSequenceDiagram(
         parsedProjectId,
-        activeCategory,
+        activeCategory
       );
       const result = response.data.result;
       setDiagramCode(result.plantuml_code);
@@ -91,7 +92,7 @@ const SequenceDiagramPage: React.FC = () => {
     try {
       const response = await getSequenceDiagram(
         parsedProjectId,
-        activeCategory,
+        activeCategory
       );
       const existing = response.data.result;
 
@@ -144,6 +145,9 @@ const SequenceDiagramPage: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const { currentProject } = useProjectStore();
+  const projectName = currentProject?.projectName || '';
+
   return (
     <div className="relative">
       {(isLoading || isCategoryLoading) && <Loading />}
@@ -151,10 +155,10 @@ const SequenceDiagramPage: React.FC = () => {
       <div
         className={`${isLoading ? 'blur-sm pointer-events-none select-none' : ''} flex flex-col h-full bg-white`}
       >
-        <Header title="시퀀스 다이어그램" />
+        <Header projectName={projectName} title="시퀀스 다이어그램" />
 
         <TabNavigation
-          categories={categories.map((c) => ({ id: c, name: c }))}
+          categories={categories.map(c => ({ id: c, name: c }))}
           activeCategory={activeCategory}
           onCategoryChange={handleCategoryChange}
         />
