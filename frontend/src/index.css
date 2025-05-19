@@ -45,3 +45,22 @@ body,
 .full-screen {
   height: calc(var(--vh, 1vh) * 100);
 }
+
+.ghost-text {
+  color: #6b7280 !important;
+  font-style: italic;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.monaco-editor .ghost-text {
+  color: #6b7280 !important;
+  font-style: italic;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* 다크 모드 지원 */
+.dark .ghost-text {
+  color: #9ca3af !important;
+}

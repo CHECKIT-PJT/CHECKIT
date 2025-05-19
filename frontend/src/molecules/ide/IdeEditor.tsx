@@ -1,13 +1,16 @@
-import { useState, useRef } from 'react';
-import Editor from '@monaco-editor/react';
+import { useState, useRef, useEffect } from 'react';
+import Editor, { OnMount } from '@monaco-editor/react';
 import { LuMoon, LuSun, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import FileTree from './FileTree';
 import { IoArrowBack } from 'react-icons/io5';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGitPush } from '../../api/gitAPI';
+import { fetchCodeSuggestion } from '../../api/suggestAPI';
 import CustomFalseAlert from '../layout/CustomFalseAlert';
 import Dialog from '../buildpreview/Dialog';
 import CustomAlert from '../layout/CustomAlert';
+import type { editor } from 'monaco-editor';
+import * as monaco from 'monaco-editor';
 import { FaCodeCommit } from 'react-icons/fa6';
 
 interface FileNode {
@@ -35,34 +38,157 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
   const [showCommitSuccess, setShowCommitSuccess] = useState(false);
   const [showCommitError, setShowCommitError] = useState(false);
   const [showGitConfigError, setShowGitConfigError] = useState(false);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const lastCursorLine = useRef<number | null>(null);
   const [showCommitModal, setShowCommitModal] = useState(false);
   const [commitMessage, setCommitMessage] = useState('');
   const originalContentRef = useRef<Map<string, string>>(new Map());
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const navigate = useNavigate();
   const { projectId } = useParams();
   const gitPush = useGitPush(Number(projectId));
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const suggestionRef = useRef<string | null>(null);
+  const getUserNameFromToken = (): string => {
+    const token = sessionStorage.getItem('accessToken');
+    if (!token) return '사용자';
+    try {
+      const payload = token.split('.')[1];
+      const decodedPayload = decodeURIComponent(
+        atob(payload)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join(''),
+      );
+      const decoded = JSON.parse(decodedPayload);
+      return decoded.nickname || '사용자';
+    } catch {
+      return '사용자';
+    }
+  };
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined && selectedFile && gitData) {
       setCode(value);
-      // 현재 파일의 내용 업데이트
-      const updatedFiles = gitData.files.map(file => {
-        if (file.path === selectedFile) {
-          return { ...file, content: value };
-        }
-        return file;
-      });
+      const updatedFiles = gitData.files.map((file) =>
+        file.path === selectedFile ? { ...file, content: value } : file,
+      );
       gitData.files = updatedFiles;
     }
   };
 
-  const onClickBack = () => {
-    navigate(`/project/${projectId}`);
+  const handleEditorDidMount: OnMount = (editor, monacoInstance) => {
+    editorRef.current = editor;
+
+    const triggerSuggestion = async (position: monaco.Position) => {
+      const model = editor.getModel();
+      if (!model || !projectId) return;
+
+      const code = model.getValue();
+      try {
+        const response = await fetchCodeSuggestion(Number(projectId), {
+          code,
+          cursorLine: position.lineNumber,
+          cursorColumn: position.column,
+        });
+
+        console.log(response);
+        const suggestionText = response.result.suggestion;
+        if (!suggestionText?.trim()) {
+          setSuggestion(null);
+          suggestionRef.current = null;
+          return;
+        }
+
+        setSuggestion(suggestionText);
+        suggestionRef.current = suggestionText;
+
+        editorRef.current?.trigger(
+          'inlineSuggestionTrigger',
+          'editor.action.inlineSuggest.trigger',
+          {},
+        );
+      } catch (err) {
+        console.error('자동완성 실패:', err);
+      }
+    };
+
+    const handleCursorActivity = (position: monaco.Position) => {
+      const currentLine = position.lineNumber;
+
+      if (lastCursorLine.current !== currentLine) {
+        lastCursorLine.current = currentLine;
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+        debounceTimer.current = setTimeout(() => {
+          triggerSuggestion(position);
+        }, 3000);
+      }
+      // 같은 줄에 머무르면 아무 것도 하지 않음
+    };
+
+    editor.onDidChangeCursorPosition((e) => {
+      handleCursorActivity(e.position);
+    });
+
+    editor.onDidChangeCursorSelection((e) => {
+      handleCursorActivity(e.selection.getPosition());
+    });
+
+    editor.addCommand(monacoInstance.KeyCode.Tab, () => {
+      const currentSuggestion = suggestionRef.current;
+      if (!currentSuggestion || !editorRef.current) return;
+      const pos = editorRef.current.getPosition();
+      if (!pos) return;
+
+      editorRef.current.executeEdits('', [
+        {
+          range: new monacoInstance.Range(
+            pos.lineNumber,
+            pos.column,
+            pos.lineNumber,
+            pos.column,
+          ),
+          text: currentSuggestion,
+          forceMoveMarkers: true,
+        },
+      ]);
+      setSuggestion(null);
+      suggestionRef.current = null;
+    });
+
+    monacoInstance.languages.registerInlineCompletionsProvider('java', {
+      provideInlineCompletions: (model, position) => {
+        const currentSuggestion = suggestionRef.current;
+        if (!currentSuggestion?.trim()) {
+          return { items: [], dispose: () => {} };
+        }
+
+        return {
+          items: [
+            {
+              insertText: currentSuggestion,
+              range: new monacoInstance.Range(
+                position.lineNumber,
+                position.column,
+                position.lineNumber,
+                position.column,
+              ),
+            },
+          ],
+          dispose: () => {
+            suggestionRef.current = null;
+          },
+        };
+      },
+      handleItemDidShow: () => {},
+      freeInlineCompletions: () => {},
+    });
   };
 
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'vs-dark' ? 'vs-light' : 'vs-dark'));
-  };
+  const onClickBack = () => navigate(`/project/${projectId}`);
+  const toggleTheme = () =>
+    setTheme((prev) => (prev === 'vs-dark' ? 'vs-light' : 'vs-dark'));
 
   const handleFileClick = (file: FileNode) => {
     if (file.type === 'file' && file.content !== null) {
@@ -74,17 +200,20 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
   const onCommit = async () => {
     if (!gitData) return;
-
     try {
-      // 변경된 파일만 필터링
-      const changedFiles = gitData.files.filter(file => {
+      const date = new Date(Date.now() + 9 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
+      const changedFiles = gitData.files.filter((file) => {
         if (file.type !== 'file') return false;
-        const originalContent = originalContentRef.current.get(file.path);
-        return (
-          originalContent !== undefined && originalContent !== file.content
-        );
+        const original = originalContentRef.current.get(file.path);
+        return original !== undefined && original !== file.content;
       });
-
+      if (changedFiles.length === 0) return setShowNoChangesAlert(true);
+      await gitPush.mutateAsync({
+        message: `feat: 코드 수정 (${date}) - ${getUserNameFromToken()}`,
+        changedFiles,
+      });
       if (changedFiles.length === 0) {
         setShowNoChangesAlert(true);
         return;
@@ -105,7 +234,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
     if (!gitData) return;
 
     try {
-      const changedFiles = gitData.files.filter(file => {
+      const changedFiles = gitData.files.filter((file) => {
         if (file.type !== 'file') return false;
         const originalContent = originalContentRef.current.get(file.path);
         return (
@@ -119,29 +248,23 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       });
       setShowCommitSuccess(true);
       setShowCommitModal(false);
-      setCommitMessage('');
     } catch (error: any) {
-      console.error('커밋 중 오류가 발생했습니다:', error);
-      if (error.message === 'Git 설정을 찾을 수 없습니다') {
+      console.error('커밋 중 오류:', error);
+      if (error.message === 'Git 설정을 찾을 수 없습니다')
         setShowGitConfigError(true);
-      } else {
-        setShowCommitError(true);
-      }
+      else setShowCommitError(true);
     }
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="relative flex flex-col">
       <div className="py-4 flex items-center justify-between mb-2">
         <div className="flex items-start">
           <button onClick={onClickBack} className="p-1 pr-3">
             <IoArrowBack className="w-5 h-5 mt-2" />
           </button>
-          <div>
-            <p className="text-xl font-bold mt-2">{gitData?.root}</p>
-          </div>
+          <p className="text-xl font-bold mt-2">{gitData?.root}</p>
         </div>
-
         <div className="flex items-center gap-3">
           <button
             className="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 shadow"
@@ -157,6 +280,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           </button>
         </div>
       </div>
+
       <div className="flex-1 flex gap-4">
         {gitData && gitData.files && (
           <div
@@ -194,6 +318,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
             value={code}
             theme={theme}
             onChange={handleEditorChange}
+            onMount={handleEditorDidMount}
             options={{
               minimap: { enabled: true },
               fontSize: 14,
@@ -205,8 +330,46 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
               renderWhitespace: 'selection',
               formatOnPaste: true,
               formatOnType: true,
+              suggestOnTriggerCharacters: true,
+              quickSuggestions: true,
+              inlineSuggest: { enabled: true }, // 중요!
             }}
           />
+        </div>
+      </div>
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${showCommitModal ? '' : 'hidden'}`}
+      >
+        <div className="bg-white dark:bg-gray-800 rounded-lg px-8 py-6 max-w-md w-full mx-4 shadow-xl">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaCodeCommit className="w-8 h-8 text-blue-700 dark:text-blue-300" />
+          </div>
+          <p className="text-xl font-semibold mb-6 text-center text-gray-800 dark:text-gray-200">
+            커밋 메시지 입력
+          </p>
+          <textarea
+            value={commitMessage}
+            onChange={(e) => setCommitMessage(e.target.value)}
+            placeholder="설정한 정규식에 맞게 입력하세요."
+            className="w-full p-2 mb-2 border border-gray-300 rounded-md  focus:ring-blue-500 focus:border-transparent dark:text-gray-200 resize-none"
+          />
+          <div className="flex justify-between gap-3">
+            <button
+              onClick={() => {
+                setShowCommitModal(false);
+                setCommitMessage('');
+              }}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md transition"
+            >
+              취소하기
+            </button>
+            <button
+              onClick={handleCommitSubmit}
+              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-md transition"
+            >
+              커밋하기
+            </button>
+          </div>
         </div>
       </div>
 
@@ -222,7 +385,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           </p>
           <textarea
             value={commitMessage}
-            onChange={e => setCommitMessage(e.target.value)}
+            onChange={(e) => setCommitMessage(e.target.value)}
             placeholder="설정한 정규식에 맞게 입력하세요."
             className="w-full p-2 mb-2 border border-gray-300 rounded-md  focus:ring-blue-500 focus:border-transparent dark:text-gray-200 resize-none"
           />
@@ -254,7 +417,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         confirmText="확인"
         onConfirm={() => setShowNoChangesAlert(false)}
       />
-
       <CustomAlert
         isOpen={showCommitSuccess}
         title="커밋 성공"
@@ -262,7 +424,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         confirmText="확인"
         onConfirm={() => setShowCommitSuccess(false)}
       />
-
       <CustomFalseAlert
         isOpen={showCommitError}
         title="커밋 실패"
@@ -270,7 +431,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         confirmText="확인"
         onConfirm={() => setShowCommitError(false)}
       />
-
       <Dialog
         isOpen={showGitConfigError}
         title="Git 설정 필요"
