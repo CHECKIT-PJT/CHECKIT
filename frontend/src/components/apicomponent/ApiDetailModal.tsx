@@ -11,7 +11,7 @@ import {
 } from '../../types/apiDocs';
 import DtoEditor from './DtoEditor';
 import { FaRegTrashAlt, FaRegSave } from 'react-icons/fa';
-import { FiTrash } from 'react-icons/fi';
+import { FiTrash, FiEdit2 } from 'react-icons/fi';
 import DtoEditorReq from './DtoEditorReq';
 import ApiHeader from './ApiHeader';
 import {
@@ -21,6 +21,7 @@ import {
 import ActiveUsers from './ActiveUsers';
 import RemoteCursor from '../cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
+import { PiList } from 'react-icons/pi';
 
 interface User {
   id: string;
@@ -89,6 +90,36 @@ const ApiDetailModal = ({
   const [showAddHeader, setShowAddHeader] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  // DTO Editor states
+  const [showAddRequestDto, setShowAddRequestDto] = useState(false);
+  const [showAddResponseDto, setShowAddResponseDto] = useState(false);
+  const [editingRequestIndex, setEditingRequestIndex] = useState<number | null>(
+    null
+  );
+  const [editingResponseIndex, setEditingResponseIndex] = useState<
+    number | null
+  >(null);
+  const [draggedRequestItem, setDraggedRequestItem] = useState<number | null>(
+    null
+  );
+  const [draggedResponseItem, setDraggedResponseItem] = useState<number | null>(
+    null
+  );
+  const [newRequestDtoItem, setNewRequestDtoItem] = useState<DtoItem>({
+    id: 0,
+    dtoItemName: '',
+    dataType: 'String',
+    isList: false,
+  });
+  const [newResponseDtoItem, setNewResponseDtoItem] = useState<DtoItem>({
+    id: 0,
+    dtoItemName: '',
+    dataType: 'String',
+    isList: false,
+  });
+  const [useRequestDto, setUseRequestDto] = useState(false);
+  const [useResponseDto, setUseResponseDto] = useState(false);
+
   const [newPathVar, setNewPathVar] = useState<PathVariable>({
     id: null,
     pathVariable: '',
@@ -116,9 +147,8 @@ const ApiDetailModal = ({
       ? api.responses[0].responseDescription
       : 'OK'
   );
-
   // 실시간 업데이트를 위한 디바운스 타이머
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 폼 데이터가 변경될 때마다 실시간 업데이트 전송
   const handleFormChange = (updatedForm: ApiDetail) => {
@@ -133,7 +163,7 @@ const ApiDetailModal = ({
     debounceTimerRef.current = setTimeout(() => {
       // API 요청용 객체로 변환
       const apiSpecRequest = convertToApiSpecRequest(updatedForm);
-      
+
       // 현재 응답 상태 설정
       const currentResponse: ApiResponse = {
         statusCode: statusCode,
@@ -141,7 +171,9 @@ const ApiDetailModal = ({
       };
 
       const otherResponses = updatedForm.responses
-        ? updatedForm.responses.filter(r => r.statusCode !== currentResponse.statusCode)
+        ? updatedForm.responses.filter(
+            r => r.statusCode !== currentResponse.statusCode
+          )
         : [];
 
       // 최종 업데이트할 데이터 생성
@@ -152,8 +184,8 @@ const ApiDetailModal = ({
         queryStrings: updatedForm.queryStrings.map(param => ({
           id: param.id,
           queryStringVariable: param.queryStringVariable,
-          queryStringDataType: param.queryStringDataType
-        }))
+          queryStringDataType: param.queryStringDataType,
+        })),
       };
 
       onSpecUpdate(finalUpdatedForm);
@@ -189,13 +221,28 @@ const ApiDetailModal = ({
         header: api.header ?? '',
       });
 
-      setShowDto(dtoList.length > 0);
+      // DTO 값이 있으면 showDto를 true로 설정
+      const hasDto =
+        dtoList.length > 0 ||
+        requestDto.fields.length > 0 ||
+        responseDto.fields.length > 0;
+      setShowDto(hasDto);
+
+      // DTO 값이 있으면 useRequestDto와 useResponseDto도 true로 설정
+      setUseRequestDto(
+        requestDto.fields.length > 0 || Boolean(requestDto.dtoName)
+      );
+      setUseResponseDto(
+        responseDto.fields.length > 0 || Boolean(responseDto.dtoName)
+      );
 
       setStatusCode(api.statusCode ?? api.responses?.[0]?.statusCode ?? 200);
       setStatusDescription(api.responses?.[0]?.responseDescription ?? 'OK');
     } else {
       setForm(blankApiDetail);
       setShowDto(false);
+      setUseRequestDto(false);
+      setUseResponseDto(false);
       setStatusCode(200);
       setStatusDescription('OK');
     }
@@ -316,6 +363,137 @@ const ApiDetailModal = ({
 
   const removeHeader = () => {
     handleFormChange({ ...form, header: '' });
+  };
+
+  // DTO Editor functions
+  const handleRequestDragStart = (index: number) => {
+    setDraggedRequestItem(index);
+  };
+
+  const handleResponseDragStart = (index: number) => {
+    setDraggedResponseItem(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleRequestDrop = (targetIndex: number) => {
+    if (draggedRequestItem === null) return;
+
+    const items = [...form.requestDto.fields];
+    const [draggedItemContent] = items.splice(draggedRequestItem, 1);
+    items.splice(targetIndex, 0, draggedItemContent);
+
+    setForm({
+      ...form,
+      requestDto: { ...form.requestDto, fields: items },
+    });
+    setDraggedRequestItem(null);
+  };
+
+  const handleResponseDrop = (targetIndex: number) => {
+    if (draggedResponseItem === null) return;
+
+    const items = [...form.responseDto.fields];
+    const [draggedItemContent] = items.splice(draggedResponseItem, 1);
+    items.splice(targetIndex, 0, draggedItemContent);
+
+    setForm({
+      ...form,
+      responseDto: { ...form.responseDto, fields: items },
+    });
+    setDraggedResponseItem(null);
+  };
+
+  const handleRequestEdit = (index: number) => {
+    setEditingRequestIndex(index);
+    setNewRequestDtoItem({ ...form.requestDto.fields[index] });
+    setShowAddRequestDto(true);
+  };
+
+  const handleResponseEdit = (index: number) => {
+    setEditingResponseIndex(index);
+    setNewResponseDtoItem({ ...form.responseDto.fields[index] });
+    setShowAddResponseDto(true);
+  };
+
+  const handleAddRequestDtoItem = () => {
+    if (newRequestDtoItem.dtoItemName.trim() === '') return;
+
+    if (editingRequestIndex !== null) {
+      const newItems = [...form.requestDto.fields];
+      newItems[editingRequestIndex] = { ...newRequestDtoItem };
+      setForm({
+        ...form,
+        requestDto: { ...form.requestDto, fields: newItems },
+      });
+      setEditingRequestIndex(null);
+    } else {
+      setForm({
+        ...form,
+        requestDto: {
+          ...form.requestDto,
+          fields: [...form.requestDto.fields, { ...newRequestDtoItem }],
+        },
+      });
+    }
+
+    setNewRequestDtoItem({
+      id: 0,
+      dtoItemName: '',
+      dataType: 'String',
+      isList: false,
+    });
+    setShowAddRequestDto(false);
+  };
+
+  const handleAddResponseDtoItem = () => {
+    if (newResponseDtoItem.dtoItemName.trim() === '') return;
+
+    if (editingResponseIndex !== null) {
+      const newItems = [...form.responseDto.fields];
+      newItems[editingResponseIndex] = { ...newResponseDtoItem };
+      setForm({
+        ...form,
+        responseDto: { ...form.responseDto, fields: newItems },
+      });
+      setEditingResponseIndex(null);
+    } else {
+      setForm({
+        ...form,
+        responseDto: {
+          ...form.responseDto,
+          fields: [...form.responseDto.fields, { ...newResponseDtoItem }],
+        },
+      });
+    }
+
+    setNewResponseDtoItem({
+      id: 0,
+      dtoItemName: '',
+      dataType: 'String',
+      isList: false,
+    });
+    setShowAddResponseDto(false);
+  };
+
+  const removeRequestDtoItem = (index: number) => {
+    const newItems = [...form.requestDto.fields];
+    newItems.splice(index, 1);
+    setForm({
+      ...form,
+      requestDto: { ...form.requestDto, fields: newItems },
+    });
+  };
+
+  const removeResponseDtoItem = (index: number) => {
+    const newItems = [...form.responseDto.fields];
+    newItems.splice(index, 1);
+    setForm({
+      ...form,
+      responseDto: { ...form.responseDto, fields: newItems },
+    });
   };
 
   return (
@@ -752,6 +930,7 @@ const ApiDetailModal = ({
                   checked={showDto}
                   onChange={() => {
                     if (showDto) {
+                      // DTO를 끄면 모든 DTO 관련 값들을 초기화
                       setForm({
                         ...form,
                         requestDto: {
@@ -767,6 +946,8 @@ const ApiDetailModal = ({
                           dtoType: 'RESPONSE',
                         },
                       });
+                      setUseRequestDto(false);
+                      setUseResponseDto(false);
                     }
                     setShowDto(!showDto);
                   }}
@@ -778,79 +959,347 @@ const ApiDetailModal = ({
 
           {showDto && (
             <div className="grid grid-cols-2 gap-4 mt-6">
-              <DtoEditorReq
-                dtoType={form.requestDto.dtoType || 'REQUEST'}
-                onDtoTypeChange={type =>
-                  setForm({
-                    ...form,
-                    requestDto: {
-                      ...form.requestDto,
-                      dtoType: type as 'REQUEST' | 'RESPONSE',
-                    },
-                  })
-                }
-                title="REQUEST DTO"
-                dtoName={form.requestDto.dtoName}
-                dtoItems={form.requestDto.fields}
-                onDtoNameChange={name =>
-                  setForm({
-                    ...form,
-                    requestDto: { ...form.requestDto, dtoName: name },
-                  })
-                }
-                onDtoItemsChange={items =>
-                  setForm({
-                    ...form,
-                    requestDto: { ...form.requestDto, fields: items },
-                  })
-                }
-                isRequestBody={true}
-                onUseDtoChange={useDto => {
-                  if (!useDto) {
-                    setForm({
-                      ...form,
-                      requestDto: {
-                        id: null,
-                        dtoName: '',
-                        fields: [],
-                        dtoType: 'REQUEST',
-                      },
-                    });
-                  }
-                }}
-              />
+              {/* Request DTO Editor */}
+              <div className="border rounded-xl p-4 bg-white shadow-sm">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-700">
+                      REQUEST DTO
+                    </span>
+                    <label className="flex items-center text-xs text-gray-600 bg-gray-100 rounded-lg px-2 py-1">
+                      <input
+                        type="checkbox"
+                        className="mr-1"
+                        checked={useRequestDto}
+                        onChange={e => {
+                          setUseRequestDto(e.target.checked);
+                          if (!e.target.checked) {
+                            setForm({
+                              ...form,
+                              requestDto: {
+                                id: null,
+                                dtoName: '',
+                                fields: [],
+                                dtoType: 'REQUEST',
+                              },
+                            });
+                          }
+                        }}
+                      />
+                      Use DTO
+                    </label>
+                  </div>
+                  {useRequestDto && (
+                    <button
+                      className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center gap-1"
+                      onClick={() => setShowAddRequestDto(!showAddRequestDto)}
+                    >
+                      + Add Field
+                    </button>
+                  )}
+                </div>
 
-              <DtoEditor
-                title="RESPONSE DTO"
-                dtoName={form.responseDto.dtoName}
-                dtoItems={form.responseDto.fields}
-                dtoType="RESPONSE"
-                onDtoNameChange={name =>
-                  setForm({
-                    ...form,
-                    responseDto: { ...form.responseDto, dtoName: name },
-                  })
-                }
-                onDtoItemsChange={items =>
-                  setForm({
-                    ...form,
-                    responseDto: { ...form.responseDto, fields: items },
-                  })
-                }
-                onUseDtoChange={useDto => {
-                  if (!useDto) {
-                    setForm({
-                      ...form,
-                      responseDto: {
-                        id: null,
-                        dtoName: '',
-                        fields: [],
-                        dtoType: 'RESPONSE',
-                      },
-                    });
-                  }
-                }}
-              />
+                {useRequestDto && (
+                  <>
+                    <div className="mb-4">
+                      <input
+                        className="w-full border-b-2 border-blue-100 text-base px-2 py-2 text-gray-700 focus:outline-none focus:border-blue-300 transition-colors"
+                        value={form.requestDto.dtoName}
+                        onChange={e =>
+                          setForm({
+                            ...form,
+                            requestDto: {
+                              ...form.requestDto,
+                              dtoName: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="DTO Name"
+                      />
+                    </div>
+
+                    {form.requestDto.fields.length > 0 ? (
+                      <div className="space-y-2 mb-3">
+                        {form.requestDto.fields.map((item, index) => (
+                          <div
+                            key={index}
+                            draggable
+                            onDragStart={() => handleRequestDragStart(index)}
+                            onDragOver={handleDragOver}
+                            onDrop={() => handleRequestDrop(index)}
+                            className={`flex justify-between items-center p-2 bg-gray-50 rounded cursor-move ${
+                              draggedRequestItem === index ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <PiList className="w-4 h-4 text-gray-400 mr-3" />
+                            <div className="flex gap-4 items-center flex-1">
+                              <span className="text-blue-600 font-medium">
+                                {item.dtoItemName}
+                              </span>
+                              <span className="text-xs bg-gray-200 px-3 py-1 rounded font-medium">
+                                {item.dataType}
+                                {item.isList ? '[ ]' : ''}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                className="text-gray-500 hover:text-blue-500"
+                                onClick={() => handleRequestEdit(index)}
+                              >
+                                <FiEdit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                className="text-gray-500 hover:text-red-500"
+                                onClick={() => removeRequestDtoItem(index)}
+                              >
+                                <FiTrash className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 text-sm" />
+                    )}
+
+                    {showAddRequestDto && (
+                      <div className="p-3 border border-blue-100 rounded-lg bg-blue-50 mb-2">
+                        <div className="grid grid-cols-11 gap-2 mb-2">
+                          <input
+                            className="p-2 border rounded col-span-5 text-base"
+                            placeholder="Field Name"
+                            value={newRequestDtoItem.dtoItemName}
+                            onChange={e =>
+                              setNewRequestDtoItem({
+                                ...newRequestDtoItem,
+                                dtoItemName: e.target.value,
+                              })
+                            }
+                          />
+                          <select
+                            className="p-2 border rounded col-span-4 text-base"
+                            value={newRequestDtoItem.dataType}
+                            onChange={e =>
+                              setNewRequestDtoItem({
+                                ...newRequestDtoItem,
+                                dataType: e.target.value,
+                              })
+                            }
+                          >
+                            {dataTypes.map(type => (
+                              <option key={type} value={type}>
+                                {type}
+                              </option>
+                            ))}
+                          </select>
+                          <label className="flex items-center gap-1 px-1 col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={newRequestDtoItem.isList}
+                              onChange={e =>
+                                setNewRequestDtoItem({
+                                  ...newRequestDtoItem,
+                                  isList: e.target.checked,
+                                })
+                              }
+                              className="w-3 h-3"
+                            />
+                            <span className="text-xs">Is List</span>
+                          </label>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                            onClick={() => {
+                              setShowAddRequestDto(false);
+                              setEditingRequestIndex(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                            onClick={handleAddRequestDtoItem}
+                          >
+                            {editingRequestIndex !== null ? 'Update' : 'Add'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Response DTO Editor */}
+              <div className="border rounded-xl p-4 bg-white shadow-sm">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-700">
+                      RESPONSE DTO
+                    </span>
+                    <label className="flex items-center text-xs text-gray-600 bg-gray-100 rounded-lg px-2 py-1">
+                      <input
+                        type="checkbox"
+                        className="mr-1"
+                        checked={useResponseDto}
+                        onChange={e => {
+                          setUseResponseDto(e.target.checked);
+                          if (!e.target.checked) {
+                            setForm({
+                              ...form,
+                              responseDto: {
+                                id: null,
+                                dtoName: '',
+                                fields: [],
+                                dtoType: 'RESPONSE',
+                              },
+                            });
+                          }
+                        }}
+                      />
+                      Use DTO
+                    </label>
+                  </div>
+                  {useResponseDto && (
+                    <button
+                      className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center gap-1"
+                      onClick={() => setShowAddResponseDto(!showAddResponseDto)}
+                    >
+                      + Add Field
+                    </button>
+                  )}
+                </div>
+
+                {useResponseDto && (
+                  <>
+                    <div className="mb-4">
+                      <input
+                        className="w-full border-b-2 border-blue-100 text-base px-2 py-2 text-gray-700 focus:outline-none focus:border-blue-300 transition-colors"
+                        value={form.responseDto.dtoName}
+                        onChange={e =>
+                          setForm({
+                            ...form,
+                            responseDto: {
+                              ...form.responseDto,
+                              dtoName: e.target.value,
+                            },
+                          })
+                        }
+                        placeholder="DTO Name"
+                      />
+                    </div>
+
+                    {form.responseDto.fields.length > 0 ? (
+                      <div className="space-y-2 mb-3">
+                        {form.responseDto.fields.map((item, index) => (
+                          <div
+                            key={index}
+                            draggable
+                            onDragStart={() => handleResponseDragStart(index)}
+                            onDragOver={handleDragOver}
+                            onDrop={() => handleResponseDrop(index)}
+                            className={`flex justify-between items-center p-2 bg-gray-50 rounded cursor-move ${
+                              draggedResponseItem === index ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <PiList className="w-4 h-4 text-gray-400 mr-3" />
+                            <div className="flex gap-4 items-center flex-1">
+                              <span className="text-blue-600 font-medium">
+                                {item.dtoItemName}
+                              </span>
+                              <span className="text-xs bg-gray-200 px-3 py-1 rounded font-medium">
+                                {item.dataType}
+                                {item.isList ? '[ ]' : ''}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                className="text-gray-500 hover:text-blue-500"
+                                onClick={() => handleResponseEdit(index)}
+                              >
+                                <FiEdit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                className="text-gray-500 hover:text-red-500"
+                                onClick={() => removeResponseDtoItem(index)}
+                              >
+                                <FiTrash className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 text-sm" />
+                    )}
+
+                    {showAddResponseDto && (
+                      <div className="p-3 border border-blue-100 rounded-lg bg-blue-50 mb-2">
+                        <div className="grid grid-cols-11 gap-2 mb-2">
+                          <input
+                            className="p-2 border rounded col-span-5 text-base"
+                            placeholder="Field Name"
+                            value={newResponseDtoItem.dtoItemName}
+                            onChange={e =>
+                              setNewResponseDtoItem({
+                                ...newResponseDtoItem,
+                                dtoItemName: e.target.value,
+                              })
+                            }
+                          />
+                          <select
+                            className="p-2 border rounded col-span-4 text-base"
+                            value={newResponseDtoItem.dataType}
+                            onChange={e =>
+                              setNewResponseDtoItem({
+                                ...newResponseDtoItem,
+                                dataType: e.target.value,
+                              })
+                            }
+                          >
+                            {dataTypes.map(type => (
+                              <option key={type} value={type}>
+                                {type}
+                              </option>
+                            ))}
+                          </select>
+                          <label className="flex items-center gap-1 px-1 col-span-2">
+                            <input
+                              type="checkbox"
+                              checked={newResponseDtoItem.isList}
+                              onChange={e =>
+                                setNewResponseDtoItem({
+                                  ...newResponseDtoItem,
+                                  isList: e.target.checked,
+                                })
+                              }
+                              className="w-3 h-3"
+                            />
+                            <span className="text-xs">Is List</span>
+                          </label>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs"
+                            onClick={() => {
+                              setShowAddResponseDto(false);
+                              setEditingResponseIndex(null);
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                            onClick={handleAddResponseDtoItem}
+                          >
+                            {editingResponseIndex !== null ? 'Update' : 'Add'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>

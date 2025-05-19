@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-
 interface User {
   id: string;
   name: string;
@@ -37,11 +35,11 @@ const ActiveUsers = ({ users, size = 'medium' }: ActiveUsersProps) => {
           <div
             key={user.id}
             className={`${avatarSize} rounded-full bg-white border-2 flex items-center justify-center font-medium transition-transform hover:scale-110 hover:z-10`}
-            style={{ 
+            style={{
               backgroundColor: user.color,
               borderColor: 'white',
               color: 'white',
-              zIndex: users.length - index 
+              zIndex: users.length - index,
             }}
             title={user.name}
           >
@@ -61,4 +59,4 @@ const ActiveUsers = ({ users, size = 'medium' }: ActiveUsersProps) => {
   );
 };
 
-export default ActiveUsers; 
+export default ActiveUsers;
