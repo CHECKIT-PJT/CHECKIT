@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ApiDetail,
   PathVariable,
@@ -7,6 +7,7 @@ import {
   Dto,
   DtoItem,
   ApiSpecRequest,
+  QueryStringRequest,
 } from '../../types/apiDocs';
 import DtoEditor from './DtoEditor';
 import { FaRegTrashAlt, FaRegSave } from 'react-icons/fa';
@@ -35,6 +36,7 @@ interface ApiDetailModalProps {
   activeUsers: User[];
   onMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void;
   remoteCursors: { [key: string]: RemoteCursorData };
+  onSpecUpdate: (updatedSpec: Partial<ApiDetail>) => void;
 }
 
 // 빈 API 상세 정보
@@ -48,7 +50,7 @@ const blankApiDetail: ApiDetail = {
   statusCode: 200,
   header: '',
   pathVariables: [],
-  requestParams: [],
+  queryStrings: [],
   requestDto: { id: null, dtoName: '', fields: [], dtoType: 'REQUEST' },
   responseDto: { id: null, dtoName: '', fields: [], dtoType: 'RESPONSE' },
   responses: [],
@@ -77,6 +79,7 @@ const ApiDetailModal = ({
   activeUsers,
   onMouseMove,
   remoteCursors,
+  onSpecUpdate,
 }: ApiDetailModalProps) => {
   const [tab, setTab] = useState<'RESOURCE' | 'HEADER' | 'QUERY'>('RESOURCE');
   const [form, setForm] = useState<ApiDetail>(api ?? blankApiDetail);
@@ -92,10 +95,10 @@ const ApiDetailModal = ({
     pathVariableDataType: 'string',
   });
 
-  const [newParam, setNewParam] = useState<RequestParam>({
+  const [newParam, setNewParam] = useState<QueryStringRequest>({
     id: null,
-    requestParamName: '',
-    requestParamDataType: 'string',
+    queryStringVariable: '',
+    queryStringDataType: 'string',
   });
 
   const [newHeader, setNewHeader] = useState<{ key: string; value: string }>({
@@ -113,6 +116,49 @@ const ApiDetailModal = ({
       ? api.responses[0].responseDescription
       : 'OK'
   );
+
+  // 실시간 업데이트를 위한 디바운스 타이머
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 폼 데이터가 변경될 때마다 실시간 업데이트 전송
+  const handleFormChange = (updatedForm: ApiDetail) => {
+    setForm(updatedForm);
+
+    // 이전 타이머 취소
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // 500ms 후에 업데이트 전송
+    debounceTimerRef.current = setTimeout(() => {
+      // API 요청용 객체로 변환
+      const apiSpecRequest = convertToApiSpecRequest(updatedForm);
+      
+      // 현재 응답 상태 설정
+      const currentResponse: ApiResponse = {
+        statusCode: statusCode,
+        responseDescription: statusDescription || 'OK',
+      };
+
+      const otherResponses = updatedForm.responses
+        ? updatedForm.responses.filter(r => r.statusCode !== currentResponse.statusCode)
+        : [];
+
+      // 최종 업데이트할 데이터 생성
+      const finalUpdatedForm = {
+        ...updatedForm,
+        statusCode: statusCode,
+        responses: [currentResponse, ...otherResponses],
+        queryStrings: updatedForm.queryStrings.map(param => ({
+          id: param.id,
+          queryStringVariable: param.queryStringVariable,
+          queryStringDataType: param.queryStringDataType
+        }))
+      };
+
+      onSpecUpdate(finalUpdatedForm);
+    }, 500);
+  };
 
   useEffect(() => {
     if (api) {
@@ -138,7 +184,7 @@ const ApiDetailModal = ({
         requestDto,
         responseDto,
         pathVariables: api.pathVariables ?? [],
-        requestParams: api.requestParams ?? [],
+        queryStrings: api.queryStrings ?? [],
         responses: api.responses ?? [],
         header: api.header ?? '',
       });
@@ -213,7 +259,7 @@ const ApiDetailModal = ({
 
   const handleAddPathVar = () => {
     if (newPathVar.pathVariable.trim() === '') return;
-    setForm({
+    handleFormChange({
       ...form,
       pathVariables: [...form.pathVariables, { ...newPathVar }],
     });
@@ -226,22 +272,29 @@ const ApiDetailModal = ({
   };
 
   const handleAddParam = () => {
-    if (newParam.requestParamName.trim() === '') return;
-    setForm({
+    if (newParam.queryStringVariable.trim() === '') return;
+    handleFormChange({
       ...form,
-      requestParams: [...form.requestParams, { ...newParam }],
+      queryStrings: [
+        ...form.queryStrings,
+        {
+          id: newParam.id,
+          queryStringVariable: newParam.queryStringVariable,
+          queryStringDataType: newParam.queryStringDataType,
+        },
+      ],
     });
     setNewParam({
       id: null,
-      requestParamName: '',
-      requestParamDataType: 'string',
+      queryStringVariable: '',
+      queryStringDataType: 'string',
     });
     setShowAddParam(false);
   };
 
   const handleAddHeader = () => {
     if (newHeader.key.trim() === '' || newHeader.value.trim() === '') return;
-    setForm({
+    handleFormChange({
       ...form,
       header: `${newHeader.key}: ${newHeader.value}`,
     });
@@ -252,17 +305,17 @@ const ApiDetailModal = ({
   const removePathVar = (index: number) => {
     const newPathVars = [...form.pathVariables];
     newPathVars.splice(index, 1);
-    setForm({ ...form, pathVariables: newPathVars });
+    handleFormChange({ ...form, pathVariables: newPathVars });
   };
 
   const removeParam = (index: number) => {
-    const newParams = [...form.requestParams];
+    const newParams = [...form.queryStrings];
     newParams.splice(index, 1);
-    setForm({ ...form, requestParams: newParams });
+    handleFormChange({ ...form, queryStrings: newParams });
   };
 
   const removeHeader = () => {
-    setForm({ ...form, header: '' });
+    handleFormChange({ ...form, header: '' });
   };
 
   return (
@@ -357,7 +410,7 @@ const ApiDetailModal = ({
         <div className="p-6 overflow-y-auto flex-grow">
           <ApiHeader
             form={form}
-            setForm={setForm}
+            setForm={handleFormChange}
             statusCode={statusCode}
             setStatusCode={setStatusCode}
             statusDescription={statusDescription}
@@ -604,19 +657,19 @@ const ApiDetailModal = ({
                       )}
                     </div>
 
-                    {form.requestParams.length > 0 ? (
+                    {form.queryStrings.length > 0 ? (
                       <div className="space-y-2 mb-2">
-                        {form.requestParams.map((param, index) => (
+                        {form.queryStrings.map((param, index) => (
                           <div
                             key={index}
                             className="flex justify-between items-center p-1.5 bg-gray-50 rounded text-xs"
                           >
                             <div className="flex gap-2 items-center">
                               <span className="text-blue-600">
-                                {param.requestParamName}
+                                {param.queryStringVariable}
                               </span>
                               <span className="bg-gray-200 px-2 py-1 rounded">
-                                {param.requestParamDataType}
+                                {param.queryStringDataType}
                               </span>
                             </div>
                             <button
@@ -638,21 +691,21 @@ const ApiDetailModal = ({
                           <input
                             className="p-2 border rounded flex-1 text-xs"
                             placeholder="Parameter Name"
-                            value={newParam.requestParamName}
+                            value={newParam.queryStringVariable}
                             onChange={e =>
                               setNewParam({
                                 ...newParam,
-                                requestParamName: e.target.value,
+                                queryStringVariable: e.target.value,
                               })
                             }
                           />
                           <select
                             className="px-2 py-2 border rounded text-xs"
-                            value={newParam.requestParamDataType}
+                            value={newParam.queryStringDataType}
                             onChange={e =>
                               setNewParam({
                                 ...newParam,
-                                requestParamDataType: e.target.value,
+                                queryStringDataType: e.target.value,
                               })
                             }
                           >

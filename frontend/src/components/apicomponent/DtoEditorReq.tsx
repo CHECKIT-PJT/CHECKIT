@@ -121,6 +121,17 @@ const DtoEditorReq = ({
       onUseDtoChange(e.target.checked);
     }
   };
+
+  const handleDtoNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onDtoNameChange(e.target.value);
+  };
+
+  const handleDtoItemChange = (index: number, field: string, value: string | boolean) => {
+    const newItems = [...dtoItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    onDtoItemsChange(newItems);
+  };
+
   return (
     <div className="border rounded-xl p-4 bg-white shadow-sm">
       <div className="flex justify-between items-center mb-3">
@@ -169,7 +180,7 @@ const DtoEditorReq = ({
             <input
               className="w-full border-b-2 border-blue-100 text-base px-2 py-2 text-gray-700 focus:outline-none focus:border-blue-300 transition-colors"
               value={dtoName}
-              onChange={e => onDtoNameChange(e.target.value)}
+              onChange={handleDtoNameChange}
               placeholder="DTO Name"
             />
           </div>
