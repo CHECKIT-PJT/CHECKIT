@@ -31,7 +31,7 @@ interface IdeEditorProps {
 }
 
 const IdeEditor = ({ gitData }: IdeEditorProps) => {
-  const [code, setCode] = useState('// 파일을 선택하세요.');
+  const [code, setCode] = useState<string>('// 파일을 선택하세요.');
   const [isFileTreeVisible, setIsFileTreeVisible] = useState(true);
   const [theme, setTheme] = useState<'vs-dark' | 'vs-light'>('vs-light');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -248,6 +248,35 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         changedFiles: changedFiles,
       });
       setShowCommitSuccess(true);
+      setShowCommitModal(false);
+      setCommitMessage('');
+    } catch (error: any) {
+      console.error('커밋 중 오류가 발생했습니다:', error);
+      if (error.message === 'Git 설정을 찾을 수 없습니다') {
+        setShowGitConfigError(true);
+      } else {
+        setShowCommitError(true);
+      }
+    }
+  };
+
+  const handleCommitSubmit = async () => {
+    if (!gitData) return;
+
+    try {
+      const changedFiles = gitData.files.filter(file => {
+        if (file.type !== 'file') return false;
+        const originalContent = originalContentRef.current.get(file.path);
+        return (
+          originalContent !== undefined && originalContent !== file.content
+        );
+      });
+
+      await gitPush.mutateAsync({
+        message: commitMessage || '',
+        changedFiles: changedFiles,
+      });
+      setShowCommitSuccess(true);
       setShowCommitModal(false)
     } catch (error: any) {
       console.error('커밋 중 오류:', error);
@@ -375,6 +404,43 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       </div>
 
 
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${showCommitModal ? '' : 'hidden'}`}
+      >
+        <div className="bg-white dark:bg-gray-800 rounded-lg px-8 py-6 max-w-md w-full mx-4 shadow-xl">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaCodeCommit className="w-8 h-8 text-blue-700 dark:text-blue-300" />
+          </div>
+          <p className="text-xl font-semibold mb-6 text-center text-gray-800 dark:text-gray-200">
+            커밋 메시지 입력
+          </p>
+          <textarea
+            value={commitMessage}
+            onChange={e => setCommitMessage(e.target.value)}
+            placeholder="설정한 정규식에 맞게 입력하세요."
+            className="w-full p-2 mb-2 border border-gray-300 rounded-md  focus:ring-blue-500 focus:border-transparent dark:text-gray-200 resize-none"
+          />
+          <div className="flex justify-between gap-3">
+            <button
+              onClick={() => {
+                setShowCommitModal(false);
+                setCommitMessage('');
+              }}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md transition"
+            >
+              취소하기
+            </button>
+            <button
+              onClick={handleCommitSubmit}
+              className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-md transition"
+            >
+              커밋하기
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 커스텀 알람 띄우기 */}
       <CustomFalseAlert
         isOpen={showNoChangesAlert}
         title="변경 사항 없음"

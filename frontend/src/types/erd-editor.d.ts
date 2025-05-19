@@ -8,6 +8,7 @@ declare global {
           value?: string;
           enableThemeBuilder?: string;
           systemDarkMode?: string;
+          style?: React.CSSProperties;
         },
         HTMLElement
       >;
@@ -22,4 +23,4 @@ export interface ErdEditorElement extends HTMLElement {
     grayColor: string;
     accentColor: string;
   }) => void;
-} 
+}

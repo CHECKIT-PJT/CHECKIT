@@ -78,28 +78,30 @@ const DtoEditor = ({
     setShowAddDto(true);
   };
 
-  const handleAddDtoItem = () => {
-    if (newDtoItem.dtoItemName.trim() === '') return;
-
-    if (editingIndex !== null) {
-      const newItems = [...dtoItems];
-      newItems[editingIndex] = { ...newDtoItem };
-      onDtoItemsChange(newItems);
-      setEditingIndex(null);
-    } else {
-      onDtoItemsChange([...dtoItems, { ...newDtoItem }]);
-    }
-
-    setNewDtoItem({
-      id: 0,
-      dtoItemName: '',
-      dataType: 'String',
-      isList: false,
-    });
-    setShowAddDto(false);
+  const handleDtoNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onDtoNameChange(e.target.value);
   };
 
-  const removeDtoItem = (index: number) => {
+  const handleDtoItemChange = (index: number, field: string, value: string) => {
+    const newItems = [...dtoItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    onDtoItemsChange(newItems);
+  };
+
+  const handleAddDtoItem = () => {
+    onDtoItemsChange([
+      ...dtoItems,
+      {
+        id: null,
+        fieldName: '',
+        fieldType: 'string',
+        fieldDescription: '',
+        isArray: false,
+      },
+    ]);
+  };
+
+  const handleRemoveDtoItem = (index: number) => {
     const newItems = [...dtoItems];
     newItems.splice(index, 1);
     onDtoItemsChange(newItems);
@@ -180,7 +182,7 @@ const DtoEditor = ({
             <input
               className="w-full border-b-2 border-blue-100 text-base px-2 py-2 text-gray-700 focus:outline-none focus:border-blue-300 transition-colors"
               value={dtoName}
-              onChange={e => onDtoNameChange(e.target.value)}
+              onChange={handleDtoNameChange}
               placeholder="DTO Name"
             />
           </div>
@@ -217,7 +219,7 @@ const DtoEditor = ({
                     </button>
                     <button
                       className="text-gray-500 hover:text-red-500"
-                      onClick={() => removeDtoItem(index)}
+                      onClick={() => handleRemoveDtoItem(index)}
                     >
                       <FiTrash className="w-4 h-4" />
                     </button>
