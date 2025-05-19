@@ -25,7 +25,7 @@ const FileTree = ({
   projectName,
 }: FileTreeProps) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
 
   if (!files || files.length === 0) {
@@ -37,7 +37,7 @@ const FileTree = ({
   }
 
   const toggleFolder = (path: string) => {
-    setExpandedFolders((prev) => {
+    setExpandedFolders(prev => {
       const next = new Set(prev);
       if (next.has(path)) {
         next.delete(path);
@@ -52,7 +52,7 @@ const FileTree = ({
     return path.split('/').pop() || path;
   };
 
-  // 파일 확장자에 따라 색상 결정하는 함수
+  // 파일 확장자에 따라 색상 결정
   const getFileIconColor = (filename: string) => {
     const extension = filename.split('.').pop()?.toLowerCase();
 
@@ -83,8 +83,30 @@ const FileTree = ({
     }
   };
 
+  // 폴더 안에 폴더나 파일이 하나만 있으면 경로를 이어 한 줄로 표시
+  const getSinglePath = (files: FileNode[], folder: FileNode) => {
+    let path = getFileName(folder.path);
+    let current = folder;
+    let children = files.filter(
+      f =>
+        f.path.startsWith(current.path + '/') &&
+        f.path.substring(current.path.length + 1).split('/').length === 1
+    );
+    while (children.length === 1 && children[0].type === 'folder') {
+      current = children[0];
+      path += '/' + getFileName(current.path);
+      children = files.filter(
+        f =>
+          f.path.startsWith(current.path + '/') &&
+          f.path.substring(current.path.length + 1).split('/').length === 1
+      );
+    }
+    return { path, lastFolder: current, children };
+  };
+
+  // 재귀적으로 트리 렌더링
   const renderFileTree = (files: FileNode[], currentPath: string = '') => {
-    const currentFiles = files.filter((file) => {
+    const currentFiles = files.filter(file => {
       const filePath = file.path;
       if (currentPath === '') {
         return filePath.split('/').length === 1;
@@ -95,7 +117,7 @@ const FileTree = ({
       );
     });
 
-    // 폴더를, 파일을 먼저 정렬
+    // 폴더, 파일 순 정렬
     const sortedFiles = [...currentFiles].sort((a, b) => {
       if (a.type === 'folder' && b.type === 'file') return -1;
       if (a.type === 'file' && b.type === 'folder') return 1;
@@ -104,16 +126,22 @@ const FileTree = ({
 
     return sortedFiles.map((file, index) => {
       if (file.type === 'folder') {
-        const isExpanded = expandedFolders.has(file.path);
+        // 폴더 내부에 폴더/파일이 하나만 있을 때 경로 한 줄로 표시
+        const {
+          path: singlePath,
+          lastFolder,
+          children,
+        } = getSinglePath(files, file);
+        const isExpanded = expandedFolders.has(lastFolder.path);
         return (
           <div key={index} className="pl-2 py-1">
             <div
               className={`cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors duration-150 ${
-                selectedFile === file.path
+                selectedFile === lastFolder.path
                   ? 'bg-blue-50 dark:bg-gray-600 font-medium'
                   : ''
               }`}
-              onClick={() => toggleFolder(file.path)}
+              onClick={() => toggleFolder(lastFolder.path)}
             >
               <div className="w-5 mr-2 flex-shrink-0">
                 {isExpanded ? (
@@ -122,11 +150,11 @@ const FileTree = ({
                   <LuFolder className="text-yellow-500" />
                 )}
               </div>
-              <span className="text-sm truncate">{getFileName(file.path)}</span>
+              <span className="text-sm truncate">{singlePath}</span>
             </div>
-            {isExpanded && (
+            {isExpanded && children.length > 0 && (
               <div className="ml-4 border-l border-gray-200 dark:border-gray-700 mt-1">
-                {renderFileTree(files, file.path)}
+                {renderFileTree(files, lastFolder.path)}
               </div>
             )}
           </div>
@@ -155,8 +183,9 @@ const FileTree = ({
   };
 
   return (
-    <div className="w-full border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white h-full">
+    <div className="w-full border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white h-5/6">
       <div className="h-full overflow-y-auto overflow-x-auto p-2 bg-white dark:bg-gray-900">
+        <p className="text-lg font-bold pl-4 pb-2 border-b-2">Files</p>
         {renderFileTree(files)}
       </div>
     </div>

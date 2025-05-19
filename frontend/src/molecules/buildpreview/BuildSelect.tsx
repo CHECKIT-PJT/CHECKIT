@@ -25,21 +25,21 @@ const BuildSelect = ({
         title="Git 설정 추가"
         subtitle="빌드 전 조건들을 지정하기"
         icon={<IoSettingsOutline size={20} />}
-        bgColor="hover:bg-blue-600 hover:bg-opacity-40 border-t"
+        bgColor="hover:bg-green-800 hover:bg-opacity-20 border-t"
         onClick={() => navigate('build/option/branch')}
       />
       <ChapterCardLong
         title="Spring 설정"
         subtitle="초기 스프링 설정 선택하기"
         icon={<SiSpring size={20} />}
-        bgColor="hover:bg-blue-600 hover:bg-opacity-40 "
+        bgColor="hover:bg-green-800 hover:bg-opacity-20 "
         onClick={() => navigate('spring')}
       />
       <ChapterCardLong
         title="빌드 미리 보기"
         subtitle="초기 코드 자동 생성"
         icon={<VscOpenPreview size={20} className="text-white-500" />}
-        bgColor="hover:bg-blue-600 hover:bg-opacity-40"
+        bgColor="hover:bg-green-800 hover:bg-opacity-20"
         onClick={() => navigate('buildpreview')}
       />
       <ChapterCardLong
@@ -51,7 +51,7 @@ const BuildSelect = ({
             className="text-white-500 ml-0.5"
           />
         }
-        bgColor="hover:bg-blue-600 hover:bg-opacity-40"
+        bgColor="hover:bg-green-800 hover:bg-opacity-20"
         onClick={() => navigate('ide')}
       />
     </div>
