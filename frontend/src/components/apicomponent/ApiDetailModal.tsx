@@ -2,20 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import {
   ApiDetail,
   PathVariable,
-  RequestParam,
-  ApiResponse,
-  Dto,
-  DtoItem,
-  ApiSpecRequest,
   QueryStringRequest,
+  ApiResponse,
+  DtoItem,
 } from '../../types/apiDocs';
 import { FaRegTrashAlt, FaRegSave } from 'react-icons/fa';
 import { FiTrash, FiEdit2 } from 'react-icons/fi';
 import ApiHeader from './ApiHeader';
-import {
-  convertToApiSpecRequest,
-  validateApiSpecRequest,
-} from '../../utils/apiUtils';
 import ActiveUsers from './ActiveUsers';
 import RemoteCursor from '../cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
@@ -30,7 +23,7 @@ interface User {
 interface ApiDetailModalProps {
   api: ApiDetail | null;
   onClose: () => void;
-  onSave: (apiSpecRequest: ApiSpecRequest) => void;
+  onSave: (apiSpecRequest: Partial<ApiDetail>) => void;
   onDelete?: () => void;
   activeUsers: User[];
   onMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void;
@@ -38,22 +31,12 @@ interface ApiDetailModalProps {
   onSpecUpdate: (updatedSpec: Partial<ApiDetail>) => void;
 }
 
-// 빈 API 상세 정보
-const blankApiDetail: ApiDetail = {
+const emptyDto = (type: 'REQUEST' | 'RESPONSE') => ({
   id: null,
-  apiName: '',
-  endpoint: '',
-  method: 'GET',
-  category: '',
-  description: '',
-  statusCode: 200,
-  header: '',
-  pathVariables: [],
-  queryStrings: [],
-  requestDto: { id: null, dtoName: '', fields: [], dtoType: 'REQUEST' },
-  responseDto: { id: null, dtoName: '', fields: [], dtoType: 'RESPONSE' },
-  responses: [],
-};
+  dtoName: '',
+  fields: [],
+  dtoType: type,
+});
 
 const dataTypes = [
   'string',
@@ -80,9 +63,42 @@ const ApiDetailModal = ({
   remoteCursors,
   onSpecUpdate,
 }: ApiDetailModalProps) => {
+  const [form, setForm] = useState<ApiDetail>(
+    api
+      ? {
+          ...api,
+          requestDto:
+            api.dtoList?.find(d => d.dtoType === 'REQUEST') ||
+            emptyDto('REQUEST'),
+          responseDto:
+            api.dtoList?.find(d => d.dtoType === 'RESPONSE') ||
+            emptyDto('RESPONSE'),
+        }
+      : {
+          id: null,
+          apiName: '',
+          endpoint: '',
+          method: 'GET',
+          category: '',
+          description: '',
+          statusCode: 200,
+          header: '',
+          pathVariables: [],
+          queryStrings: [],
+          responses: [],
+          requestDto: emptyDto('REQUEST'),
+          responseDto: emptyDto('RESPONSE'),
+          dtoList: [],
+        }
+  );
   const [tab, setTab] = useState<'RESOURCE' | 'HEADER' | 'QUERY'>('RESOURCE');
-  const [form, setForm] = useState<ApiDetail>(api ?? blankApiDetail);
-  const [showDto, setShowDto] = useState(false);
+  const [showDto, setShowDto] = useState(
+    !!(
+      form.requestDto.fields.length ||
+      form.responseDto.fields.length ||
+      (api && api.dtoList && api.dtoList.length > 0)
+    )
+  );
   const [showAddPathVar, setShowAddPathVar] = useState(false);
   const [showAddParam, setShowAddParam] = useState(false);
   const [showAddHeader, setShowAddHeader] = useState(false);
@@ -115,8 +131,12 @@ const ApiDetailModal = ({
     dataType: 'String',
     isList: false,
   });
-  const [useRequestDto, setUseRequestDto] = useState(false);
-  const [useResponseDto, setUseResponseDto] = useState(false);
+  const [useRequestDto, setUseRequestDto] = useState(
+    !!form.requestDto.dtoName || !!form.requestDto.fields.length
+  );
+  const [useResponseDto, setUseResponseDto] = useState(
+    !!form.responseDto.dtoName || !!form.responseDto.fields.length
+  );
 
   const [newPathVar, setNewPathVar] = useState<PathVariable>({
     id: null,
@@ -148,144 +168,61 @@ const ApiDetailModal = ({
   // 실시간 업데이트를 위한 디바운스 타이머
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 폼 데이터가 변경될 때마다 실시간 업데이트 전송
+  useEffect(() => {
+    if (!api) return;
+    const dtoList = api.dtoList || [];
+    setForm({
+      ...api,
+      requestDto:
+        dtoList.find(d => d.dtoType === 'REQUEST') || emptyDto('REQUEST'),
+      responseDto:
+        dtoList.find(d => d.dtoType === 'RESPONSE') || emptyDto('RESPONSE'),
+    });
+  }, [api]);
+
+  const getDtoListFromForm = (formObj: any) => {
+    const list = [];
+    if (formObj.requestDto && formObj.requestDto.dtoName)
+      list.push({ ...formObj.requestDto, dtoType: 'REQUEST' });
+    if (formObj.responseDto && formObj.responseDto.dtoName)
+      list.push({ ...formObj.responseDto, dtoType: 'RESPONSE' });
+    return list;
+  };
+
   const handleFormChange = (updatedForm: ApiDetail) => {
     setForm(updatedForm);
-
-    // 이전 타이머 취소
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-
-    // 500ms 후에 업데이트 전송
     debounceTimerRef.current = setTimeout(() => {
-      // API 요청용 객체로 변환
-      const apiSpecRequest = convertToApiSpecRequest(updatedForm);
-
-      // 현재 응답 상태 설정
-      const currentResponse: ApiResponse = {
-        statusCode: statusCode,
-        responseDescription: statusDescription || 'OK',
-      };
-
-      const otherResponses = updatedForm.responses
-        ? updatedForm.responses.filter(
-            r => r.statusCode !== currentResponse.statusCode
-          )
-        : [];
-
-      // 최종 업데이트할 데이터 생성
-      const finalUpdatedForm = {
+      const dtoList = getDtoListFromForm(updatedForm);
+      onSpecUpdate({
         ...updatedForm,
-        statusCode: statusCode,
-        responses: [currentResponse, ...otherResponses],
-        queryStrings: updatedForm.queryStrings.map(param => ({
-          id: param.id,
-          queryStringVariable: param.queryStringVariable,
-          queryStringDataType: param.queryStringDataType,
-        })),
-      };
-
-      onSpecUpdate(finalUpdatedForm);
-    }, 500);
+        dtoList,
+        requestDto: undefined,
+        responseDto: undefined,
+      });
+    }, 300);
   };
 
-  useEffect(() => {
-    if (!api) return;
-
-    const dtoList = api.dtoList || [];
-    const requestDto = dtoList.find(d => d.dtoType === 'REQUEST') || {
-      id: null,
-      dtoName: '',
-      fields: [],
-      dtoType: 'REQUEST' as const,
-    };
-    const responseDto = dtoList.find(d => d.dtoType === 'RESPONSE') || {
-      id: null,
-      dtoName: '',
-      fields: [],
-      dtoType: 'RESPONSE' as const,
-    };
-
-    setForm({
-      ...api,
-      requestDto,
-      responseDto,
-      pathVariables: api.pathVariables ?? [],
-      queryStrings: api.queryStrings ?? [],
-      responses: api.responses ?? [],
-      header: api.header ?? '',
-    });
-
-    setShowDto(
-      dtoList.length > 0 ||
-        requestDto.fields.length > 0 ||
-        responseDto.fields.length > 0
-    );
-    setUseRequestDto(
-      requestDto.fields.length > 0 || Boolean(requestDto.dtoName)
-    );
-    setUseResponseDto(
-      responseDto.fields.length > 0 || Boolean(responseDto.dtoName)
-    );
-    setStatusCode(api.statusCode ?? api.responses?.[0]?.statusCode ?? 200);
-    setStatusDescription(api.responses?.[0]?.responseDescription ?? 'OK');
-  }, [api]);
-
   const handleSave = () => {
-    // 기본 유효성 검사
     const errors: string[] = [];
-
-    if (!form.apiName.trim()) {
-      errors.push('API 이름을 입력해주세요.');
-    }
-
-    if (!form.endpoint.trim()) {
-      errors.push('Endpoint를 입력해주세요.');
-    }
-
-    if (!form.category.trim()) {
-      errors.push('카테고리를 입력해주세요.');
-    }
-
-    // 유효성 검사 실패 시 에러 표시
+    if (!form.apiName.trim()) errors.push('API 이름을 입력해주세요.');
+    if (!form.endpoint.trim()) errors.push('Endpoint를 입력해주세요.');
+    if (!form.category.trim()) errors.push('카테고리를 입력해주세요.');
     if (errors.length > 0) {
       setValidationErrors(errors);
       return;
     }
-
-    // 에러가 없으면 초기화
     setValidationErrors([]);
-
-    // 현재 응답 상태 설정
-    const currentResponse: ApiResponse = {
-      statusCode: statusCode,
-      responseDescription: statusDescription || 'OK',
-    };
-
-    const otherResponses = form.responses
-      ? form.responses.filter(r => r.statusCode !== currentResponse.statusCode)
-      : [];
-
-    // 폼 데이터 업데이트
-    const updatedForm = {
+    const dtoList = getDtoListFromForm(form);
+    onSave({
       ...form,
-      statusCode: statusCode,
-      responses: [currentResponse, ...otherResponses],
-    };
-
-    // API 요청용 객체로 변환
-    const apiSpecRequest = convertToApiSpecRequest(updatedForm);
-
-    // 최종 유효성 검사
-    if (!validateApiSpecRequest(apiSpecRequest)) {
-      setValidationErrors(['API 정보를 다시 확인해주세요.']);
-      return;
-    }
-
-    // API 요청 형식만 전달
-    onSave(apiSpecRequest);
-    onClose(); // 저장 후 모달 닫기
+      dtoList,
+      requestDto: undefined,
+      responseDto: undefined,
+    });
+    onClose();
   };
 
   const handleAddPathVar = () => {
@@ -369,10 +306,12 @@ const ApiDetailModal = ({
     const [draggedItemContent] = items.splice(draggedRequestItem, 1);
     items.splice(targetIndex, 0, draggedItemContent);
 
-    setForm({
+    const updatedForm = {
       ...form,
       requestDto: { ...form.requestDto, fields: items },
-    });
+    };
+    setForm(updatedForm);
+    handleFormChange(updatedForm); // ← 실시간 동기화!
     setDraggedRequestItem(null);
   };
 
@@ -383,10 +322,12 @@ const ApiDetailModal = ({
     const [draggedItemContent] = items.splice(draggedResponseItem, 1);
     items.splice(targetIndex, 0, draggedItemContent);
 
-    setForm({
+    const updatedForm = {
       ...form,
       responseDto: { ...form.responseDto, fields: items },
-    });
+    };
+    setForm(updatedForm);
+    handleFormChange(updatedForm); // ← 실시간 동기화!
     setDraggedResponseItem(null);
   };
 
@@ -405,23 +346,28 @@ const ApiDetailModal = ({
   const handleAddRequestDtoItem = () => {
     if (newRequestDtoItem.dtoItemName.trim() === '') return;
 
+    let updatedForm;
     if (editingRequestIndex !== null) {
       const newItems = [...form.requestDto.fields];
       newItems[editingRequestIndex] = { ...newRequestDtoItem };
-      setForm({
+      updatedForm = {
         ...form,
         requestDto: { ...form.requestDto, fields: newItems },
-      });
+      };
       setEditingRequestIndex(null);
     } else {
-      setForm({
+      updatedForm = {
         ...form,
         requestDto: {
           ...form.requestDto,
           fields: [...form.requestDto.fields, { ...newRequestDtoItem }],
         },
-      });
+      };
     }
+
+    // 변경된 폼을 set + 브로드캐스트
+    setForm(updatedForm);
+    handleFormChange(updatedForm);
 
     setNewRequestDtoItem({
       id: 0,
@@ -435,23 +381,27 @@ const ApiDetailModal = ({
   const handleAddResponseDtoItem = () => {
     if (newResponseDtoItem.dtoItemName.trim() === '') return;
 
+    let updatedForm;
     if (editingResponseIndex !== null) {
       const newItems = [...form.responseDto.fields];
       newItems[editingResponseIndex] = { ...newResponseDtoItem };
-      setForm({
+      updatedForm = {
         ...form,
         responseDto: { ...form.responseDto, fields: newItems },
-      });
+      };
       setEditingResponseIndex(null);
     } else {
-      setForm({
+      updatedForm = {
         ...form,
         responseDto: {
           ...form.responseDto,
           fields: [...form.responseDto.fields, { ...newResponseDtoItem }],
         },
-      });
+      };
     }
+
+    setForm(updatedForm);
+    handleFormChange(updatedForm);
 
     setNewResponseDtoItem({
       id: 0,
@@ -465,19 +415,23 @@ const ApiDetailModal = ({
   const removeRequestDtoItem = (index: number) => {
     const newItems = [...form.requestDto.fields];
     newItems.splice(index, 1);
-    setForm({
+    const updatedForm = {
       ...form,
       requestDto: { ...form.requestDto, fields: newItems },
-    });
+    };
+    setForm(updatedForm);
+    handleFormChange(updatedForm);
   };
 
   const removeResponseDtoItem = (index: number) => {
     const newItems = [...form.responseDto.fields];
     newItems.splice(index, 1);
-    setForm({
+    const updatedForm = {
       ...form,
       responseDto: { ...form.responseDto, fields: newItems },
-    });
+    };
+    setForm(updatedForm);
+    handleFormChange(updatedForm);
   };
 
   return (
