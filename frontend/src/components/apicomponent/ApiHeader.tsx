@@ -81,21 +81,21 @@ const ApiHeader = ({
           placeholder="API Description"
         />
       </div>
-      <div className="flex-wrap gap-6 mb-6 p-4 bg-gray-50 rounded-xl text-sm flex items-center">
-        <span className="font-semibold text-gray-700 mr-2">Method:</span>
+      <div className="flex-wrap gap-3 mb-6 p-4 bg-gray-50 rounded-xl text-sm flex items-center">
+        <span className="font-semibold text-gray-700">Method:</span>
         <div className="dropdown relative ">
           <span
-            className={`px-4 py-2 rounded-lg text-white font-bold ${methodColor(form.method)} cursor-pointer`}
+            className={`px-3 py-2 rounded-lg text-white font-bold ${methodColor(form.method)} cursor-pointer`}
             onClick={() => setShowMethodDropdown(!showMethodDropdown)}
           >
             {form.method}
           </span>
           {showMethodDropdown && (
-            <div className="absolute mt-1 bg-white shadow-lg rounded-lg z-10 border border-gray-200 py-1 min-w-[100px]">
+            <div className="absolute mt-1 bg-white shadow-lg rounded-lg z-10 border border-gray-200 py-1">
               {methodOptions.map(method => (
                 <div
                   key={method}
-                  className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                  className={`px-2 py-2 cursor-pointer hover:bg-gray-100 ${
                     method === form.method ? 'font-bold bg-gray-50' : ''
                   }`}
                   onClick={() => {
@@ -123,7 +123,7 @@ const ApiHeader = ({
           <span className="font-semibold text-gray-700 mr-2">Status:</span>
           <div className="flex gap-2">
             <div
-              className={`${statusCodeColor} px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 w-20 text-center font-bold cursor-pointer flex justify-center items-center`}
+              className={`${statusCodeColor} px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 w-16 text-center font-bold cursor-pointer flex justify-center items-center`}
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
             >
               {statusCode}
@@ -140,7 +140,7 @@ const ApiHeader = ({
                 {commonStatusCodes.map(status => (
                   <div
                     key={status.code}
-                    className={`px-4 py-2 cursor-pointer hover:bg-gray-100 flex`}
+                    className={`px-2 py-2 cursor-pointer hover:bg-gray-100 flex`}
                     onClick={() => selectStatusCode(status)}
                   >
                     <span
@@ -158,7 +158,7 @@ const ApiHeader = ({
         <div className="flex items-center">
           <span className="font-semibold text-gray-700 mr-2">Category:</span>
           <input
-            className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 w-40"
+            className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 w-32"
             value={form.category}
             onChange={e => {
               const value = e.target.value

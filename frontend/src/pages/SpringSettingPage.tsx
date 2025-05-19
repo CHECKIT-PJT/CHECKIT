@@ -11,6 +11,11 @@ import DependencyList from '../molecules/springsetting/DependencyList';
 import DependencyRecommendations from '../molecules/springsetting/DependencyRecommendations';
 import ActionButtons from '../molecules/springsetting/ActionButtons';
 import Dialog from '../molecules/buildpreview/Dialog';
+import {
+  getDockerCompose,
+  createDockerCompose,
+  updateDockerCompose,
+} from '../api/dockercomposeAPI';
 
 import {
   getSpringSettings,
@@ -218,6 +223,10 @@ const SpringSettingsPage = () => {
       return major * 100 + minor * 10 + patch;
     })();
 
+    const selectedDependencies = dependencies
+      .filter((d) => d.selected)
+      .map((d) => d.id);
+
     const requestData = {
       springSettings: {
         springProject: projectType,
@@ -236,35 +245,46 @@ const SpringSettingsPage = () => {
         springPackaging: packaging === 'Jar' ? 'JAR' : 'WAR',
         springJavaVersion: parseInt(javaVersion),
       },
-      selectedDependencies: dependencies
-        .filter((d) => d.selected)
-        .map((d) => d.id),
+      selectedDependencies,
     };
 
     try {
       if (settingsExist) {
-        console.log(requestData);
         await updateSpringSettings(Number(projectId), requestData, accessToken);
       } else {
         await createSpringSettings(Number(projectId), requestData, accessToken);
       }
+
       setSettingsExist(true);
 
+      const knownDatabases = ['MYSQL', 'POSTGRESQL', 'MONGODB', 'REDIS'];
+      const selectedDatabases = selectedDependencies.filter((dep) =>
+        knownDatabases.includes(dep),
+      );
+
+      const dockerComposeRequest = { databases: selectedDatabases };
+
       try {
-        await generateCode(projectId);
-        setDialogMessage(
-          '코드 생성이 완료되었습니다.\n코드 미리보기로 이동하시겠습니까?',
+        await getDockerCompose(Number(projectId), accessToken);
+        await updateDockerCompose(
+          Number(projectId),
+          { content: '' },
+          accessToken,
         );
-        setIsSuccess(true);
-        setIsDialogOpen(true);
-      } catch (error) {
-        console.error('코드 생성 실패:', error);
-        setDialogMessage(
-          '설정은 저장되었으나\n코드 생성 중 오류가 발생했습니다.',
-        );
-        setIsSuccess(false);
-        setIsDialogOpen(true);
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          await createDockerCompose(Number(projectId), selectedDatabases);
+        } else {
+          console.error('Docker Compose 처리 실패:', error);
+        }
       }
+
+      await generateCode(projectId);
+      setDialogMessage(
+        '코드 생성이 완료되었습니다.\n코드 미리보기로 이동하시겠습니까?',
+      );
+      setIsSuccess(true);
+      setIsDialogOpen(true);
     } catch (error) {
       console.error('저장 실패:', error);
       alert('설정 저장 중 오류가 발생했습니다.');

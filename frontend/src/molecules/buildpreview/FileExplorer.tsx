@@ -1,6 +1,7 @@
-import FolderIcon from "../../components/buildpreview/FolderIcon";
-import FolderTreeItem from "./FolderTreeItem";
-import { ProjectData, SelectedFile, ExpandedFolders } from "../../types";
+import FolderIcon from '../../components/buildpreview/FolderIcon';
+import FolderTreeItem from './FolderTreeItem';
+import FileTreeItem from './FileTreeItem'; // ⬅️ 루트 파일도 위해 import
+import { ProjectData, SelectedFile, ExpandedFolders } from '../../types';
 
 interface FileExplorerProps {
   data: ProjectData | null;
@@ -8,12 +9,9 @@ interface FileExplorerProps {
   toggleFolder: (folderPath: string) => void;
   selectedFile: SelectedFile | null;
   selectFile: (folderPath: string, fileName: string) => void;
-  rootPackage?: string; // ✅ 추가
+  rootPackage?: string;
 }
 
-/**
- * 파일 탐색기 컴포넌트
- */
 const FileExplorer: React.FC<FileExplorerProps> = ({
   data,
   expandedFolders,
@@ -36,8 +34,20 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   }
 
   const rootPath = rootPackage
-    ? `src/main/java/${rootPackage.replace(/\./g, "/")}`
-    : "src/main/java/com/example/project";
+    ? `src/main/java/${rootPackage.replace(/\./g, '/')}`
+    : 'src/main/java/com/example/project';
+
+  // 📦 폴더와 파일 분리
+  const folders: Record<string, any> = {};
+  const files: Record<string, string> = {};
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (typeof value === 'object' && value !== null) {
+      folders[key] = value;
+    } else {
+      files[key] = value;
+    }
+  });
 
   return (
     <div className="mb-4">
@@ -52,7 +62,16 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
           </div>
         </div>
 
-        {Object.entries(data).map(([domainName, folders]) => (
+        {Object.entries(files).map(([fileName, content]) => (
+          <FileTreeItem
+            key={fileName}
+            fileName={fileName}
+            isSelected={selectedFile?.path === fileName}
+            onClick={() => selectFile('', fileName)}
+          />
+        ))}
+
+        {Object.entries(folders).map(([domainName, folders]) => (
           <FolderTreeItem
             key={domainName}
             folderPath={domainName}

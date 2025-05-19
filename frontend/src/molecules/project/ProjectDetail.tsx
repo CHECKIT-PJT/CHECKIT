@@ -68,7 +68,7 @@ const ProjectDetail = () => {
           <div className="flex flex-col gap-4 mb-6 border-b border-gray-200 pb-4">
             <h3 className="font-bold text-xl text-gray-800">팀 관리</h3>
             <JiraButton />
-            <MoveGitlabButton />
+            <MoveGitlabButton repositoryUrl={projectData.repositoryUrl} />
           </div>
 
           <div className="flex-1 overflow-y-auto mb-4">

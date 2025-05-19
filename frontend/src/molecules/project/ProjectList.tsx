@@ -75,7 +75,7 @@ const ProjectList = () => {
           <h2 className=" font-bold text-gray-800">
             <span className="text-blue-600">{username}</span> 님의 프로젝트
           </h2>
-          <p className="text-gray-500 mt-2 text-sm">
+          <p className="text-gray-500 mt-4 text-sm">
             프로젝트의 시작은 <b>CHEKIT</b>과 함께 진행하세요.
           </p>
         </div>

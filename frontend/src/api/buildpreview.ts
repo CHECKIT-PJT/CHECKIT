@@ -1,5 +1,5 @@
 import { ApiResponse } from '../types';
-
+import axiosInstance from './axiosInstance';
 /**
  * API 서비스 - 샘플 데이터 및 API 통신 관련 로직
  */
@@ -48,4 +48,13 @@ export const createNewProject = async (): Promise<boolean> => {
   // 실제 API 연동 시 구현
   console.log('새 프로젝트 생성');
   return true;
+};
+
+export const getDockerCompose = async (
+  projectId: string,
+): Promise<{ content: string }> => {
+  const response = await axiosInstance.get(
+    `/api/project/${projectId}/docker-compose`,
+  );
+  return response.data;
 };

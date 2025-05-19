@@ -1,40 +1,39 @@
-import axiosInstance from "./axiosInstance";
-import { AxiosError } from "axios";
-import { ApiResponse } from "../types";
+import axiosInstance from './axiosInstance';
+import { AxiosError } from 'axios';
+import { ApiResponse } from '../types';
 
 /**
  * API 응답을 파싱하여 프로젝트 데이터 형식으로 변환
  */
 const parseApiResponse = (response: string): ApiResponse => {
   const files: Record<string, Record<string, Record<string, string>>> = {};
-  let rootPackage = "";
+  let rootPackage = '';
 
   const packageSections = response
-    .split("package ")
+    .split('package ')
     .filter((section) => section.trim())
-    .map((section) => "package " + section);
+    .map((section) => 'package ' + section);
 
   packageSections.forEach((fullContent, index) => {
-    const lines = fullContent.split("\n");
-    const packageLine = lines.find((line) => line.startsWith("package "));
+    const lines = fullContent.split('\n');
+    const packageLine = lines.find((line) => line.startsWith('package '));
     if (!packageLine) return;
 
     const packagePath = packageLine
-      .replace("package ", "")
-      .replace(";", "")
+      .replace('package ', '')
+      .replace(';', '')
       .trim();
-    const packageParts = packagePath.split(".");
+    const packageParts = packagePath.split('.');
 
-    // ✅ rootPackage 추출 (ex: sdfsdf.test.service → sdfsdf.test)
     if (index === 0 && packageParts.length >= 2) {
-      rootPackage = packageParts.slice(0, packageParts.length - 2).join(".");
+      rootPackage = packageParts.slice(0, packageParts.length - 2).join('.');
     }
 
-    const domain = packageParts[packageParts.length - 2] || "common";
-    const folder = packageParts[packageParts.length - 1] || "etc";
+    const domain = packageParts[packageParts.length - 2] || 'common';
+    const folder = packageParts[packageParts.length - 1] || 'etc';
 
     const classMatch = fullContent.match(
-      /(public\s+)?(class|interface)\s+(\w+)/
+      /(public\s+)?(class|interface)\s+(\w+)/,
     );
     const className =
       classMatch?.[3] || `Unknown${Math.random().toString(36).substring(2, 6)}`;
@@ -46,10 +45,10 @@ const parseApiResponse = (response: string): ApiResponse => {
   });
 
   return {
-    status: "success",
-    message: "코드 생성이 완료되었습니다.",
+    status: 'success',
+    message: '코드 생성이 완료되었습니다.',
     data: files,
-    rootPackage, // ⬅️ 동적으로 추출된 패키지 경로 포함
+    rootPackage,
   };
 };
 
@@ -59,7 +58,7 @@ const parseApiResponse = (response: string): ApiResponse => {
 export const generateCode = async (projectId: string): Promise<ApiResponse> => {
   try {
     const response = await axiosInstance.post(
-      `/api/generate/build/${projectId}`
+      `/api/generate/build/${projectId}`,
     );
     console.log(response.data);
     return parseApiResponse(response.data);
@@ -71,11 +70,20 @@ export const generateCode = async (projectId: string): Promise<ApiResponse> => {
 
     const code = data?.code;
     const message =
-      data?.message || "코드 생성 중 알 수 없는 오류가 발생했습니다.";
+      data?.message || '코드 생성 중 알 수 없는 오류가 발생했습니다.';
     throw {
       status,
       code,
       message,
     };
   }
+};
+
+export const getDockerCompose = async (
+  projectId: string,
+): Promise<{ content: string }> => {
+  const response = await axiosInstance.get(
+    `/api/project/${projectId}/docker-compose`,
+  );
+  return response.data;
 };
