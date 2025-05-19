@@ -26,7 +26,6 @@ import RemoteCursor from '../../components/cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
 import { getUserColor } from '../../utils/colorUtils';
-import { toast } from 'react-toastify';
 
 interface User {
   id: string;
@@ -87,7 +86,7 @@ const convertToFuncDetail = (spec: FunctionalSpec): FuncDetail => ({
   description: spec.functionDescription,
   successCase: spec.successCase,
   failCase: spec.failCase,
-  userName: spec.userName || '',
+  userName: spec.userName || ''
 });
 
 const convertFromFuncDetail = (
@@ -218,12 +217,7 @@ const DevelopFunc = () => {
   // 마우스 이벤트 핸들러 - 메인 페이지용
   const handleNativeMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (
-        !containerRef.current ||
-        !stompClientRef.current?.connected ||
-        modalOpen
-      )
-        return;
+      if (!containerRef.current || !stompClientRef.current?.connected || modalOpen) return;
 
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -245,14 +239,13 @@ const DevelopFunc = () => {
   // 모달 마우스 이벤트 핸들러
   const handleModalMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!modalOpen || !stompClientRef.current?.connected || !selectedFunc?.id)
-        return;
+      if (!modalOpen || !stompClientRef.current?.connected || !selectedFunc?.id) return;
 
       const modalElement = e.currentTarget;
       const rect = modalElement.getBoundingClientRect();
       const scrollTop = modalElement.scrollTop;
       const scrollLeft = modalElement.scrollLeft;
-
+      
       // 스크롤 위치를 고려한 상대적 좌표 계산
       const x = e.clientX - rect.left + scrollLeft;
       const y = e.clientY - rect.top + scrollTop;
@@ -292,9 +285,7 @@ const DevelopFunc = () => {
         message => {
           try {
             const cursorData = JSON.parse(message.body);
-            const myUserId = getUserIdFromToken(
-              sessionStorage.getItem('accessToken')
-            );
+            const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
 
             if (cursorData.userId === myUserId) return;
 
@@ -345,10 +336,6 @@ const DevelopFunc = () => {
       if (document.hidden && stompClientRef.current?.connected) {
         // 페이지가 숨겨질 때 커서 제거
         setRemoteCursors({});
-        setModalRemoteCursors({});
-        setActiveUsers([]);
-        setModalActiveUsers([]);
-        setActiveUsersByFunc({});
       }
     };
 
@@ -356,10 +343,6 @@ const DevelopFunc = () => {
     const handleBeforeUnload = () => {
       if (stompClientRef.current?.connected) {
         setRemoteCursors({});
-        setModalRemoteCursors({});
-        setActiveUsers([]);
-        setModalActiveUsers([]);
-        setActiveUsersByFunc({});
       }
     };
 
@@ -373,30 +356,27 @@ const DevelopFunc = () => {
   }, []);
 
   // 웹소켓 메시지 전송 함수
-  const sendFuncSpecSocketMessage = useCallback(
-    (
-      action: 'CREATE' | 'UPDATE' | 'DELETE',
-      funcSpec: Partial<FunctionalSpec>
-    ) => {
-      if (!stompClientRef.current?.connected || !projectId) return;
+  const sendFuncSpecSocketMessage = useCallback((
+    action: 'CREATE' | 'UPDATE' | 'DELETE',
+    funcSpec: Partial<FunctionalSpec>
+  ) => {
+    if (!stompClientRef.current?.connected || !projectId) return;
+    console.log("funcSpec", funcSpec);
+    console.log('[📤 Sending to /pub/function/update]', {
+      projectId: Number(projectId),
+      action,
+      functionalSpec: funcSpec,
+    });
 
-      console.log('[📤 Sending to /pub/function/update]', {
+    stompClientRef.current.publish({
+      destination: `/pub/function/update/${projectId}`,
+      body: JSON.stringify({
         projectId: Number(projectId),
         action,
         functionalSpec: funcSpec,
-      });
-
-      stompClientRef.current.publish({
-        destination: `/pub/function/update/${projectId}`,
-        body: JSON.stringify({
-          projectId: Number(projectId),
-          action,
-          functionalSpec: funcSpec,
-        }),
-      });
-    },
-    [projectId]
-  );
+      }),
+    });
+  }, [projectId]);
 
   // 웹소켓 연결 및 구독 설정
   const initStomp = useCallback(() => {
@@ -424,31 +404,47 @@ const DevelopFunc = () => {
             const { action, functionalSpec } = socketMessage;
 
             // 상태 업데이트 함수 수정
-            const updateSpecsState = (
-              prevSpecs: FunctionalSpec[]
-            ): FunctionalSpec[] => {
+            const updateSpecsState = (prevSpecs: FunctionalSpec[]): FunctionalSpec[] => {
               let newData = [...prevSpecs];
 
               switch (action) {
                 case 'CREATE': {
-                  const isDuplicate = newData.some(
-                    item => item.id === functionalSpec.id
-                  );
+                  const isDuplicate = newData.some(item => item.id === functionalSpec.id);
                   if (!isDuplicate) {
                     newData = [...newData, functionalSpec];
                   }
                   break;
                 }
-                case 'UPDATE': {
-                  newData = newData.map(item =>
-                    item.id === functionalSpec.id ? functionalSpec : item
-                  );
-                  break;
+              case 'UPDATE': {
+          newData = newData.map(item =>
+            item.id === functionalSpec.id
+              ? {
+                  ...item,
+                  ...functionalSpec,
+                  storyPoint: functionalSpec.storyPoint ?? item.storyPoint,
+                  successCase: functionalSpec.successCase ?? item.successCase,
+                  failCase: functionalSpec.failCase ?? item.failCase,
+                  functionDescription: functionalSpec.functionDescription ?? item.functionDescription,
                 }
+              : item
+          );
+
+          // ✅ 모달에서 보고 있는 기능 명세서도 같이 업데이트
+          if (selectedFunc?.id === functionalSpec.id) {
+            setSelectedFunc(prev => ({
+              ...prev!,
+              ...functionalSpec,
+              storyPoint: functionalSpec.storyPoint ?? prev!.storyPoint,
+              successCase: functionalSpec.successCase ?? prev!.successCase,
+              failCase: functionalSpec.failCase ?? prev!.failCase,
+              functionDescription: functionalSpec.functionDescription ?? prev!.functionDescription,
+            }));
+          }
+
+          break;
+        }
                 case 'DELETE': {
-                  newData = newData.filter(
-                    item => item.id !== functionalSpec.id
-                  );
+                  newData = newData.filter(item => item.id !== functionalSpec.id);
                   break;
                 }
               }
@@ -655,34 +651,31 @@ const DevelopFunc = () => {
     const fullFunc = specs.find(spec => spec.id === func.funcId);
     if (fullFunc) {
       setSelectedFunc(fullFunc);
-
+      
       // 모달창 커서 구독 설정
-      const cursorSubscription: StompSubscription | null =
-        stompClientRef.current?.subscribe(
-          `/sub/cursor/${projectId}/function-detail/${fullFunc.id}`,
-          message => {
-            try {
-              const cursorData = JSON.parse(message.body);
-              const myUserId = getUserIdFromToken(
-                sessionStorage.getItem('accessToken')
-              );
+      const cursorSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
+        `/sub/cursor/${projectId}/function-detail/${fullFunc.id}`,
+        message => {
+          try {
+            const cursorData = JSON.parse(message.body);
+            const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
 
-              // 자신의 커서는 표시하지 않음
-              if (cursorData.userId === myUserId) return;
+            // 자신의 커서는 표시하지 않음
+            if (cursorData.userId === myUserId) return;
 
-              setModalRemoteCursors(prev => ({
-                ...prev,
-                [cursorData.userId]: {
-                  ...cursorData,
-                  color: getUserColor(cursorData.userId),
-                  username: cursorData.userId,
-                },
-              }));
-            } catch (error) {
-              console.error('Failed to parse cursor message:', error);
-            }
+            setModalRemoteCursors(prev => ({
+              ...prev,
+              [cursorData.userId]: {
+                ...cursorData,
+                color: getUserColor(cursorData.userId),
+                username: cursorData.userId,
+              },
+            }));
+          } catch (error) {
+            console.error('Failed to parse cursor message:', error);
           }
-        ) || null;
+        }
+      ) || null;
 
       // 새로운 기능 명세에 입장
       const newResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${fullFunc.id}`;
@@ -695,47 +688,46 @@ const DevelopFunc = () => {
       });
 
       // 새로운 기능 명세의 presence 구독 설정
-      const presenceSubscription: StompSubscription | null =
-        stompClientRef.current?.subscribe(
-          `/sub/presence/${newResourceId}`,
-          message => {
-            try {
-              const data = JSON.parse(message.body);
-              const users = data.users.map((username: string) => ({
-                id: username,
-                name: username,
-                color: getUserColor(username),
-              }));
+      const presenceSubscription: StompSubscription | null = stompClientRef.current?.subscribe(
+        `/sub/presence/${newResourceId}`,
+        message => {
+          try {
+            const data = JSON.parse(message.body);
+            const users = data.users.map((username: string) => ({
+              id: username,
+              name: username,
+              color: getUserColor(username),
+            }));
+            
+            // 모달 활성 사용자 업데이트
+            setModalActiveUsers(users);
 
-              // 모달 활성 사용자 업데이트
-              setModalActiveUsers(users);
-
-              // 현재 활성 사용자가 아닌 커서 제거
-              setModalRemoteCursors(prev => {
-                const newCursors = { ...prev };
-                Object.keys(newCursors).forEach(userId => {
-                  if (!data.users.includes(userId)) {
-                    delete newCursors[userId];
-                  }
-                });
-                return newCursors;
+            // 현재 활성 사용자가 아닌 커서 제거
+            setModalRemoteCursors(prev => {
+              const newCursors = { ...prev };
+              Object.keys(newCursors).forEach(userId => {
+                if (!data.users.includes(userId)) {
+                  delete newCursors[userId];
+                }
               });
-
-              // 기능 명세별 활성 사용자 목록 업데이트
-              setActiveUsersByFunc(prev => ({
-                ...prev,
-                [fullFunc.id!.toString()]: users,
-              }));
-            } catch (error) {
-              console.error('Failed to parse presence message:', error);
-            }
+              return newCursors;
+            });
+            
+            // 기능 명세별 활성 사용자 목록 업데이트
+            setActiveUsersByFunc(prev => ({
+              ...prev,
+              [fullFunc.id!.toString()]: users,
+            }));
+          } catch (error) {
+            console.error('Failed to parse presence message:', error);
           }
-        ) || null;
+        }
+      ) || null;
 
       // 구독 정보 저장
       modalSubscriptionRef.current = {
         cursor: cursorSubscription,
-        presence: presenceSubscription,
+        presence: presenceSubscription
       };
     }
     setModalOpen(true);
@@ -751,7 +743,6 @@ const DevelopFunc = () => {
         const savedFunc = await updateMutation.mutateAsync(updatedFunc);
         // 실시간 전파
         sendFuncSpecSocketMessage('UPDATE', savedFunc);
-        toast.success('기능 명세가 성공적으로 수정되었습니다.');
       } else {
         // 생성
         const newFunc = {
@@ -768,19 +759,17 @@ const DevelopFunc = () => {
         const savedFunc = await createMutation.mutateAsync(newFunc);
         // 실시간 전파
         sendFuncSpecSocketMessage('CREATE', savedFunc);
-        toast.success('기능 명세가 성공적으로 생성되었습니다.');
       }
       setModalOpen(false);
       setSelectedFunc(null);
     } catch (error) {
       console.error('기능 명세 저장 중 에러:', error);
-      toast.error('기능 명세 저장 중 오류가 발생했습니다.');
     }
   };
 
   const handleDelete = async () => {
     if (!selectedFunc?.id) return;
-
+    
     if (window.confirm('정말로 이 기능을 삭제하시겠습니까?')) {
       try {
         await deleteMutation.mutateAsync(selectedFunc.id);
@@ -816,14 +805,10 @@ const DevelopFunc = () => {
       // 기능 명세별 활성 사용자 목록에서 현재 사용자 제거
       setActiveUsersByFunc(prev => {
         const currentUsers = prev[selectedFunc.id!.toString()] || [];
-        const myUserId = getUserIdFromToken(
-          sessionStorage.getItem('accessToken')
-        );
+        const myUserId = getUserIdFromToken(sessionStorage.getItem('accessToken'));
         return {
           ...prev,
-          [selectedFunc.id!.toString()]: currentUsers.filter(
-            user => user.id !== myUserId
-          ),
+          [selectedFunc.id!.toString()]: currentUsers.filter(user => user.id !== myUserId),
         };
       });
 
@@ -845,54 +830,6 @@ const DevelopFunc = () => {
     setModalActiveUsers([]); // 모달 닫을 때 모달 활성 사용자 목록 초기화
   };
 
-  // 컴포넌트 언마운트 시 cleanup
-  useEffect(() => {
-    return () => {
-      // 모든 구독 해제
-      if (mainPageCursorSubscription.current) {
-        mainPageCursorSubscription.current.unsubscribe();
-      }
-      if (modalSubscriptionRef.current) {
-        modalSubscriptionRef.current.cursor?.unsubscribe();
-        modalSubscriptionRef.current.presence?.unsubscribe();
-      }
-
-      // STOMP 연결 해제
-      if (stompClientRef.current?.connected) {
-        // 페이지에서 퇴장
-        const pageResourceId = `${RESOURCE_TYPES.PAGE_FUNC}-${projectId}`;
-        stompClientRef.current.publish({
-          destination: '/pub/presence',
-          body: JSON.stringify({
-            resourceId: pageResourceId,
-            action: PRESENCE_ACTIONS.LEAVE,
-          }),
-        });
-
-        // 현재 보고 있는 기능 명세가 있다면 퇴장
-        if (selectedFunc?.id) {
-          const funcResourceId = `${RESOURCE_TYPES.FUNC_SPEC}-${selectedFunc.id}`;
-          stompClientRef.current.publish({
-            destination: '/pub/presence',
-            body: JSON.stringify({
-              resourceId: funcResourceId,
-              action: PRESENCE_ACTIONS.LEAVE,
-            }),
-          });
-        }
-
-        stompClientRef.current.deactivate();
-      }
-
-      // 모든 상태 초기화
-      setRemoteCursors({});
-      setModalRemoteCursors({});
-      setActiveUsers([]);
-      setModalActiveUsers([]);
-      setActiveUsersByFunc({});
-    };
-  }, [projectId, selectedFunc?.id]);
-
   if (!projectId) return null;
 
   return (
@@ -901,16 +838,15 @@ const DevelopFunc = () => {
       className="mt-2 min-h-screen w-full flex flex-col bg-gray-50 relative"
     >
       {/* 메인 페이지 원격 커서 렌더링 */}
-      {!modalOpen &&
-        Object.values(remoteCursors).map(cursor => (
-          <RemoteCursor
-            key={cursor.userId}
-            x={cursor.x}
-            y={cursor.y}
-            username={cursor.username}
-            color={cursor.color}
-          />
-        ))}
+      {!modalOpen && Object.values(remoteCursors).map(cursor => (
+        <RemoteCursor
+          key={cursor.userId}
+          x={cursor.x}
+          y={cursor.y}
+          username={cursor.username}
+          color={cursor.color}
+        />
+      ))}
       <div className="flex-1 flex flex-col justify-center items-center w-full">
         <div className="w-full flex justify-between items-center my-4">
           <div className="flex-1 max-w-md">
@@ -947,8 +883,15 @@ const DevelopFunc = () => {
             activeUsers={modalActiveUsers}
             onMouseMove={handleModalMouseMove}
             remoteCursors={modalRemoteCursors}
+            sendFuncSocketMessage={(action, funcDetail) => {
+              if (!selectedFunc?.id) return;
+
+              const updated = convertFromFuncDetail(funcDetail, selectedFunc);
+              sendFuncSpecSocketMessage(action, updated);
+            }}
           />
         )}
+      
         <SuccessModal
           visible={showSuccessModal}
           onClose={() => {

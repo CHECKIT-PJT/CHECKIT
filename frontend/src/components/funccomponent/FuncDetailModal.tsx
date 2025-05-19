@@ -9,7 +9,6 @@ import {
   FaAngleDown,
   FaAnglesDown,
 } from 'react-icons/fa6';
-import { FaEquals as FaEqualsOld } from 'react-icons/fa';
 import ActiveUsers from '../apicomponent/ActiveUsers';
 import RemoteCursor from '../cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
@@ -28,6 +27,7 @@ interface FuncDetailModalProps {
   activeUsers: User[];
   onMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void;
   remoteCursors: { [key: string]: RemoteCursorData };
+  sendFuncSocketMessage: (action: 'UPDATE', funcSpec: FuncDetail) => void;
 }
 
 const blankFuncDetail: FuncDetail = {
@@ -58,29 +58,36 @@ const FuncDetailModal = ({
   activeUsers,
   onMouseMove,
   remoteCursors,
+  sendFuncSocketMessage,
 }: FuncDetailModalProps) => {
   const { currentProject } = useProjectStore();
   const members = currentProject?.projectMembers || [];
   const [form, setForm] = useState<FuncDetail>(func ?? blankFuncDetail);
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const [funcName, setFuncName] = useState();
+
 
   useEffect(() => {
-    if (func) {
-      setForm(func);
-    } else {
-      setForm(blankFuncDetail);
-    }
-  }, [func]);
+  if (!func) {
+    setForm(blankFuncDetail);
+  } else if (JSON.stringify(func) !== JSON.stringify(form)) {
+    setForm(func);
+  }
+}, []);
 
-  if (!form) return null;
-
-  console.log(members, 'members');
-
-  const priorityOptions = ['HIGHEST', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
+  const handleChange = (updated: FuncDetail) => {
+    console.log('update',updated)
+    setForm(updated);
+    sendFuncSocketMessage('UPDATE', updated);
+  };
 
   const handleSave = () => {
     onSave(form);
   };
+
+  if (!form) return null;
+
+  const priorityOptions = ['HIGHEST', 'HIGH', 'MEDIUM', 'LOW', 'LOWEST'];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -88,17 +95,7 @@ const FuncDetailModal = ({
         className="bg-white rounded-2xl w-3/4 max-w-6xl flex flex-col shadow-2xl max-h-[80vh] overflow-hidden relative"
         onMouseMove={onMouseMove}
       >
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            overflow: 'hidden',
-          }}
-        >
+        <div className="fixed pointer-events-none inset-0 overflow-hidden">
           {Object.values(remoteCursors).map(cursor => (
             <RemoteCursor
               key={cursor.userId}
@@ -109,6 +106,7 @@ const FuncDetailModal = ({
             />
           ))}
         </div>
+
         <div className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold text-blue-700">
@@ -145,14 +143,14 @@ const FuncDetailModal = ({
         </div>
 
         <div className="p-6 overflow-y-auto">
-          <div className="mb-4">
-            <input
-              className="w-full border-b-2 border-blue-200 text-xl font-semibold mb-3 px-2 py-2 focus:outline-none focus:border-blue-500 transition-colors"
-              value={form.funcName}
-              onChange={e => setForm({ ...form, funcName: e.target.value })}
-              placeholder="기능 이름"
-            />
-          </div>
+          <input
+            className="w-full border-b-2 border-blue-200 text-xl font-semibold mb-3 px-2 py-2 focus:outline-none focus:border-blue-500 transition-colors"
+            value={form.funcName}
+            onChange={e =>
+              handleChange({ ...form, funcName: e.target.value })
+            }
+            placeholder="기능 이름"
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center">
@@ -163,23 +161,21 @@ const FuncDetailModal = ({
                 className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300"
                 value={form.category}
                 onChange={e => {
-                  const value = e.target.value
-                    .replace(/[^a-zA-Z]/g, '')
-                    .toLowerCase();
-                  setForm({ ...form, category: value });
+                  const value = e.target.value.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                  handleChange({ ...form, category: value });
                 }}
                 placeholder="category"
               />
             </div>
 
             <div className="flex items-center">
-              <span className="font-semibold text-gray-700 mr-2">
-                담당자 :{' '}
-              </span>
+              <span className="font-semibold text-gray-700 mr-2">담당자 :</span>
               <select
                 className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 text-sm"
                 value={form.assignee}
-                onChange={e => setForm({ ...form, assignee: e.target.value })}
+                onChange={e =>
+                  handleChange({ ...form, assignee: e.target.value })
+                }
               >
                 <option value="">담당자 선택</option>
                 {members
@@ -194,7 +190,7 @@ const FuncDetailModal = ({
 
             <div className="flex items-center">
               <span className="font-semibold text-gray-700 mr-2">
-                Stoty Point:
+                Story Point:
               </span>
               <input
                 type="number"
@@ -202,7 +198,7 @@ const FuncDetailModal = ({
                 className="bg-white text-gray-700 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-300 w-24"
                 value={form.storyPoints}
                 onChange={e =>
-                  setForm({ ...form, storyPoints: Number(e.target.value) })
+                  handleChange({ ...form, storyPoints: Number(e.target.value) })
                 }
                 placeholder="0"
               />
@@ -214,7 +210,7 @@ const FuncDetailModal = ({
               </span>
               <div className="dropdown relative">
                 <span
-                  className={`px-4 py-2 rounded-lg text-gray-700 font-bold bg-white cursor-pointer flex items-center justify-between min-w-[120px]`}
+                  className="px-4 py-2 rounded-lg text-gray-700 font-bold bg-white cursor-pointer flex items-center justify-between min-w-[120px]"
                   onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
                 >
                   <span className="flex items-center">
@@ -224,12 +220,14 @@ const FuncDetailModal = ({
                 </span>
                 {showPriorityDropdown && (
                   <div className="absolute mt-1 bg-white shadow-lg rounded-lg z-10 border border-gray-200 py-1 min-w-[100px]">
-                    {priorityOptions.map(priority => (
+                    {Object.keys(priorityIcons).map(priority => (
                       <div
                         key={priority}
-                        className={`px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center ${priority === form.priority ? 'font-bold bg-gray-50' : ''}`}
+                        className={`px-4 py-2 cursor-pointer hover:bg-gray-100 flex items-center ${
+                          priority === form.priority ? 'font-bold bg-gray-50' : ''
+                        }`}
                         onClick={() => {
-                          setForm({ ...form, priority });
+                          handleChange({ ...form, priority });
                           setShowPriorityDropdown(false);
                         }}
                       >
@@ -245,17 +243,15 @@ const FuncDetailModal = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border rounded-lg bg-white p-4 shadow-sm">
-              <div>
-                <div className="px-6 py-2 font-medium bg-blue-600 text-white rounded-t-lg text-center">
-                  설명
-                </div>
+              <div className="px-6 py-2 font-medium bg-blue-600 text-white rounded-t-lg text-center">
+                설명
               </div>
               <textarea
-                className="w-full p-3 border-x border-b  rounded-b-lg bg-white focus:outline-none focus:border-blue-300 overflow-y-auto resize-none"
+                className="w-full p-3 border-x border-b rounded-b-lg bg-white focus:outline-none focus:border-blue-300 resize-none"
                 style={{ height: '350px' }}
                 value={form.description}
                 onChange={e =>
-                  setForm({ ...form, description: e.target.value })
+                  handleChange({ ...form, description: e.target.value })
                 }
                 placeholder="기능에 대한 상세 설명을 입력하세요"
               />
@@ -263,34 +259,32 @@ const FuncDetailModal = ({
 
             <div className="flex flex-col gap-6">
               <div className="border rounded-lg bg-white p-4 shadow-sm">
-                <div>
-                  <div className="px-6 py-2 font-medium bg-green-800 text-white rounded-t-lg text-center">
-                    성공 케이스
-                  </div>
+                <div className="px-6 py-2 font-medium bg-green-800 text-white rounded-t-lg text-center">
+                  성공 케이스
                 </div>
                 <textarea
-                  className="w-full p-3 border-x border-b rounded-b-lg bg-green-50 focus:outline-none focus:border-green-700 overflow-y-auto resize-none"
+                  className="w-full p-3 border-x border-b rounded-b-lg bg-green-50 focus:outline-none focus:border-green-700 resize-none"
                   style={{ height: '128px' }}
-                  placeholder="성공 케이스를 입력하세요"
                   value={form.successCase}
                   onChange={e =>
-                    setForm({ ...form, successCase: e.target.value })
+                    handleChange({ ...form, successCase: e.target.value })
                   }
+                  placeholder="성공 케이스를 입력하세요"
                 />
               </div>
 
               <div className="border rounded-lg bg-white p-4 shadow-sm">
-                <div>
-                  <div className="px-6 py-2 font-medium bg-rose-700 text-white rounded-t-lg text-center">
-                    실패 케이스
-                  </div>
+                <div className="px-6 py-2 font-medium bg-rose-700 text-white rounded-t-lg text-center">
+                  실패 케이스
                 </div>
                 <textarea
-                  className="w-full p-3 border-x border-b  rounded-b-lg bg-rose-50 focus:outline-none focus:border-rose-500 overflow-y-auto resize-none"
+                  className="w-full p-3 border-x border-b rounded-b-lg bg-rose-50 focus:outline-none focus:border-rose-500 resize-none"
                   style={{ height: '128px' }}
-                  placeholder="실패 케이스를 입력하세요"
                   value={form.failCase}
-                  onChange={e => setForm({ ...form, failCase: e.target.value })}
+                  onChange={e =>
+                    handleChange({ ...form, failCase: e.target.value })
+                  }
+                  placeholder="실패 케이스를 입력하세요"
                 />
               </div>
             </div>
@@ -302,3 +296,7 @@ const FuncDetailModal = ({
 };
 
 export default FuncDetailModal;
+function state(arg0: string): { (initialState: string | (() => string)): [string, import("react").Dispatch<import("react").SetStateAction<string>>]; (): [string | undefined, import("react").Dispatch<import("react").SetStateAction<string | undefined>>]; } {
+  throw new Error('Function not implemented.');
+}
+
