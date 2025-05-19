@@ -415,12 +415,34 @@ const DevelopFunc = () => {
                   }
                   break;
                 }
-                case 'UPDATE': {
-                  newData = newData.map(item =>
-                    item.id === functionalSpec.id ? functionalSpec : item
-                  );
-                  break;
+              case 'UPDATE': {
+          newData = newData.map(item =>
+            item.id === functionalSpec.id
+              ? {
+                  ...item,
+                  ...functionalSpec,
+                  storyPoint: functionalSpec.storyPoint ?? item.storyPoint,
+                  successCase: functionalSpec.successCase ?? item.successCase,
+                  failCase: functionalSpec.failCase ?? item.failCase,
+                  functionDescription: functionalSpec.functionDescription ?? item.functionDescription,
                 }
+              : item
+          );
+
+          // ✅ 모달에서 보고 있는 기능 명세서도 같이 업데이트
+          if (selectedFunc?.id === functionalSpec.id) {
+            setSelectedFunc(prev => ({
+              ...prev!,
+              ...functionalSpec,
+              storyPoint: functionalSpec.storyPoint ?? prev!.storyPoint,
+              successCase: functionalSpec.successCase ?? prev!.successCase,
+              failCase: functionalSpec.failCase ?? prev!.failCase,
+              functionDescription: functionalSpec.functionDescription ?? prev!.functionDescription,
+            }));
+          }
+
+          break;
+        }
                 case 'DELETE': {
                   newData = newData.filter(item => item.id !== functionalSpec.id);
                   break;
