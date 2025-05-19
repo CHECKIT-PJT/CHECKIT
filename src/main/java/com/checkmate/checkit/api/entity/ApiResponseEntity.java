@@ -34,7 +34,7 @@ public class ApiResponseEntity {
 	@Column(name = "status_code")
 	private Integer statusCode;
 
-	@Column(name = "respose_json", length = 255)
+	@Column(name = "response_json", length = 255)
 	private String responseJson;
 
 	@Column(name = "response_description", length = 255)
