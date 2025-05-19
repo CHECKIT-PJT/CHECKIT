@@ -48,7 +48,7 @@ export interface ApiDetail {
   description: string;
   statusCode: number;
   header?: string;
-  requestParams: RequestParam[];
+  queryStrings: QueryStringRequest[];
   pathVariables: PathVariable[];
   requestDto: Dto;
   responseDto: Dto;

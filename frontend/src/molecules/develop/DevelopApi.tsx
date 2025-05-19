@@ -343,20 +343,64 @@ const DevelopApi = () => {
                       statusCode: apiSpec.statusCode,
                       header: apiSpec.header,
                       pathVariables: apiSpec.pathVariables,
-                      requestParams: apiSpec.requestParams,
-                      requestDto: apiSpec.requestDto,
-                      responseDto: apiSpec.responseDto,
+                      requestParams: apiSpec.queryStrings?.map(qs => ({
+                        id: qs.id,
+                        requestParamName: qs.queryString,
+                        requestParamDataType: qs.queryStringDataType
+                      })) || [],
+                      requestDto: apiSpec.requestDto || {
+                        id: null,
+                        dtoName: '',
+                        fields: [],
+                        dtoType: 'REQUEST',
+                      },
+                      responseDto: apiSpec.responseDto || {
+                        id: null,
+                        dtoName: '',
+                        fields: [],
+                        dtoType: 'RESPONSE',
+                      },
                       responses: apiSpec.responses,
                       ...apiSpec, // 추가 필드들도 모두 포함
                     }
                   : item,
               );
               console.log('UPDATE - 새로운 데이터:', newData);
+
+              // 현재 열려있는 모달의 API가 업데이트된 경우, 모달 내용도 업데이트
+              if (selectedApi?.id === apiSpec.id) {
+                setSelectedApi({
+                  ...apiSpec,
+                  requestParams: apiSpec.queryStrings?.map(qs => ({
+                    id: qs.id,
+                    requestParamName: qs.queryString,
+                    requestParamDataType: qs.queryStringDataType
+                  })) || [],
+                  requestDto: apiSpec.requestDto || {
+                    id: null,
+                    dtoName: '',
+                    fields: [],
+                    dtoType: 'REQUEST',
+                  },
+                  responseDto: apiSpec.responseDto || {
+                    id: null,
+                    dtoName: '',
+                    fields: [],
+                    dtoType: 'RESPONSE',
+                  },
+                });
+              }
               break;
             }
             case 'DELETE': {
               newData = newData.filter((item) => item.apiSpecId !== apiSpec.id);
               console.log('DELETE - 새로운 데이터:', newData);
+
+              // 현재 열려있는 모달의 API가 삭제된 경우, 모달 닫기
+              if (selectedApi?.id === apiSpec.id) {
+                setModalOpen(false);
+                setSelectedApi(null);
+              }
               break;
             }
           }
@@ -723,7 +767,7 @@ const DevelopApi = () => {
 
   const sendApiSpecSocketMessage = (
     action: 'CREATE' | 'UPDATE' | 'DELETE',
-    apiSpec: Partial<ApiDetail>, // 최소 id만 있어도 전송 가능
+    apiSpec: Partial<ApiDetail>,
   ) => {
     if (!stompClientRef.current?.connected || !projectId) return;
 
@@ -945,6 +989,7 @@ const DevelopApi = () => {
           activeUsers={modalActiveUsers}
           onMouseMove={handleModalMouseMove}
           remoteCursors={modalRemoteCursors}
+          onSpecUpdate={(updatedSpec) => sendApiSpecSocketMessage('UPDATE', updatedSpec)}
         />
       )}
       <Dialog
