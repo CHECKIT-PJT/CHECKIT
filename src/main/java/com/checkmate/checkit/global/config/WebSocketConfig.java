@@ -36,6 +36,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*")
                 .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();
+
+        // 챗봇용 WebSocket 연결
+        registry.addEndpoint("/ws/chat")
+            .setHandshakeHandler(new DefaultHandshakeHandler() {
+                @Override
+                protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
+                    return (Principal) attributes.get("principal");
+                }
+            })
+            .setAllowedOriginPatterns("*")
+            .addInterceptors(jwtHandshakeInterceptor)
+            .withSockJS();
     }
 
     @Override

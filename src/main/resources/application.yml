@@ -1,3 +1,10 @@
+# application.yml
+logging:
+  level:
+    org.springframework.messaging.simp.stomp: DEBUG
+    org.springframework.web.socket: DEBUG
+    org.springframework.web.socket.messaging: DEBUG
+
 spring:
   config:
     import:
