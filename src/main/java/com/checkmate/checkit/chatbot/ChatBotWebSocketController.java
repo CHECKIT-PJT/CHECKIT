@@ -1,6 +1,7 @@
 package com.checkmate.checkit.chatbot;
 
 import java.security.Principal;
+import java.util.Collections;
 
 import com.checkmate.checkit.chatbot.dto.ChatRequest;
 import lombok.RequiredArgsConstructor;
@@ -33,22 +34,25 @@ public class ChatBotWebSocketController {
 			Flux<String> responseFlux = chatBotService.processChatStream(request);
 
 			responseFlux
-				.concatWith(Flux.just("[DONE]")) // ✅ 끝에 종료 토큰 추가
+				.doOnNext(token -> log.info("📤 스트리밍 응답: {}", token))
+				.concatWith(Flux.just("[DONE]"))
 				.subscribe(
-				token -> messagingTemplate.convertAndSendToUser(
-					username,
-					"/sub/chat/stream",
-					token
-				),
-				error -> {
-					log.error("❌ Chat stream 처리 중 에러", error);
-					messagingTemplate.convertAndSendToUser(
+					token -> messagingTemplate.convertAndSendToUser(
 						username,
 						"/sub/chat/stream",
-						"[에러] 챗봇 응답 중 문제가 발생했습니다."
-					);
-				}
-			);
+						token,
+						Collections.singletonMap("content-type", "text/plain;charset=UTF-8") // 👈 이 부분
+					),
+					error -> {
+						log.error("❌ Chat stream 처리 중 에러", error);
+						messagingTemplate.convertAndSendToUser(
+							username,
+							"/sub/chat/stream",
+							"[에러] 챗봇 응답 중 문제가 발생했습니다."
+						);
+					},
+					() -> log.info("✅ 스트리밍 완료")
+				);
 		} catch (Exception e) {
 			log.error("❌ WebSocket 처리 전체 예외", e);
 		}
