@@ -1,33 +1,33 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import ApiTable from '../../components/apicomponent/ApiTable';
-import ApiDetailModal from '../../components/apicomponent/ApiDetailModal';
+import { useState, useEffect, useRef, useCallback } from "react";
+import ApiTable from "../../components/apicomponent/ApiTable";
+import ApiDetailModal from "../../components/apicomponent/ApiDetailModal";
 import type {
   ApiDocListItem,
   ApiDetail,
   ApiSpecRequest,
-} from '../../types/apiDocs';
-import ApiAddButton from '../../components/apicomponent/ApiAddButton';
+} from "../../types/apiDocs";
+import ApiAddButton from "../../components/apicomponent/ApiAddButton";
 import {
   useGetApiSpecs,
   useCreateApiSpec,
   useDeleteApiSpec,
-} from '../../api/apiAPI';
-import { useParams } from 'react-router-dom';
-import ActiveUsers from '../../components/apicomponent/ActiveUsers';
-import { useQueryClient } from '@tanstack/react-query';
-import { PRESENCE_ACTIONS, RESOURCE_TYPES } from '../../constants/websocket';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
-import type { StompSubscription } from '@stomp/stompjs';
-import { useAuth } from '../../hooks/useAuth';
-import RemoteCursor from '../../components/cursor/RemoteCursor';
-import type { RemoteCursorData } from '../../types/cursor';
-import { getUserIdFromToken } from '../../utils/tokenUtils';
-import { getUserColor } from '../../utils/colorUtils';
-import { toast } from 'react-toastify';
-import Dialog from '../../molecules/buildpreview/Dialog';
+} from "../../api/apiAPI";
+import { useParams } from "react-router-dom";
+import ActiveUsers from "../../components/apicomponent/ActiveUsers";
+import { useQueryClient } from "@tanstack/react-query";
+import { PRESENCE_ACTIONS, RESOURCE_TYPES } from "../../constants/websocket";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
+import type { StompSubscription } from "@stomp/stompjs";
+import { useAuth } from "../../hooks/useAuth";
+import RemoteCursor from "../../components/cursor/RemoteCursor";
+import type { RemoteCursorData } from "../../types/cursor";
+import { getUserIdFromToken } from "../../utils/tokenUtils";
+import { getUserColor } from "../../utils/colorUtils";
+import { toast } from "react-toastify";
+import Dialog from "../../molecules/buildpreview/Dialog";
 
-// API 세부 정보를 목록 형식으로 변환하는 유틸리티 함수
+// API 세부 정보를 목록 형식으로 변환하는 유틸리티
 const convertDetailToListItem = (apiDetail: ApiDetail): ApiDocListItem => {
   return {
     apiSpecId: apiDetail.id,
@@ -58,8 +58,8 @@ const DevelopApi = () => {
   const { token } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedApi, setSelectedApi] = useState<ApiDetail | null>(null);
-  const [selectedDomain, setSelectedDomain] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDomain, setSelectedDomain] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
   const [modalActiveUsers, setModalActiveUsers] = useState<User[]>([]);
   const stompClientRef = useRef<Client | null>(null);
@@ -80,7 +80,7 @@ const DevelopApi = () => {
 
   // API hooks
   const { data: apiListItems = [], isLoading } = useGetApiSpecs(
-    Number(projectId),
+    Number(projectId)
   );
   const createApiSpec = useCreateApiSpec();
   const deleteApiSpec = useDeleteApiSpec();
@@ -88,7 +88,7 @@ const DevelopApi = () => {
   const sendPresenceMessage = (resourceId: string, action: string) => {
     if (stompClientRef.current?.connected) {
       stompClientRef.current.publish({
-        destination: '/pub/presence',
+        destination: "/pub/presence",
         body: JSON.stringify({ resourceId, action }),
       });
     }
@@ -103,7 +103,7 @@ const DevelopApi = () => {
     // 각 API 명세에 대한 구독 설정
     const setupSubscriptions = () => {
       if (!stompClientRef.current?.connected) {
-        console.log('STOMP 연결이 아직 준비되지 않았습니다.');
+        console.log("STOMP 연결이 아직 준비되지 않았습니다.");
         return;
       }
 
@@ -124,13 +124,13 @@ const DevelopApi = () => {
                       id: username,
                       name: username,
                       color: getUserColor(username),
-                    }),
+                    })
                   ),
                 }));
               } catch (error) {
-                console.error('Failed to parse presence message:', error);
+                console.error("Failed to parse presence message:", error);
               }
-            },
+            }
           );
 
           subscriptions[api.apiSpecId.toString()] = subscription;
@@ -158,7 +158,7 @@ const DevelopApi = () => {
         try {
           subscription?.unsubscribe();
         } catch (error) {
-          console.error('구독 해제 중 에러:', error);
+          console.error("구독 해제 중 에러:", error);
         }
       });
       // 원래의 onConnect 핸들러 복구
@@ -185,14 +185,14 @@ const DevelopApi = () => {
       stompClientRef.current.publish({
         destination: `/pub/cursor/${projectId}/api`,
         body: JSON.stringify({
-          userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+          userId: getUserIdFromToken(sessionStorage.getItem("accessToken")),
           x,
           y,
-          pageType: 'api',
+          pageType: "api",
         }),
       });
     },
-    [projectId, modalOpen],
+    [projectId, modalOpen]
   );
 
   // 모달 마우스 이벤트 핸들러
@@ -213,14 +213,14 @@ const DevelopApi = () => {
       stompClientRef.current.publish({
         destination: `/pub/cursor/${projectId}/api-detail/${selectedApi.id}`,
         body: JSON.stringify({
-          userId: getUserIdFromToken(sessionStorage.getItem('accessToken')),
+          userId: getUserIdFromToken(sessionStorage.getItem("accessToken")),
           x,
           y,
-          pageType: 'api-detail',
+          pageType: "api-detail",
         }),
       });
     },
-    [projectId, modalOpen, selectedApi],
+    [projectId, modalOpen, selectedApi]
   );
 
   // 마우스 이벤트 리스너 등록
@@ -228,9 +228,9 @@ const DevelopApi = () => {
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('mousemove', handleNativeMouseMove);
+    container.addEventListener("mousemove", handleNativeMouseMove);
     return () => {
-      container.removeEventListener('mousemove', handleNativeMouseMove);
+      container.removeEventListener("mousemove", handleNativeMouseMove);
     };
   }, [handleNativeMouseMove]);
 
@@ -250,19 +250,19 @@ const DevelopApi = () => {
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 
   // useEffect로 apiListItems 로드 완료 후 웹소켓 연결하도록 수정
   useEffect(() => {
     if (!isLoading && apiListItems) {
-      console.log('API 리스트 로드 완료:', apiListItems);
+      console.log("API 리스트 로드 완료:", apiListItems);
       initStomp();
     }
 
@@ -275,34 +275,34 @@ const DevelopApi = () => {
 
   // 웹소켓 연결 시 커서 구독 추가
   const initStomp = () => {
-    const token = sessionStorage.getItem('accessToken');
+    const token = sessionStorage.getItem("accessToken");
     const sock = new SockJS(
-      `${import.meta.env.VITE_API_BASE_URL}/ws/erd?token=${token}`,
+      `${import.meta.env.VITE_API_BASE_URL}/ws/erd?token=${token}`
     );
 
     const stompClient = new Client({
       webSocketFactory: () => sock,
       connectHeaders: {
-        Authorization: `Bearer ${token || ''}`,
+        Authorization: `Bearer ${token || ""}`,
       },
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('STOMP 연결 성공');
-        console.log('현재 API 리스트:', apiListItems); // 여기서는 데이터가 있어야 함
+        console.log("STOMP 연결 성공");
+        console.log("현재 API 리스트:", apiListItems); // 여기서는 데이터가 있어야 함
         stompClientRef.current = stompClient;
         setIsConnected(true);
 
         stompClient.subscribe(`/sub/spec/${projectId}`, (message) => {
           const socketMessage = JSON.parse(message.body);
-          console.log('[📥 Received from /sub/spec]', socketMessage);
+          console.log("[📥 Received from /sub/spec]", socketMessage);
           const { action, apiSpec } = socketMessage;
 
           // apiListItems 사용
-          console.log('현재 apiListItems:', apiListItems);
+          console.log("현재 apiListItems:", apiListItems);
           let newData: ApiDocListItem[] = [...apiListItems];
 
           switch (action) {
-            case 'CREATE': {
+            case "CREATE": {
               // 전체 상세 정보를 포함한 데이터로 저장
               const newItem = {
                 apiSpecId: apiSpec.id,
@@ -322,15 +322,15 @@ const DevelopApi = () => {
               };
 
               const isDuplicate = newData.some(
-                (item) => item.apiSpecId === newItem.apiSpecId,
+                (item) => item.apiSpecId === newItem.apiSpecId
               );
               if (!isDuplicate) {
                 newData = [...newData, newItem];
-                console.log('CREATE - 새로운 데이터:', newData);
+                console.log("CREATE - 새로운 데이터:", newData);
               }
               break;
             }
-            case 'UPDATE': {
+            case "UPDATE": {
               newData = newData.map((item) =>
                 item.apiSpecId === apiSpec.id
                   ? {
@@ -343,58 +343,60 @@ const DevelopApi = () => {
                       statusCode: apiSpec.statusCode,
                       header: apiSpec.header,
                       pathVariables: apiSpec.pathVariables,
-                      queryStrings: apiSpec.queryStrings?.map(qs => ({
-                        id: qs.id,
-                        queryStringVariable: qs.queryStringVariable,
-                        queryStringDataType: qs.queryStringDataType
-                      })) || [],
+                      queryStrings:
+                        apiSpec.queryStrings?.map((qs) => ({
+                          id: qs.id,
+                          queryStringVariable: qs.queryStringVariable,
+                          queryStringDataType: qs.queryStringDataType,
+                        })) || [],
                       requestDto: apiSpec.requestDto || {
                         id: null,
-                        dtoName: '',
+                        dtoName: "",
                         fields: [],
-                        dtoType: 'REQUEST',
+                        dtoType: "REQUEST",
                       },
                       responseDto: apiSpec.responseDto || {
                         id: null,
-                        dtoName: '',
+                        dtoName: "",
                         fields: [],
-                        dtoType: 'RESPONSE',
+                        dtoType: "RESPONSE",
                       },
                       responses: apiSpec.responses,
                       ...apiSpec, // 추가 필드들도 모두 포함
                     }
-                  : item,
+                  : item
               );
-              console.log('UPDATE - 새로운 데이터:', newData);
+              console.log("UPDATE - 새로운 데이터:", newData);
 
               // 현재 열려있는 모달의 API가 업데이트된 경우, 모달 내용도 업데이트
               if (selectedApi?.id === apiSpec.id) {
                 setSelectedApi({
                   ...apiSpec,
-                  queryStrings: apiSpec.queryStrings?.map(qs => ({
-                    id: qs.id,
-                    queryStringVariable: qs.queryStringVariable,
-                    queryStringDataType: qs.queryStringDataType
-                  })) || [],
+                  queryStrings:
+                    apiSpec.queryStrings?.map((qs) => ({
+                      id: qs.id,
+                      queryStringVariable: qs.queryStringVariable,
+                      queryStringDataType: qs.queryStringDataType,
+                    })) || [],
                   requestDto: apiSpec.requestDto || {
                     id: null,
-                    dtoName: '',
+                    dtoName: "",
                     fields: [],
-                    dtoType: 'REQUEST',
+                    dtoType: "REQUEST",
                   },
                   responseDto: apiSpec.responseDto || {
                     id: null,
-                    dtoName: '',
+                    dtoName: "",
                     fields: [],
-                    dtoType: 'RESPONSE',
+                    dtoType: "RESPONSE",
                   },
                 });
               }
               break;
             }
-            case 'DELETE': {
+            case "DELETE": {
               newData = newData.filter((item) => item.apiSpecId !== apiSpec.id);
-              console.log('DELETE - 새로운 데이터:', newData);
+              console.log("DELETE - 새로운 데이터:", newData);
 
               // 현재 열려있는 모달의 API가 삭제된 경우, 모달 닫기
               if (selectedApi?.id === apiSpec.id) {
@@ -406,19 +408,19 @@ const DevelopApi = () => {
           }
 
           queryClient.setQueryData(
-            ['apiListItems', Number(projectId)],
-            newData,
+            ["apiListItems", Number(projectId)],
+            newData
           );
           queryClient.setQueriesData(
-            ['apiListItems', Number(projectId)],
-            () => newData,
+            ["apiListItems", Number(projectId)],
+            () => newData
           );
         });
 
         // 페이지 입장 알림
         const pageResourceId = `${RESOURCE_TYPES.PAGE_API}-${projectId}`;
         stompClient.publish({
-          destination: '/pub/presence',
+          destination: "/pub/presence",
           body: JSON.stringify({
             resourceId: pageResourceId,
             action: PRESENCE_ACTIONS.ENTER,
@@ -448,10 +450,10 @@ const DevelopApi = () => {
                 id: username,
                 name: username,
                 color: getUserColor(username),
-              })),
+              }))
             );
           } catch (error) {
-            console.error('Failed to parse presence message:', error);
+            console.error("Failed to parse presence message:", error);
           }
         });
 
@@ -473,7 +475,7 @@ const DevelopApi = () => {
               },
             }));
           } catch (error) {
-            console.error('Failed to parse cursor message:', error);
+            console.error("Failed to parse cursor message:", error);
           }
         });
 
@@ -494,20 +496,20 @@ const DevelopApi = () => {
                           id: username,
                           name: username,
                           color: getUserColor(username),
-                        }),
+                        })
                       ),
                     }));
                   } catch (error) {
-                    console.error('Failed to parse presence message:', error);
+                    console.error("Failed to parse presence message:", error);
                   }
-                },
+                }
               );
             }
           });
         }
       },
       onDisconnect: () => {
-        console.log('STOMP 연결 해제');
+        console.log("STOMP 연결 해제");
         setIsConnected(false);
         stompClientRef.current = null;
 
@@ -528,7 +530,7 @@ const DevelopApi = () => {
         setRemoteCursors({});
       },
       onStompError: (frame) => {
-        console.error('STOMP 에러:', frame);
+        console.error("STOMP 에러:", frame);
       },
     });
 
@@ -555,7 +557,7 @@ const DevelopApi = () => {
             try {
               const cursorData = JSON.parse(message.body);
               const myUserId = getUserIdFromToken(
-                sessionStorage.getItem('accessToken'),
+                sessionStorage.getItem("accessToken")
               );
 
               // 자신의 커서는 표시하지 않음
@@ -571,14 +573,14 @@ const DevelopApi = () => {
                 },
               }));
             } catch (error) {
-              console.error('Failed to parse cursor message:', error);
+              console.error("Failed to parse cursor message:", error);
             }
-          },
+          }
         ) || null;
 
       // presence 구독 및 입장 메시지 전송
       stompClientRef.current?.publish({
-        destination: '/pub/presence',
+        destination: "/pub/presence",
         body: JSON.stringify({
           resourceId: apiResourceId,
           action: PRESENCE_ACTIONS.ENTER,
@@ -596,12 +598,12 @@ const DevelopApi = () => {
                   id: username,
                   name: username,
                   color: getUserColor(username),
-                })),
+                }))
               );
             } catch (error) {
-              console.error('Failed to parse presence message:', error);
+              console.error("Failed to parse presence message:", error);
             }
-          },
+          }
         ) || null;
 
       return () => {
@@ -609,7 +611,7 @@ const DevelopApi = () => {
         cursorSubscription?.unsubscribe();
         presenceSubscription?.unsubscribe();
         stompClientRef.current?.publish({
-          destination: '/pub/presence',
+          destination: "/pub/presence",
           body: JSON.stringify({
             resourceId: apiResourceId,
             action: PRESENCE_ACTIONS.LEAVE,
@@ -623,7 +625,7 @@ const DevelopApi = () => {
   // 필터링 로직 (카테고리만 검색)
   const filteredData = apiListItems.filter((api: { category: string }) => {
     const matchesDomain =
-      selectedDomain === 'ALL' || api.category === selectedDomain;
+      selectedDomain === "ALL" || api.category === selectedDomain;
     const matchesSearch = api.category
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -633,22 +635,22 @@ const DevelopApi = () => {
   const handleAdd = () => {
     setSelectedApi({
       id: null,
-      apiName: '',
-      endpoint: '',
-      method: 'GET',
-      category: '',
-      description: '',
+      apiName: "",
+      endpoint: "",
+      method: "GET",
+      category: "",
+      description: "",
       statusCode: 200,
-      header: '',
+      header: "",
       pathVariables: [],
       requestParams: [],
       queryStrings: [],
-      requestDto: { id: null, dtoName: '', fields: [], dtoType: 'REQUEST' },
-      responseDto: { id: null, dtoName: '', fields: [], dtoType: 'RESPONSE' },
+      requestDto: { id: null, dtoName: "", fields: [], dtoType: "REQUEST" },
+      responseDto: { id: null, dtoName: "", fields: [], dtoType: "RESPONSE" },
       responses: [
         {
           statusCode: 200,
-          responseDescription: 'OK',
+          responseDescription: "OK",
         },
       ],
     });
@@ -658,7 +660,7 @@ const DevelopApi = () => {
   const handleRowClick = (apiItem: ApiDocListItem) => {
     // 메인 페이지에서 퇴장
     stompClientRef.current?.publish({
-      destination: '/pub/presence',
+      destination: "/pub/presence",
       body: JSON.stringify({
         resourceId: `${RESOURCE_TYPES.PAGE_API}-${projectId}`,
         action: PRESENCE_ACTIONS.LEAVE,
@@ -674,7 +676,7 @@ const DevelopApi = () => {
     setRemoteCursors({});
 
     const fullApi = apiListItems.find(
-      (api: { id: number | null }) => api.id === apiItem.apiSpecId,
+      (api: { id: number | null }) => api.id === apiItem.apiSpecId
     );
     if (fullApi) {
       setSelectedApi(fullApi);
@@ -687,7 +689,7 @@ const DevelopApi = () => {
             try {
               const cursorData = JSON.parse(message.body);
               const myUserId = getUserIdFromToken(
-                sessionStorage.getItem('accessToken'),
+                sessionStorage.getItem("accessToken")
               );
 
               // 자신의 커서는 표시하지 않음
@@ -702,16 +704,16 @@ const DevelopApi = () => {
                 },
               }));
             } catch (error) {
-              console.error('Failed to parse cursor message:', error);
+              console.error("Failed to parse cursor message:", error);
             }
-          },
+          }
         ) || null;
 
       // 새로운 API에 입장
       const newResourceId = `${RESOURCE_TYPES.API_SPEC}-${fullApi.id}`;
       if (stompClientRef.current?.connected) {
         stompClientRef.current.publish({
-          destination: '/pub/presence',
+          destination: "/pub/presence",
           body: JSON.stringify({
             resourceId: newResourceId,
             action: PRESENCE_ACTIONS.ENTER,
@@ -752,9 +754,9 @@ const DevelopApi = () => {
                 [fullApi.id!.toString()]: users,
               }));
             } catch (error) {
-              console.error('Failed to parse presence message:', error);
+              console.error("Failed to parse presence message:", error);
             }
-          },
+          }
         ) || null;
 
       // 구독 정보 저장
@@ -767,8 +769,8 @@ const DevelopApi = () => {
   };
 
   const sendApiSpecSocketMessage = (
-    action: 'CREATE' | 'UPDATE' | 'DELETE',
-    apiSpec: Partial<ApiDetail>,
+    action: "CREATE" | "UPDATE" | "DELETE",
+    apiSpec: Partial<ApiDetail>
   ) => {
     if (!stompClientRef.current?.connected || !projectId) return;
 
@@ -792,7 +794,7 @@ const DevelopApi = () => {
         try {
           const cursorData = JSON.parse(message.body);
           const myUserId = getUserIdFromToken(
-            sessionStorage.getItem('accessToken'),
+            sessionStorage.getItem("accessToken")
           );
 
           if (cursorData.userId === myUserId) return;
@@ -806,9 +808,9 @@ const DevelopApi = () => {
             },
           }));
         } catch (error) {
-          console.error('Failed to parse cursor message:', error);
+          console.error("Failed to parse cursor message:", error);
         }
-      },
+      }
     );
 
     return () => {
@@ -823,7 +825,7 @@ const DevelopApi = () => {
     if (selectedApi?.id) {
       const resourceId = `${RESOURCE_TYPES.API_SPEC}-${selectedApi.id}`;
       stompClientRef.current?.publish({
-        destination: '/pub/presence',
+        destination: "/pub/presence",
         body: JSON.stringify({
           resourceId: resourceId,
           action: PRESENCE_ACTIONS.LEAVE,
@@ -841,12 +843,12 @@ const DevelopApi = () => {
       setActiveUsersByApi((prev) => {
         const currentUsers = prev[selectedApi.id!.toString()] || [];
         const myUserId = getUserIdFromToken(
-          sessionStorage.getItem('accessToken'),
+          sessionStorage.getItem("accessToken")
         );
         return {
           ...prev,
           [selectedApi.id!.toString()]: currentUsers.filter(
-            (user) => user.id !== myUserId,
+            (user) => user.id !== myUserId
           ),
         };
       });
@@ -858,7 +860,7 @@ const DevelopApi = () => {
 
     // 메인 페이지로 돌아갈 때 메인 페이지 presence 다시 구독
     stompClientRef.current?.publish({
-      destination: '/pub/presence',
+      destination: "/pub/presence",
       body: JSON.stringify({
         resourceId: `${RESOURCE_TYPES.PAGE_API}-${projectId}`,
         action: PRESENCE_ACTIONS.ENTER,
@@ -880,17 +882,17 @@ const DevelopApi = () => {
       {
         onSuccess: (savedApiSpecResponse) => {
           // 실시간 전파
-          console.log('savedApiSpecResponse', savedApiSpecResponse);
+          console.log("savedApiSpecResponse", savedApiSpecResponse);
           sendApiSpecSocketMessage(
-            apiSpecRequest.id ? 'UPDATE' : 'CREATE',
-            savedApiSpecResponse.result,
+            apiSpecRequest.id ? "UPDATE" : "CREATE",
+            savedApiSpecResponse.result
           );
 
           // 성공 메시지 표시
           toast.success(
             apiSpecRequest.id
-              ? 'API가 성공적으로 수정되었습니다.'
-              : 'API가 성공적으로 생성되었습니다.',
+              ? "API가 성공적으로 수정되었습니다."
+              : "API가 성공적으로 생성되었습니다."
           );
 
           // 모달 닫기 및 상태 초기화
@@ -898,10 +900,10 @@ const DevelopApi = () => {
           setSelectedApi(null);
         },
         onError: (error) => {
-          console.error('API 저장 중 에러:', error);
-          toast.error('API 저장 중 오류가 발생했습니다.');
+          console.error("API 저장 중 에러:", error);
+          toast.error("API 저장 중 오류가 발생했습니다.");
         },
-      },
+      }
     );
   };
 
@@ -921,10 +923,10 @@ const DevelopApi = () => {
       {
         onSuccess: () => {
           // WebSocket으로 삭제 전파
-          sendApiSpecSocketMessage('DELETE', { id: selectedApi.id });
+          sendApiSpecSocketMessage("DELETE", { id: selectedApi.id });
 
           // 성공 메시지 표시
-          toast.success('API가 성공적으로 삭제되었습니다.');
+          toast.success("API가 성공적으로 삭제되었습니다.");
 
           // 모달 닫기 및 상태 초기화
           setModalOpen(false);
@@ -932,11 +934,11 @@ const DevelopApi = () => {
           setShowDeleteDialog(false);
         },
         onError: (error) => {
-          console.error('API 삭제 중 에러:', error);
-          toast.error('API 삭제 중 오류가 발생했습니다.');
+          console.error("API 삭제 중 에러:", error);
+          toast.error("API 삭제 중 오류가 발생했습니다.");
           setShowDeleteDialog(false);
         },
-      },
+      }
     );
   };
 
@@ -990,7 +992,9 @@ const DevelopApi = () => {
           activeUsers={modalActiveUsers}
           onMouseMove={handleModalMouseMove}
           remoteCursors={modalRemoteCursors}
-          onSpecUpdate={(updatedSpec) => sendApiSpecSocketMessage('UPDATE', updatedSpec)}
+          onSpecUpdate={(updatedSpec) =>
+            sendApiSpecSocketMessage("UPDATE", updatedSpec)
+          }
         />
       )}
       <Dialog
