@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({ projectName, title = 'SEQUENCE' }) => {
         </button>
         <div>
           <h3 className="text-gray-900 flex items-start">
-            {projectName} <p className="ml-2 text-gray-500"> / {title}</p>
+            {projectName} <p className="ml-2 text-slate-400"> / {title}</p>
           </h3>
         </div>
       </div>

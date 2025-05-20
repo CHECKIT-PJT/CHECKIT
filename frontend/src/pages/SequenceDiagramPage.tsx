@@ -155,7 +155,7 @@ const SequenceDiagramPage: React.FC = () => {
       <div
         className={`${isLoading ? 'blur-sm pointer-events-none select-none' : ''} flex flex-col h-full bg-white`}
       >
-        <Header projectName={projectName} title="시퀀스 다이어그램" />
+        <Header projectName={projectName} title="SEQUENCE DIAGRAM" />
 
         <TabNavigation
           categories={categories.map(c => ({ id: c, name: c }))}

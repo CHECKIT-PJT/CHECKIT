@@ -33,7 +33,7 @@ const BuildOptionPage = () => {
             <IoArrowBack className="w-5 h-5" />
           </button>
           <h3>
-            {projectName} <span className="text-slate-400"> / CONVENTION</span>
+            {projectName} <span className="text-slate-400"> / SETTING</span>
           </h3>
         </div>
       </div>
