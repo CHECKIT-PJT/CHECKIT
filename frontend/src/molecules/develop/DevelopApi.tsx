@@ -962,7 +962,7 @@ const DevelopApi = () => {
             <input
               type="text"
               placeholder="카테고리로 검색"
-              className="text-sm w-full px-4 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-sm w-full px-4 py-1 ml-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
