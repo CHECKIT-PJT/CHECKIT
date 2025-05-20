@@ -110,7 +110,7 @@ public class DtoGenerateService {
 		for (DtoItemEntity field : fields) {
 			toJavaType(field.getDataType(), field.getIsList());
 		}
-		importLines.forEach(line -> sb.append(line).append("\n"));
+		new ArrayList<>(importLines).forEach(line -> sb.append(line).append("\n"));
 		sb.append("\n");
 
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
@@ -138,7 +138,7 @@ public class DtoGenerateService {
 		for (SimpleField field : fields) {
 			toJavaType(field.getDataType(), false);
 		}
-		importLines.forEach(line -> sb.append(line).append("\n"));
+		new ArrayList<>(importLines).forEach(line -> sb.append(line).append("\n"));
 		sb.append("\n");
 
 		sb.append("@Getter\n@Setter\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\n");
