@@ -122,7 +122,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
         debounceTimer.current = setTimeout(() => {
           triggerSuggestion(position);
-        }, 3000);
+        }, 2000);
       }
       // 같은 줄에 머무르면 아무 것도 하지 않음
     };
@@ -133,6 +133,17 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
     editor.onDidChangeCursorSelection(e => {
       handleCursorActivity(e.selection.getPosition());
+    });
+
+    editor.onDidChangeModel(() => {
+      setSuggestion(null);
+      suggestionRef.current = null;
+      lastCursorLine.current = null;
+
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
     });
 
     editor.addCommand(monacoInstance.KeyCode.Tab, () => {
@@ -195,6 +206,18 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       setSelectedFile(file.path);
       setCode(file.content);
       originalContentRef.current.set(file.path, file.content);
+
+      setSuggestion(null);
+      suggestionRef.current = null;
+
+      // 디바운스 타이머가 있다면 취소
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+
+      // 커서 위치 초기화
+      lastCursorLine.current = null;
     }
   };
 

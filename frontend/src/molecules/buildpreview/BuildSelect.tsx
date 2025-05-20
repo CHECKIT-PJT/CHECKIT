@@ -37,14 +37,14 @@ const BuildSelect = ({
       />
       <ChapterCardLong
         title="빌드 미리 보기"
-        subtitle="초기 코드 자동 생성"
+        subtitle="프로젝트 설계 기반 초기 코드 자동 생성"
         icon={<VscOpenPreview size={20} className="text-white-500" />}
         bgColor="hover:bg-green-800 hover:bg-opacity-20"
         onClick={() => navigate('buildpreview')}
       />
       <ChapterCardLong
-        title="수정 프로젝트 등록"
-        subtitle="템플릿 수정 반영하여 제출하기"
+        title="현재 프로젝트 불러오기"
+        subtitle="Git에 올라간 코드를 가져와서 수정 및 커밋"
         icon={
           <LuGitPullRequestCreateArrow
             size={20}

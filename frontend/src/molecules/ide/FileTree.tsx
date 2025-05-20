@@ -11,8 +11,8 @@ interface FileTreeProps {
   files: FileNode[];
   selectedFile: string | null;
   onFileClick: (file: FileNode) => void;
-  branch: string;
-  root: string;
+  branch?: string;
+  root?: string;
 }
 
 const FileTree = ({
@@ -26,7 +26,12 @@ const FileTree = ({
     new Set()
   );
 
-  if (!files || files.length === 0) {
+  // Filter out entries with empty paths or null paths
+  const validFiles = files.filter(
+    file => file.path !== '' && file.path !== null
+  );
+
+  if (!validFiles || validFiles.length === 0) {
     return (
       <div className="p-4 text-gray-500 flex items-center justify-center h-full italic">
         파일이 없습니다
@@ -103,7 +108,10 @@ const FileTree = ({
   };
 
   const renderFileTree = (files: FileNode[], currentPath: string = '') => {
+    // Only process files with non-empty paths
     const currentFiles = files.filter(file => {
+      if (!file.path) return false;
+
       const filePath = file.path;
       if (currentPath === '') {
         return !filePath.includes('/');
@@ -131,7 +139,7 @@ const FileTree = ({
         } = getSinglePath(files, file);
         const isExpanded = expandedFolders.has(lastFolder.path);
         return (
-          <div key={index} className="pl-2 py-1">
+          <div key={`folder-${file.path}-${index}`} className="pl-2 py-1">
             <div
               className={`cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors duration-150 ${
                 selectedFile === lastFolder.path
@@ -160,7 +168,7 @@ const FileTree = ({
       // 파일 렌더링
       const fileName = getFileName(file.path);
       return (
-        <div key={index} className="pl-2 py-1">
+        <div key={`file-${file.path}-${index}`} className="pl-2 py-1">
           <div
             className={`cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors duration-150 ${
               selectedFile === file.path
@@ -180,10 +188,10 @@ const FileTree = ({
   };
 
   return (
-    <div className="w-full border border-gray-200 dark:border-gray-700  overflow-hidden shadow-sm bg-white h-full">
+    <div className="w-full border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white h-full">
       <div className="h-full overflow-y-auto overflow-x-auto p-2 bg-white dark:bg-gray-900">
-        <p className="text-lg font-bold pl-4 pb-2 border-b-2"> Files</p>
-        {renderFileTree(files)}
+        <p className="text-lg font-bold pl-4 pb-2 border-b-2">Files</p>
+        {renderFileTree(validFiles)}
       </div>
     </div>
   );
