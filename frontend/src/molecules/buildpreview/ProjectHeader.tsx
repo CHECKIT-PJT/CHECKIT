@@ -22,7 +22,7 @@ const ProjectHeader = ({
   const projectName = currentProject?.projectName || '';
 
   const onClickBack = () => {
-    navigate(`project/${projectId}`);
+    navigate(`/project/${projectId}`);
   };
 
   return (
