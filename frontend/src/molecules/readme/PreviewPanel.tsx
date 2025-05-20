@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export interface PreviewPanelProps {
   html: string;
@@ -10,9 +10,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ html }) => {
       {/* 헤더 */}
       <div className="p-3 border-b border-gray-200 bg-gray-200">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-900">
-            시퀀스 다이어그램
-          </h2>
+          <h2 className=" text-gray-900">시퀀스 다이어그램</h2>
         </div>
       </div>
 

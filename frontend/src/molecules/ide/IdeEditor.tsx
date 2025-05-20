@@ -57,8 +57,8 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       const decodedPayload = decodeURIComponent(
         atob(payload)
           .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join(''),
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
       );
       const decoded = JSON.parse(decodedPayload);
       return decoded.nickname || '사용자';
@@ -70,8 +70,8 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined && selectedFile && gitData) {
       setCode(value);
-      const updatedFiles = gitData.files.map((file) =>
-        file.path === selectedFile ? { ...file, content: value } : file,
+      const updatedFiles = gitData.files.map(file =>
+        file.path === selectedFile ? { ...file, content: value } : file
       );
       gitData.files = updatedFiles;
     }
@@ -106,7 +106,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         editorRef.current?.trigger(
           'inlineSuggestionTrigger',
           'editor.action.inlineSuggest.trigger',
-          {},
+          {}
         );
       } catch (err) {
         console.error('자동완성 실패:', err);
@@ -122,17 +122,28 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
         debounceTimer.current = setTimeout(() => {
           triggerSuggestion(position);
-        }, 3000);
+        }, 2000);
       }
       // 같은 줄에 머무르면 아무 것도 하지 않음
     };
 
-    editor.onDidChangeCursorPosition((e) => {
+    editor.onDidChangeCursorPosition(e => {
       handleCursorActivity(e.position);
     });
 
-    editor.onDidChangeCursorSelection((e) => {
+    editor.onDidChangeCursorSelection(e => {
       handleCursorActivity(e.selection.getPosition());
+    });
+
+    editor.onDidChangeModel(() => {
+      setSuggestion(null);
+      suggestionRef.current = null;
+      lastCursorLine.current = null;
+
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
     });
 
     editor.addCommand(monacoInstance.KeyCode.Tab, () => {
@@ -147,7 +158,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
             pos.lineNumber,
             pos.column,
             pos.lineNumber,
-            pos.column,
+            pos.column
           ),
           text: currentSuggestion,
           forceMoveMarkers: true,
@@ -172,7 +183,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
                 position.lineNumber,
                 position.column,
                 position.lineNumber,
-                position.column,
+                position.column
               ),
             },
           ],
@@ -188,13 +199,25 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
   const onClickBack = () => navigate(`/project/${projectId}`);
   const toggleTheme = () =>
-    setTheme((prev) => (prev === 'vs-dark' ? 'vs-light' : 'vs-dark'));
+    setTheme(prev => (prev === 'vs-dark' ? 'vs-light' : 'vs-dark'));
 
   const handleFileClick = (file: FileNode) => {
     if (file.type === 'file' && file.content !== null) {
       setSelectedFile(file.path);
       setCode(file.content);
       originalContentRef.current.set(file.path, file.content);
+
+      setSuggestion(null);
+      suggestionRef.current = null;
+
+      // 디바운스 타이머가 있다면 취소
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+
+      // 커서 위치 초기화
+      lastCursorLine.current = null;
     }
   };
 
@@ -204,7 +227,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       const date = new Date(Date.now() + 9 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0];
-      const changedFiles = gitData.files.filter((file) => {
+      const changedFiles = gitData.files.filter(file => {
         if (file.type !== 'file') return false;
         const original = originalContentRef.current.get(file.path);
         return original !== undefined && original !== file.content;
@@ -234,7 +257,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
     if (!gitData) return;
 
     try {
-      const changedFiles = gitData.files.filter((file) => {
+      const changedFiles = gitData.files.filter(file => {
         if (file.type !== 'file') return false;
         const originalContent = originalContentRef.current.get(file.path);
         return (
@@ -258,12 +281,12 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
   return (
     <div className="relative flex flex-col">
-      <div className="py-4 flex items-center justify-between mb-2">
+      <div className="pb-4 flex items-center justify-between mb-2">
         <div className="flex items-start">
           <button onClick={onClickBack} className="p-1 pr-3">
             <IoArrowBack className="w-5 h-5 mt-2" />
           </button>
-          <p className="text-xl font-bold mt-2">{gitData?.root}</p>
+          <h3 className=" mt-2">{gitData?.root}</h3>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -349,7 +372,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           </p>
           <textarea
             value={commitMessage}
-            onChange={(e) => setCommitMessage(e.target.value)}
+            onChange={e => setCommitMessage(e.target.value)}
             placeholder="설정한 정규식에 맞게 입력하세요."
             className="w-full p-2 mb-2 border border-gray-300 rounded-md  focus:ring-blue-500 focus:border-transparent dark:text-gray-200 resize-none"
           />
@@ -385,7 +408,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           </p>
           <textarea
             value={commitMessage}
-            onChange={(e) => setCommitMessage(e.target.value)}
+            onChange={e => setCommitMessage(e.target.value)}
             placeholder="설정한 정규식에 맞게 입력하세요."
             className="w-full p-2 mb-2 border border-gray-300 rounded-md  focus:ring-blue-500 focus:border-transparent dark:text-gray-200 resize-none"
           />
