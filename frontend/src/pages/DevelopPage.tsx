@@ -2,6 +2,7 @@ import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { IoArrowBack } from 'react-icons/io5';
 import { FaFolder, FaFolderOpen } from 'react-icons/fa';
 import useProjectStore from '../stores/projectStore';
+import ChatButton from '../components/chatbot/ChatButton';
 
 function DevelopPage() {
   const params = useParams();
@@ -48,7 +49,7 @@ function DevelopPage() {
 
         {/* 탭을 오른쪽으로 이동 */}
         <div className="flex">
-          {tabs.map((tab) => {
+          {tabs.map(tab => {
             const isActive = currentPath.includes(tab.id);
             return (
               <div
@@ -74,6 +75,7 @@ function DevelopPage() {
 
       <div className="flex-1 h-screen overflow-hidden">
         <Outlet />
+        <ChatButton />
       </div>
     </div>
   );
