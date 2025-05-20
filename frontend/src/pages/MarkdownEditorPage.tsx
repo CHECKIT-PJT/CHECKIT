@@ -162,7 +162,7 @@ const MarkdownEditorPage: React.FC = () => {
 
   const getDocumentTitle = () => {
     const match = markdown.match(/^#\s+(.*)$/m);
-    return match ? match[1] : '제목 없음';
+    return match ? match[1] : '';
   };
 
   return (

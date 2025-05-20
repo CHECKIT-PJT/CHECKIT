@@ -267,13 +267,13 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           <button onClick={onClickBack} className="p-1 pr-3">
             <IoArrowBack className="w-5 h-5 mt-2" />
           </button>
-          <h3 className=" mt-2">{gitData?.root}</h3>
+          <h3 className=" mt-2">{gitData?.root} / EDIT</h3>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-gray-700">AI</span>
+          <span className="text-sm font-bold text-gray-700">AI</span>
           <button
             type="button"
-            className={`w-10 h-5 flex items-center rounded-full px-0.5 transition-colors duration-300 ${isAiEnabled ? 'bg-blue-500' : 'bg-gray-300'}`}
+            className={`w-10 h-5 flex items-center rounded-full px-0.5 transition-colors duration-300 ${isAiEnabled ? 'bg-blue-800' : 'bg-gray-300'}`}
             onClick={() => setIsAiEnabled(v => !v)}
           >
             <span

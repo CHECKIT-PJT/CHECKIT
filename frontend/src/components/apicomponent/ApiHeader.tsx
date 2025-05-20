@@ -110,7 +110,7 @@ const ApiHeader = ({
           )}
         </div>
         <div className="flex items-center">
-          <span className="font-semibold text-gray-700 mr-2">URL:</span>
+          <span className="font-semibold text-gray-700 mr-2">ENDPOINT:</span>
           <input
             className="bg-blue-50 text-blue-600 font-mono px-3 py-2 rounded-lg border border-blue-100 focus:outline-none focus:border-blue-300"
             value={form.endpoint}
