@@ -49,23 +49,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
   const gitPush = useGitPush(Number(projectId));
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const suggestionRef = useRef<string | null>(null);
-  const getUserNameFromToken = (): string => {
-    const token = sessionStorage.getItem('accessToken');
-    if (!token) return '사용자';
-    try {
-      const payload = token.split('.')[1];
-      const decodedPayload = decodeURIComponent(
-        atob(payload)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      const decoded = JSON.parse(decodedPayload);
-      return decoded.nickname || '사용자';
-    } catch {
-      return '사용자';
-    }
-  };
+  const [isAiEnabled, setIsAiEnabled] = useState(true);
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined && selectedFile && gitData) {
@@ -224,19 +208,14 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
   const onCommit = async () => {
     if (!gitData) return;
     try {
-      const date = new Date(Date.now() + 9 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0];
       const changedFiles = gitData.files.filter(file => {
         if (file.type !== 'file') return false;
         const original = originalContentRef.current.get(file.path);
         return original !== undefined && original !== file.content;
       });
+
       if (changedFiles.length === 0) return setShowNoChangesAlert(true);
-      await gitPush.mutateAsync({
-        message: `feat: 코드 수정 (${date}) - ${getUserNameFromToken()}`,
-        changedFiles,
-      });
+
       if (changedFiles.length === 0) {
         setShowNoChangesAlert(true);
         return;
@@ -279,6 +258,8 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
     }
   };
 
+  const onTodo = () => {};
+
   return (
     <div className="relative flex flex-col">
       <div className="pb-4 flex items-center justify-between mb-2">
@@ -289,8 +270,23 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           <h3 className=" mt-2">{gitData?.root}</h3>
         </div>
         <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-700">AI</span>
           <button
-            className="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 shadow"
+            type="button"
+            className={`w-10 h-5 flex items-center rounded-full px-0.5 transition-colors duration-300 ${isAiEnabled ? 'bg-blue-500' : 'bg-gray-300'}`}
+            onClick={() => setIsAiEnabled(v => !v)}
+          >
+            <span
+              className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isAiEnabled ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+            <span
+              className={`ml-[-14px] text-xs font-semibold select-none ${isAiEnabled ? 'text-white' : 'text-gray-600'}`}
+              style={{ marginLeft: isAiEnabled ? '-8px' : '3px' }}
+            ></span>
+          </button>
+
+          <button
+            className="px-4 py-1 rounded bg-blue-800 hover:bg-blue-900 text-white shadow"
             onClick={onCommit}
           >
             commit하기
@@ -450,7 +446,9 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       <CustomFalseAlert
         isOpen={showCommitError}
         title="커밋 실패"
-        message="커밋 중 오류가 발생했습니다. 다시 시도해주세요."
+        message={
+          '커밋 중 오류가 발생했습니다.\n커밋 메세지를 다시 작성해주세요.'
+        }
         confirmText="확인"
         onConfirm={() => setShowCommitError(false)}
       />
