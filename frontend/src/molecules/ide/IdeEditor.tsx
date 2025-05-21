@@ -280,7 +280,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
             <IoArrowBack className="w-5 h-5 mt-2" />
           </button>
           <h3 className=" mt-2  flex items-center">
-            {gitData?.root} <p className="text-slate-400"> / EDIT</p>
+            {gitData?.root} <p className="text-slate-400 ml-3"> / EDIT</p>
           </h3>
         </div>
         <div className="flex items-center gap-3">
