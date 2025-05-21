@@ -23,7 +23,7 @@ const CustomFalseCommit = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg px-14 py-8 max-w-sm mx-4 shadow-xl text-center">
+      <div className="bg-white rounded-lg px-14 py-8 mx-4 shadow-xl text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <GoAlert className="w-8 h-8 text-red-700" />
         </div>
@@ -31,9 +31,7 @@ const CustomFalseCommit = ({
         <p className="text-gray-700 whitespace-pre-line mb-6">{message}</p>
         {regex && (
           <div className="mb-4">
-            <div className="text-sm text-gray-500 mb-1">
-              현재 설정된 정규식:
-            </div>
+            <div className="text-sm text-gray-500 mb-1">현재 설정된 정규식</div>
             <pre className="bg-gray-100 rounded px-2 py-2 text-xs font-mono text-left whitespace-pre-wrap break-words">
               {regex}
             </pre>
