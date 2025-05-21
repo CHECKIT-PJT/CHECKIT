@@ -26,6 +26,7 @@ import RemoteCursor from '../../components/cursor/RemoteCursor';
 import type { RemoteCursorData } from '../../types/cursor';
 import { getUserIdFromToken } from '../../utils/tokenUtils';
 import { getUserColor } from '../../utils/colorUtils';
+import Loading from '../layout/loading';
 
 interface User {
   id: string;
@@ -135,6 +136,7 @@ const DevelopFunc = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const modalSubscriptionRef = useRef<ModalSubscriptions | null>(null);
   const mainPageCursorSubscription = useRef<StompSubscription | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const { specs, setSpecs } = useFunctionalSpecStore();
   const { refetch } = useGetFunctionalSpecs(Number(projectId));
@@ -646,11 +648,14 @@ const DevelopFunc = () => {
   const handleJiraAdd = async () => {
     if (!projectId) return;
     try {
+      setLoading(true);
       const jiraLink = await createJiraIssue(Number(projectId));
       setShowSuccessModal(true);
       setJiraLink(jiraLink);
     } catch (error) {
       console.error('Jira 이슈 등록 실패:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -869,6 +874,7 @@ const DevelopFunc = () => {
       ref={containerRef}
       className="mt-2 min-h-screen w-full flex flex-col bg-gray-50 relative"
     >
+      {loading && <Loading />}
       {/* 메인 페이지 원격 커서 렌더링 */}
       {!modalOpen &&
         Object.values(remoteCursors).map(cursor => (
