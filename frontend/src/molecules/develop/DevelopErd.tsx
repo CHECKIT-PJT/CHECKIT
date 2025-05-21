@@ -311,10 +311,14 @@ const DevelopErd = () => {
 
         const newData = (event.target as ErdEditorElement).value;
 
-        stompClientRef.current?.publish({
-          destination: `/pub/erd/update/${projectId}`,
-          body: newData,
-        });
+        if (stompClientRef.current?.connected) {
+          stompClientRef.current.publish({
+            destination: `/pub/erd/update/${projectId}`,
+            body: newData,
+          });
+        } else {
+          console.warn('❗ STOMP 연결 안 됨: publish 생략됨');
+        }
 
         saveToServer(newData);
       });
@@ -369,7 +373,7 @@ const DevelopErd = () => {
           </button>
         </div>
       </div>
-      <div className="w-[90%] h-[470px]">
+      <div className="w-[90%] h-[500px]">
         <erd-editor
           id="erd-editor"
           enableThemeBuilder="true"

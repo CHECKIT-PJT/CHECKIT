@@ -52,7 +52,7 @@ const ProjectMemberList = ({
             return a.nickname.localeCompare(b.nickname);
           })
           .map(member => (
-            <li key={member.id} className="mb-4">
+            <li key={member.id} className="mb-2">
               <div className=" flex items-center justify-between border-b border-gray-200 pb-2">
                 <div>
                   <span className="font-medium">{member.nickname}</span>

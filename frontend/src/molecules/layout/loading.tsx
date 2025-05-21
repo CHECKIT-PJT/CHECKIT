@@ -1,23 +1,44 @@
-import React from 'react';
-
-const Loading: React.FC = () => {
+const Loading = () => {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
       {/* 컵 + 빨대 */}
-      <div className="relative w-14 h-36 mb-8">
+      <div className="relative w-20 h-52 mb-8">
         {/* 흰색 빨대 */}
-        <div className="absolute -top-[28px] left-1/2 -translate-x-1/2 bottom-2 w-[6px] bg-white origin-bottom rotate-[8deg] " />
+        <div className="absolute -top-[28px] left-1/2 -translate-x-1/2 bottom-2 w-[6px] bg-white origin-bottom rotate-[8deg]" />
 
-        {/* 투명 유리컵 느낌 */}
+        {/* SSAFY 세로 글씨 (컵 안 중앙) */}
         <div
-          className="absolute inset-0 px-[6px] py-[4px] border-2 border-slate-200 rounded-md shadow-md backdrop-blur-md"
+          className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
           style={{
-            background:
-              'linear-gradient(#1BB1E7 0 0) bottom no-repeat content-box, rgba(255, 255, 255, 0.01)',
-            animation: 'sip 2.5s infinite linear',
-            backgroundBlendMode: 'lighten',
+            zIndex: 3,
           }}
-        />
+        >
+          <span className="flex flex-col items-center text-[#0056C2] font-bold text-2xl tracking-widest h-full justify-center font-tmoney select-none">
+            {/* 세로 글씨로 각 글자 한 줄씩 */}
+            {Array.from('SSAFY').map((char, i) => (
+              <span key={i}>{char}</span>
+            ))}
+          </span>
+        </div>
+
+        {/* 파란 컵 내용물 (비워지면서 SSAFY가 드러남) */}
+        <div
+          className="absolute inset-0 px-[6px] py-[4px] border-2 border-slate-200 rounded-md shadow-md backdrop-blur-md overflow-hidden"
+          style={{
+            zIndex: 3,
+            // 파란 컵 내용물이 줄어들며 SSAFY가 보이도록
+          }}
+        >
+          {/* 파란색 내용물에 애니메이션 적용 */}
+          <div
+            className="absolute left-0 bottom-0 w-full"
+            style={{
+              height: '100%',
+              background: 'linear-gradient(#1BB1E7 0 0) bottom no-repeat',
+              animation: 'sip-fill 2.5s infinite linear',
+            }}
+          />
+        </div>
       </div>
 
       {/* Loading 텍스트 */}
@@ -41,16 +62,14 @@ const Loading: React.FC = () => {
       </div>
 
       <style>{`
-        @keyframes sip {
-          0%   { background-size: 100% 100%; }
-          100% { background-size: 100% 5%; }
+        @keyframes sip-fill {
+          0%   { height: 100%; }
+          100% { height: 5%; }
         }
-
         @keyframes jump {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-10px); }
         }
-
         .animate-jump {
           display: inline-block;
           animation: jump 1s ease-in-out infinite;

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { LuMoon, LuSun, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import FileTree from './FileTree';
@@ -12,6 +12,7 @@ import CustomAlert from '../layout/CustomAlert';
 import type { editor } from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 import { FaCodeCommit } from 'react-icons/fa6';
+import CustomFalseCommit from '../layout/CustomFalseCommit';
 
 interface FileNode {
   path: string;
@@ -49,23 +50,13 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
   const gitPush = useGitPush(Number(projectId));
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const suggestionRef = useRef<string | null>(null);
-  const getUserNameFromToken = (): string => {
-    const token = sessionStorage.getItem('accessToken');
-    if (!token) return '사용자';
-    try {
-      const payload = token.split('.')[1];
-      const decodedPayload = decodeURIComponent(
-        atob(payload)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      const decoded = JSON.parse(decodedPayload);
-      return decoded.nickname || '사용자';
-    } catch {
-      return '사용자';
-    }
-  };
+  const [isAiEnabled, setIsAiEnabled] = useState(true);
+
+  // 커밋 규칙 실패 안내용 상태
+  const [showCustomFalseCommit, setShowCustomFalseCommit] = useState(false);
+  const [commitErrorMsg, setCommitErrorMsg] = useState('');
+  const [customRegex, setCustomRegex] = useState('');
+  const [customExample, setCustomExample] = useState('');
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined && selectedFile && gitData) {
@@ -92,7 +83,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           cursorColumn: position.column,
         });
 
-        console.log(response);
         const suggestionText = response.result.suggestion;
         if (!suggestionText?.trim()) {
           setSuggestion(null);
@@ -124,7 +114,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           triggerSuggestion(position);
         }, 2000);
       }
-      // 같은 줄에 머무르면 아무 것도 하지 않음
     };
 
     editor.onDidChangeCursorPosition(e => {
@@ -210,13 +199,10 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       setSuggestion(null);
       suggestionRef.current = null;
 
-      // 디바운스 타이머가 있다면 취소
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
         debounceTimer.current = null;
       }
-
-      // 커서 위치 초기화
       lastCursorLine.current = null;
     }
   };
@@ -224,27 +210,16 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
   const onCommit = async () => {
     if (!gitData) return;
     try {
-      const date = new Date(Date.now() + 9 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0];
       const changedFiles = gitData.files.filter(file => {
         if (file.type !== 'file') return false;
         const original = originalContentRef.current.get(file.path);
         return original !== undefined && original !== file.content;
       });
+
       if (changedFiles.length === 0) return setShowNoChangesAlert(true);
-      await gitPush.mutateAsync({
-        message: `feat: 코드 수정 (${date}) - ${getUserNameFromToken()}`,
-        changedFiles,
-      });
-      if (changedFiles.length === 0) {
-        setShowNoChangesAlert(true);
-        return;
-      }
 
       setShowCommitModal(true);
     } catch (error: any) {
-      console.error('커밋 중 오류가 발생했습니다:', error);
       if (error.message === 'Git 설정을 찾을 수 없습니다') {
         setShowGitConfigError(true);
       } else {
@@ -255,7 +230,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
   const handleCommitSubmit = async () => {
     if (!gitData) return;
-
     try {
       const changedFiles = gitData.files.filter(file => {
         if (file.type !== 'file') return false;
@@ -272,25 +246,61 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       setShowCommitSuccess(true);
       setShowCommitModal(false);
     } catch (error: any) {
-      console.error('커밋 중 오류:', error);
-      if (error.message === 'Git 설정을 찾을 수 없습니다')
+      const errMsg = error?.response?.data?.message || error?.message || '';
+      if (errMsg === '유효하지 않은 커밋 규칙입니다.') {
+        const rawMsg = error.response?.data?.result || '';
+        // '현재 커밋 메시지:' 부분 제거
+        const filteredMsg = rawMsg.replace(/\n?현재 커밋 메시지:.*$/, '');
+        // 정규식 추출
+        const regexMatch = filteredMsg.match(/규칙: ([^\n]+)/);
+        const conventionRegex = regexMatch
+          ? regexMatch[1]
+          : '^(feat|fix|docs|style|refactor|test|chore): .+$';
+
+        setCommitErrorMsg('커밋 컨벤션에 맞게 메세지를 다시 작성해주세요.');
+        setCustomRegex(conventionRegex);
+        setCustomExample('feat: login func implemation');
+        setShowCustomFalseCommit(true);
+      } else if (errMsg === 'Git 설정을 찾을 수 없습니다') {
         setShowGitConfigError(true);
-      else setShowCommitError(true);
+      } else {
+        setShowCommitError(true);
+      }
     }
   };
 
+  const onTodo = () => {};
+
   return (
     <div className="relative flex flex-col">
+      {/* 상단 헤더 */}
       <div className="pb-4 flex items-center justify-between mb-2">
         <div className="flex items-start">
           <button onClick={onClickBack} className="p-1 pr-3">
             <IoArrowBack className="w-5 h-5 mt-2" />
           </button>
-          <h3 className=" mt-2">{gitData?.root}</h3>
+          <h3 className=" mt-2  flex items-center">
+            {gitData?.root} <p className="text-slate-400"> / EDIT</p>
+          </h3>
         </div>
         <div className="flex items-center gap-3">
+          <span className="text-sm font-bold text-gray-700">AI</span>
           <button
-            className="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 shadow"
+            type="button"
+            className={`w-10 h-5 flex items-center rounded-full px-0.5 transition-colors duration-300 ${isAiEnabled ? 'bg-blue-800' : 'bg-gray-300'}`}
+            onClick={() => setIsAiEnabled(v => !v)}
+          >
+            <span
+              className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${isAiEnabled ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+            <span
+              className={`ml-[-14px] text-xs font-semibold select-none ${isAiEnabled ? 'text-white' : 'text-gray-600'}`}
+              style={{ marginLeft: isAiEnabled ? '-8px' : '3px' }}
+            ></span>
+          </button>
+
+          <button
+            className="px-4 py-1 rounded bg-blue-800 hover:bg-blue-900 text-white shadow"
             onClick={onCommit}
           >
             commit하기
@@ -304,6 +314,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         </div>
       </div>
 
+      {/* 메인 영역 */}
       <div className="flex-1 flex gap-4">
         {gitData && gitData.files && (
           <div
@@ -355,7 +366,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
               formatOnType: true,
               suggestOnTriggerCharacters: true,
               quickSuggestions: true,
-              inlineSuggest: { enabled: true }, // 중요!
+              inlineSuggest: { enabled: true },
             }}
           />
         </div>
@@ -432,7 +443,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         </div>
       </div>
 
-      {/* 커스텀 알람 띄우기 */}
+      {/* --- 알림/에러 모달 --- */}
       <CustomFalseAlert
         isOpen={showNoChangesAlert}
         title="변경 사항 없음"
@@ -447,6 +458,17 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         confirmText="확인"
         onConfirm={() => setShowCommitSuccess(false)}
       />
+      {/* 규칙 위반 안내 */}
+      <CustomFalseCommit
+        isOpen={showCustomFalseCommit}
+        title="커밋 규칙 오류"
+        message={commitErrorMsg}
+        regex={customRegex}
+        example={customExample}
+        confirmText="확인"
+        onConfirm={() => setShowCustomFalseCommit(false)}
+      />
+      {/* 기타 커밋 에러 */}
       <CustomFalseAlert
         isOpen={showCommitError}
         title="커밋 실패"
@@ -454,6 +476,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         confirmText="확인"
         onConfirm={() => setShowCommitError(false)}
       />
+      {/* Git 설정 필요 */}
       <Dialog
         isOpen={showGitConfigError}
         title="Git 설정 필요"

@@ -162,7 +162,7 @@ const MarkdownEditorPage: React.FC = () => {
 
   const getDocumentTitle = () => {
     const match = markdown.match(/^#\s+(.*)$/m);
-    return match ? match[1] : '제목 없음';
+    return match ? match[1] : '';
   };
 
   return (
@@ -208,7 +208,6 @@ const MarkdownEditorPage: React.FC = () => {
                     className="font-medium cursor-pointer hover:text-blue-500 transition-colors flex items-center"
                   >
                     <span className="truncate max-w-xs">{fileName}</span>
-                    <span className="mx-2 text-gray-400">|</span>
                     <span className="text-gray-500 dark:text-gray-400 truncate font-normal">
                       {getDocumentTitle()}
                     </span>
