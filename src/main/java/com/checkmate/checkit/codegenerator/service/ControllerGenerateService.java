@@ -77,7 +77,7 @@ public class ControllerGenerateService {
 		}
 
 		sb.append("\n@RestController\n")
-			.append("@RequestMapping(\"/api/").append(domain).append("\")\n")
+			// .append("@RequestMapping(\"/api/").append(domain).append("\")\n")
 			.append("@RequiredArgsConstructor\n")
 			.append("public class ").append(className).append(" {\n\n")
 			.append("    private final ").append(serviceType).append(" ").append(serviceName).append(";\n\n");
@@ -162,9 +162,9 @@ public class ControllerGenerateService {
 
 		sb.append("        return ResponseEntity.status(HttpStatus.valueOf(").append(statusCode).append(")");
 		if (!returnType.equals("Void")) {
-			sb.append(".body(result);\n");
+			sb.append(".body(result));\n");
 		} else {
-			sb.append(".build();\n");
+			sb.append(".build());\n");
 		}
 
 		sb.append("    }\n");
