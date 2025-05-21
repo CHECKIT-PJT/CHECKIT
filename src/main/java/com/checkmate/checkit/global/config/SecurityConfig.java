@@ -37,6 +37,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(authz -> authz
 				.requestMatchers("/api/auth/**").permitAll() // 인증 관련 API는 모두 허용
 				.requestMatchers("/ws/erd/**").permitAll()
+				.requestMatchers("/ws/chat/**").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userRepository),
 				UsernamePasswordAuthenticationFilter.class);
