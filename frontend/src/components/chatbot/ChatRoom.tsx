@@ -75,7 +75,7 @@ const ChatRoom = () => {
   };
 
   const handleSendMessage = async () => {
-    await new Promise(res => setTimeout(res, 200));
+    await new Promise(res => setTimeout(res, thinkingDelay));
 
     const trimmed = inputText.trim();
     if (trimmed && stompClientRef.current?.connected) {
