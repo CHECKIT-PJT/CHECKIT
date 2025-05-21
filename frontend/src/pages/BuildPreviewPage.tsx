@@ -171,7 +171,7 @@ const BuildPreviewPage: React.FC = () => {
 
       {projectData ? (
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-1/3 bg-gray-50 border-gray-200 border-r overflow-y-auto ">
+          <div className="w-1/4 bg-gray-50 border-gray-200 border-r overflow-y-auto ">
             <FileTree
               files={projectData.data.files}
               selectedFile={selectedFile?.path || null}
@@ -187,7 +187,7 @@ const BuildPreviewPage: React.FC = () => {
             />
           </div>
 
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col w-3/4">
             <CodeViewer
               selectedFile={selectedFile}
               codeDarkMode={codeDarkMode}

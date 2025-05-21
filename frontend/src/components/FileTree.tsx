@@ -183,7 +183,7 @@ const FileTree = ({
   };
 
   return (
-    <div className="w-full border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white h-5/6">
+    <div className="w-full border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm bg-white h-5/6 ">
       <div className="h-full overflow-y-auto overflow-x-auto p-2 bg-white dark:bg-gray-900">
         <p className="text-lg font-bold pl-4 pb-2 border-b-2">Files</p>
         {renderFileTree(files)}
