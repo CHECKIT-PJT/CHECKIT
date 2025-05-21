@@ -12,13 +12,13 @@ const ChatButton = () => {
   return (
     <div className="fixed bottom-4 left-4 z-50">
       <button
-        className="w-10 h-10 border-2 border-white rounded-full bg-white shadow-lg"
+        className="w-16 h-16 border-2 border-white rounded-full bg-white shadow-lg"
         onClick={toggleChat}
       >
         <img src={chatbot} className="w-full h-full" />
       </button>
       {isOpen && (
-        <div className="absolute bottom-16 left-0 w-80 h-[500px] bg-white rounded-lg shadow-xl">
+        <div className="absolute bottom-16 left-0 w-80 h-[500px] bg-white rounded-lg shadow-xl pb-2">
           <div className="flex justify-between items-center p-3 border-b">
             <p className="text-lg font-semibold ml-2 pt-1"> AI 챗봇</p>
             <button

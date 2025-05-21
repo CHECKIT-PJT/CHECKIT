@@ -208,7 +208,6 @@ const MarkdownEditorPage: React.FC = () => {
                     className="font-medium cursor-pointer hover:text-blue-500 transition-colors flex items-center"
                   >
                     <span className="truncate max-w-xs">{fileName}</span>
-                    <span className="mx-2 text-gray-400">|</span>
                     <span className="text-gray-500 dark:text-gray-400 truncate font-normal">
                       {getDocumentTitle()}
                     </span>
