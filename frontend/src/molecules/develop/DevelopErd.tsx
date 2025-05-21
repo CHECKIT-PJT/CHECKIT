@@ -369,7 +369,7 @@ const DevelopErd = () => {
           </button>
         </div>
       </div>
-      <div className="w-[90%] h-[470px]">
+      <div className="w-[90%] h-[500px]">
         <erd-editor
           id="erd-editor"
           enableThemeBuilder="true"
