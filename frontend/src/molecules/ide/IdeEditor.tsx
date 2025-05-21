@@ -449,7 +449,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         isOpen={showCommitError}
         title="커밋 실패"
         message={
-          '커밋 중 오류가 발생했습니다.\n커밋 메세지를 다시 작성해주세요.'
+          '커밋 컨벤션에 맞게 메세지를 다시 작성해주세요.\n현재 설정된 정규식:  ^(feat|fix|docs|style|refactor|test|chore): .+$\n예시 - feat: login func implemation'
         }
         confirmText="확인"
         onConfirm={() => setShowCommitError(false)}
