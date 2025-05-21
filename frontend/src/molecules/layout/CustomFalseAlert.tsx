@@ -19,7 +19,7 @@ const CustomFalseAlert = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg px-14 py-8 max-w-sm mx-4 shadow-xl text-center">
+      <div className="bg-white rounded-lg px-14 py-8 mx-4 shadow-xl text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <GoAlert className="w-8 h-8 text-red-700" />
         </div>

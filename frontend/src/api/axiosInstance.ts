@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { refreshToken } from './authAPI'; // 네가 만든 토큰 갱신 함수
+import { refreshToken } from './authAPI';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -68,7 +68,13 @@ axiosInstance.interceptors.response.use(
 
       try {
         const refreshed = await refreshToken();
-        const newAccessToken = refreshed.accessToken;
+        // refreshToken 함수가 response.data.data를 반환하므로 구조에 맞게 접근
+        const newAccessToken = refreshed?.accessToken;
+
+        if (!newAccessToken) {
+          console.error('No access token received from refresh');
+          throw new Error('Failed to refresh token');
+        }
 
         sessionStorage.setItem('accessToken', newAccessToken);
         axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;

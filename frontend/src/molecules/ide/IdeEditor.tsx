@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { LuMoon, LuSun, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import FileTree from './FileTree';
@@ -12,6 +12,7 @@ import CustomAlert from '../layout/CustomAlert';
 import type { editor } from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 import { FaCodeCommit } from 'react-icons/fa6';
+import CustomFalseCommit from '../layout/CustomFalseCommit';
 
 interface FileNode {
   path: string;
@@ -51,6 +52,12 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
   const suggestionRef = useRef<string | null>(null);
   const [isAiEnabled, setIsAiEnabled] = useState(true);
 
+  // 커밋 규칙 실패 안내용 상태
+  const [showCustomFalseCommit, setShowCustomFalseCommit] = useState(false);
+  const [commitErrorMsg, setCommitErrorMsg] = useState('');
+  const [customRegex, setCustomRegex] = useState('');
+  const [customExample, setCustomExample] = useState('');
+
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined && selectedFile && gitData) {
       setCode(value);
@@ -76,7 +83,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           cursorColumn: position.column,
         });
 
-        console.log(response);
         const suggestionText = response.result.suggestion;
         if (!suggestionText?.trim()) {
           setSuggestion(null);
@@ -108,7 +114,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
           triggerSuggestion(position);
         }, 2000);
       }
-      // 같은 줄에 머무르면 아무 것도 하지 않음
     };
 
     editor.onDidChangeCursorPosition(e => {
@@ -194,13 +199,10 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       setSuggestion(null);
       suggestionRef.current = null;
 
-      // 디바운스 타이머가 있다면 취소
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
         debounceTimer.current = null;
       }
-
-      // 커서 위치 초기화
       lastCursorLine.current = null;
     }
   };
@@ -216,14 +218,8 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
       if (changedFiles.length === 0) return setShowNoChangesAlert(true);
 
-      if (changedFiles.length === 0) {
-        setShowNoChangesAlert(true);
-        return;
-      }
-
       setShowCommitModal(true);
     } catch (error: any) {
-      console.error('커밋 중 오류가 발생했습니다:', error);
       if (error.message === 'Git 설정을 찾을 수 없습니다') {
         setShowGitConfigError(true);
       } else {
@@ -234,7 +230,6 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
   const handleCommitSubmit = async () => {
     if (!gitData) return;
-
     try {
       const changedFiles = gitData.files.filter(file => {
         if (file.type !== 'file') return false;
@@ -251,10 +246,26 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
       setShowCommitSuccess(true);
       setShowCommitModal(false);
     } catch (error: any) {
-      console.error('커밋 중 오류:', error);
-      if (error.message === 'Git 설정을 찾을 수 없습니다')
+      const errMsg = error?.response?.data?.message || error?.message || '';
+      if (errMsg === '유효하지 않은 커밋 규칙입니다.') {
+        const rawMsg = error.response?.data?.result || '';
+        // '현재 커밋 메시지:' 부분 제거
+        const filteredMsg = rawMsg.replace(/\n?현재 커밋 메시지:.*$/, '');
+        // 정규식 추출
+        const regexMatch = filteredMsg.match(/규칙: ([^\n]+)/);
+        const conventionRegex = regexMatch
+          ? regexMatch[1]
+          : '^(feat|fix|docs|style|refactor|test|chore): .+$';
+
+        setCommitErrorMsg('커밋 컨벤션에 맞게 메세지를 다시 작성해주세요.');
+        setCustomRegex(conventionRegex);
+        setCustomExample('feat: login func implemation');
+        setShowCustomFalseCommit(true);
+      } else if (errMsg === 'Git 설정을 찾을 수 없습니다') {
         setShowGitConfigError(true);
-      else setShowCommitError(true);
+      } else {
+        setShowCommitError(true);
+      }
     }
   };
 
@@ -262,6 +273,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
 
   return (
     <div className="relative flex flex-col">
+      {/* 상단 헤더 */}
       <div className="pb-4 flex items-center justify-between mb-2">
         <div className="flex items-start">
           <button onClick={onClickBack} className="p-1 pr-3">
@@ -302,6 +314,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         </div>
       </div>
 
+      {/* 메인 영역 */}
       <div className="flex-1 flex gap-4">
         {gitData && gitData.files && (
           <div
@@ -353,7 +366,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
               formatOnType: true,
               suggestOnTriggerCharacters: true,
               quickSuggestions: true,
-              inlineSuggest: { enabled: true }, // 중요!
+              inlineSuggest: { enabled: true },
             }}
           />
         </div>
@@ -430,7 +443,7 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         </div>
       </div>
 
-      {/* 커스텀 알람 띄우기 */}
+      {/* --- 알림/에러 모달 --- */}
       <CustomFalseAlert
         isOpen={showNoChangesAlert}
         title="변경 사항 없음"
@@ -445,15 +458,25 @@ const IdeEditor = ({ gitData }: IdeEditorProps) => {
         confirmText="확인"
         onConfirm={() => setShowCommitSuccess(false)}
       />
+      {/* 규칙 위반 안내 */}
+      <CustomFalseCommit
+        isOpen={showCustomFalseCommit}
+        title="커밋 규칙 오류"
+        message={commitErrorMsg}
+        regex={customRegex}
+        example={customExample}
+        confirmText="확인"
+        onConfirm={() => setShowCustomFalseCommit(false)}
+      />
+      {/* 기타 커밋 에러 */}
       <CustomFalseAlert
         isOpen={showCommitError}
         title="커밋 실패"
-        message={
-          '커밋 컨벤션에 맞게 메세지를 다시 작성해주세요.\n현재 설정된 정규식:  ^(feat|fix|docs|style|refactor|test|chore): .+$\n예시 - feat: login func implemation'
-        }
+        message="커밋 중 오류가 발생했습니다. 다시 시도해주세요."
         confirmText="확인"
         onConfirm={() => setShowCommitError(false)}
       />
+      {/* Git 설정 필요 */}
       <Dialog
         isOpen={showGitConfigError}
         title="Git 설정 필요"

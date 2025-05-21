@@ -15,7 +15,7 @@ const ProjectTable = ({ projects, onDetail }: ProjectTableProps) => {
       <table className="w-full table-auto border-collapse">
         <thead>
           <tr className="text-left border-b">
-            <th className="p-2 text-center ">프로젝트 명</th>
+            <th className="p-2 text-center">프로젝트 명</th>
             <th className="p-2 text-center">등록 일자</th>
             <th className="p-2 text-center">상세 보기</th>
           </tr>
@@ -23,7 +23,7 @@ const ProjectTable = ({ projects, onDetail }: ProjectTableProps) => {
         <tbody>
           {projects.map(project => (
             <tr key={project.projectId} className="border-b">
-              <td className="p-2 text-left">{project.projectName}</td>
+              <td className="p-2 text-center">{project.projectName}</td>
               <td className="p-2 text-center">
                 {new Date(project.createdAt).toISOString().split('T')[0]}
               </td>
