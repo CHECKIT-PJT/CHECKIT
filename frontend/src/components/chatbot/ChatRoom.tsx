@@ -184,75 +184,8 @@ const ChatRoom = () => {
         <div ref={messagesEndRef} />
       </div>
 
-    setIsTyping(true);
-    setStreamingText(''); // 시작 전에 초기화
-
-    await new Promise((res) => setTimeout(res, thinkingDelay));
-
-    const temp: string[] = [];
-
-    const intervalId = setInterval(() => {
-      if (index >= text.length) {
-        clearInterval(intervalId);
-        setIsTyping(false);
-        setStreamingText(''); // 이건 UI에서 제거
-        setMessages((prev) => [...prev, { text: text, isUser: false }]);
-        return;
-      }
-      temp.push(text[index]);
-      index++;
-      setStreamingText(temp.join('')); // 기존 값을 계속 덮어씀
-    }, typingSpeed);
-  };
-
-
-
-
-  return (
-      <div className="flex flex-col h-full">
-        <div className="flex-1 p-3 overflow-y-auto">
-          {messages.map((message, index) => (
-              <div
-                  key={index}
-                  className={`text-sm mb-3 w-fit max-w-[80%] ${
-                      message.isUser ? 'ml-auto text-right' : 'mr-auto text-left'
-                  }`}
-              >
-                <div
-                    className={`rounded-lg p-2 inline-block break-words break-all ${
-                        message.isUser
-                            ? 'bg-blue-500 text-white rounded-br-none'
-                            : 'bg-gray-200 text-gray-800 rounded-bl-none'
-                    }`}
-                >
-                  {message.text}
-                </div>
-              </div>
-          ))}
-
-          {isTyping && streamingText ? (
-              <div className="text-sm mb-3 w-fit max-w-[80%] mr-auto text-left">
-                <div className="rounded-lg p-2 inline-block break-words break-all bg-gray-200 text-gray-800 rounded-bl-none">
-                  {streamingText}
-                  <span className="animate-blink">|</span>
-                </div>
-              </div>
-          ) : isTyping ? (
-              <div className="text-sm mb-3 w-fit max-w-[80%] mr-auto text-left">
-                <div className="rounded-lg p-2 inline-block break-words bg-gray-100 text-gray-500 italic animate-pulse">
-                  챗봇이 응답 중입니다...
-                </div>
-              </div>
-          ) : null}
-
-
-
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        <div className="border-t p-3 bg-gray-50 text-sm">
-          <div className="flex">
+      <div className="border-t p-3 bg-gray-50 text-sm">
+        <div className="flex">
           <textarea
             value={inputText}
             onChange={function (e) {
@@ -263,15 +196,15 @@ const ChatRoom = () => {
             className="text-xs flex-1 border rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 resize-none min-h-[40px] max-h-[120px] overflow-y-auto"
             rows={1}
           />
-            <button
-                onClick={handleSendMessage}
-                className="bg-blue-200 text-white px-4 py-2 rounded-r-lg hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-            >
-              <LuSendHorizontal />
-            </button>
-          </div>
+          <button
+            onClick={handleSendMessage}
+            className="bg-blue-200 text-white px-4 py-2 rounded-r-lg hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+          >
+            <LuSendHorizontal />
+          </button>
         </div>
       </div>
+    </div>
   );
 };
 
