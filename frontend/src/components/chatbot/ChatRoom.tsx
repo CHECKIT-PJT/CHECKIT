@@ -48,7 +48,6 @@ const ChatRoom = () => {
             playTypingAnimation(finalMessage);
           } else {
             streamingBufferRef.current += tokenChunk;
-            // ✅ setStreamingText는 제거 (중간 텍스트 UI에 안 띄움)
           }
         });
       },
