@@ -1,0 +1,9 @@
+# AI 주소값
+
+ai:
+  server:
+    url: ${AI_SERVER_URL}
+  llm:
+    type: ${LLM_TYPE}
+  api:
+    key: ${AI_API_KEY}
