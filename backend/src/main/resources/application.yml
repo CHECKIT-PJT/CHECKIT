@@ -1,0 +1,41 @@
+# application.yml
+logging:
+  level:
+    org.springframework.messaging.simp.stomp: DEBUG
+    org.springframework.web.socket: DEBUG
+    org.springframework.web.socket.messaging: DEBUG
+
+spring:
+  config:
+    import:
+      - classpath:application-redis.yml
+      - classpath:application-mysql.yml
+      - classpath:application-jwt.yml
+      - classpath:application-oauth.yml
+      - classpath:application-mail.yml
+      - optional:application-project.yml
+      - optional:application-ai.yml
+      - optional:file:.env[.properties]
+  application:
+    name: checkit
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  jackson:
+    time-zone: Asia/Seoul
+
+  web:
+    resources:
+      add-mappings: false
+
+server:
+  forward-headers-strategy: framework
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
