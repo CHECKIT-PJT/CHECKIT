@@ -1,0 +1,15 @@
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+pydantic==2.6.4
+python-dotenv==1.0.1
+requests==2.31.0
+
+transformers==4.51.3
+# torch==2.1.2+cu118              # ✅ 꼭 필요
+# accelerate==0.27.2
+
+SQLAlchemy==2.0.29   # ✅ DB 연결 및 ORM
+mysqlclient==2.2.4   # ✅ MySQL 연동 (필수)
+pymysql==1.1.0   # ✅ 설치 필요
+openai==0.28.0   # ✅ GPT-3.5/4/4o 사용을 위한 라이브러리
+tiktoken==0.5.1      # ✅ OpenAI 토큰 수 정확히 세기 위한 라이브러리

@@ -1,0 +1,43 @@
+# Python 관련
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# 가상환경
+.venv/
+env/
+ENV/
+venv/
+*.egg-info/
+
+# VSCode / JetBrains (PyCharm, IntelliJ 등) 설정
+.vscode/
+.idea/
+
+# 테스트 및 디버깅 관련
+*.log
+*.tmp
+*.swp
+*.bak
+*.old
+.DS_Store
+test_main.http
+
+# OS 관련
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 프로젝트 결과물 캐시나 임시 파일
+*.sqlite3
+*.db
+*.db-journal
+
+# 기타
+*.env
+.env.*
+*.secret
+
+# 제외하고 싶은 폴더 명시
+# 예: 사용자 코드에는 있지만 배포나 저장소엔 필요 없는 폴더들
